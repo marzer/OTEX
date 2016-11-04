@@ -1,0 +1,58 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.25420.1
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OTEX", "OTEX\OTEX.csproj", "{732A23BD-FADA-4D41-B61D-E786C1100ED8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OTEXEditor", "OTEXEditor\OTEXEditor.csproj", "{07537181-A5D7-40A2-B7FC-AB6457A3175A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OTEXDedicatedServer", "OTEXDedicatedServer\OTEXDedicatedServer.csproj", "{9DD57B3F-7AA4-4B2C-85E4-B14696E9CDAD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Marzersoft", "..\marzersoft-lib\Marzersoft\Marzersoft.csproj", "{73858149-A09B-41B4-A64C-C6A78CBFAF2D}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{732A23BD-FADA-4D41-B61D-E786C1100ED8}.Debug|x64.ActiveCfg = Debug|x64
+		{732A23BD-FADA-4D41-B61D-E786C1100ED8}.Debug|x64.Build.0 = Debug|x64
+		{732A23BD-FADA-4D41-B61D-E786C1100ED8}.Debug|x86.ActiveCfg = Debug|x86
+		{732A23BD-FADA-4D41-B61D-E786C1100ED8}.Debug|x86.Build.0 = Debug|x86
+		{732A23BD-FADA-4D41-B61D-E786C1100ED8}.Release|x64.ActiveCfg = Release|x64
+		{732A23BD-FADA-4D41-B61D-E786C1100ED8}.Release|x64.Build.0 = Release|x64
+		{732A23BD-FADA-4D41-B61D-E786C1100ED8}.Release|x86.ActiveCfg = Release|x86
+		{732A23BD-FADA-4D41-B61D-E786C1100ED8}.Release|x86.Build.0 = Release|x86
+		{07537181-A5D7-40A2-B7FC-AB6457A3175A}.Debug|x64.ActiveCfg = Debug|x64
+		{07537181-A5D7-40A2-B7FC-AB6457A3175A}.Debug|x64.Build.0 = Debug|x64
+		{07537181-A5D7-40A2-B7FC-AB6457A3175A}.Debug|x86.ActiveCfg = Debug|x86
+		{07537181-A5D7-40A2-B7FC-AB6457A3175A}.Debug|x86.Build.0 = Debug|x86
+		{07537181-A5D7-40A2-B7FC-AB6457A3175A}.Release|x64.ActiveCfg = Release|x64
+		{07537181-A5D7-40A2-B7FC-AB6457A3175A}.Release|x64.Build.0 = Release|x64
+		{07537181-A5D7-40A2-B7FC-AB6457A3175A}.Release|x86.ActiveCfg = Release|x86
+		{07537181-A5D7-40A2-B7FC-AB6457A3175A}.Release|x86.Build.0 = Release|x86
+		{9DD57B3F-7AA4-4B2C-85E4-B14696E9CDAD}.Debug|x64.ActiveCfg = Debug|x64
+		{9DD57B3F-7AA4-4B2C-85E4-B14696E9CDAD}.Debug|x64.Build.0 = Debug|x64
+		{9DD57B3F-7AA4-4B2C-85E4-B14696E9CDAD}.Debug|x86.ActiveCfg = Debug|x86
+		{9DD57B3F-7AA4-4B2C-85E4-B14696E9CDAD}.Debug|x86.Build.0 = Debug|x86
+		{9DD57B3F-7AA4-4B2C-85E4-B14696E9CDAD}.Release|x64.ActiveCfg = Release|x64
+		{9DD57B3F-7AA4-4B2C-85E4-B14696E9CDAD}.Release|x64.Build.0 = Release|x64
+		{9DD57B3F-7AA4-4B2C-85E4-B14696E9CDAD}.Release|x86.ActiveCfg = Release|x86
+		{9DD57B3F-7AA4-4B2C-85E4-B14696E9CDAD}.Release|x86.Build.0 = Release|x86
+		{73858149-A09B-41B4-A64C-C6A78CBFAF2D}.Debug|x64.ActiveCfg = Debug|x64
+		{73858149-A09B-41B4-A64C-C6A78CBFAF2D}.Debug|x64.Build.0 = Debug|x64
+		{73858149-A09B-41B4-A64C-C6A78CBFAF2D}.Debug|x86.ActiveCfg = Debug|x86
+		{73858149-A09B-41B4-A64C-C6A78CBFAF2D}.Debug|x86.Build.0 = Debug|x86
+		{73858149-A09B-41B4-A64C-C6A78CBFAF2D}.Release|x64.ActiveCfg = Release|x64
+		{73858149-A09B-41B4-A64C-C6A78CBFAF2D}.Release|x64.Build.0 = Release|x64
+		{73858149-A09B-41B4-A64C-C6A78CBFAF2D}.Release|x86.ActiveCfg = Release|x86
+		{73858149-A09B-41B4-A64C-C6A78CBFAF2D}.Release|x86.Build.0 = Release|x86
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
