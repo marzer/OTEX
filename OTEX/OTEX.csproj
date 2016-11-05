@@ -61,7 +61,8 @@
   <ItemGroup>
     <Compile Include="Operation.cs" />
     <Compile Include="OperationRequest.cs" />
-    <Compile Include="Server.cs" />
+    <Compile Include="OTEXInternalException.cs" />
+    <Compile Include="OTEXServer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

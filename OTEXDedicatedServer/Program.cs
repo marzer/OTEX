@@ -9,7 +9,7 @@ namespace OTEX
 {
     class Program
     {
-        static Server server = null;
+        static OTEXServer server = null;
         static volatile bool stop = false;
 
         static int Main(string[] args)
@@ -17,7 +17,7 @@ namespace OTEX
             Console.CancelKeyPress += (s,e) => { stop = true; e.Cancel = true; };
             AppDomain.CurrentDomain.ProcessExit += (s, e) => { if (server != null) server.Dispose(); };
 
-            server = new Server(args[0]);
+            server = new OTEXServer(args[0]);
             server.Start();
             while (!stop)
                 Thread.Sleep(100);

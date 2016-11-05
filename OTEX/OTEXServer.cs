@@ -11,7 +11,10 @@ using System.Net;
 
 namespace OTEX
 {
-    public class Server : IDisposable
+    /// <summary>
+    /// Server class for the OTEX framework.
+    /// </summary>
+    public class OTEXServer : IDisposable
     {
         /////////////////////////////////////////////////////////////////////
         // PROPERTIES/VARIABLES
@@ -66,17 +69,59 @@ namespace OTEX
         /// Lock object for running state.
         /// </summary>
         private readonly object runningLock = new object();
-
+        
+        /// <summary>
+        /// Contents of the file at last sync.
+        /// </summary>
         private volatile string fileContents = "";
+
+        /// <summary>
+        /// Starting operation index for next sync.
+        /// </summary>
         private volatile int fileSyncIndex = 0;
 
+        /// <summary>
+        /// Container for storing exceptions thrown on threads.
+        /// </summary>
+        private readonly List<OTEXInternalException> threadExceptions = new List<OTEXInternalException>();
+
+        /// <summary>
+        /// Lock object for thread exceptions.
+        /// </summary>
+        private readonly object threadExceptionsLock = new object();
+
+        /// <summary>
+        /// Gets the collection of exceptions thrown on child threads. Accessing this property clears the
+        /// internal exception cache, so check it periodically in a loop on your main thread.
+        /// </summary>
+        public List<OTEXInternalException> ThreadExceptions
+        {
+            get
+            {
+                List<OTEXInternalException> output = null;
+                lock (threadExceptionsLock)
+                {
+                    output = new List<OTEXInternalException>(threadExceptions);
+                    threadExceptions.Clear();
+                }
+                return output;
+            }
+        }
+
         /////////////////////////////////////////////////////////////////////
-        // CONSTRUCTION/INITIALIZATION/DESTRUCTION
+        // CONSTRUCTION
         /////////////////////////////////////////////////////////////////////
 
-        public Server(string path, ushort port = 55555)
+        /// <summary>
+        /// Creates an OTEX server.
+        /// </summary>
+        /// <param name="path">Path to the text file the server will edit/create.</param>
+        /// <param name="port">Port to listen on. Must be between 1024 and 65535.</param>
+        /// <exception cref="ArgumentException" />
+        /// <exception cref="ArgumentOutOfRangeException" />
+        public OTEXServer(string path, ushort port = 55555)
         {
-            if ((path = path.Trim()).Length == 0)
+            if ((path = (path ?? "").Trim()).Length == 0)
                 throw new ArgumentException("Path cannot be empty");
             FilePath = path;
 
@@ -85,6 +130,16 @@ namespace OTEX
             ListenPort = port;
         }
 
+        /////////////////////////////////////////////////////////////////////
+        // STARTING THE SERVER
+        /////////////////////////////////////////////////////////////////////
+
+        /// <summary>
+        /// Starts the server. Does nothing if the server is already running.
+        /// Throws OTEXInternalException if an internal exception is thrown during initialization;
+        /// view the InnerException property of the exception to learn more about the actual cause of the problem.
+        /// </summary>
+        /// <exception cref="OTEXInternalException"></exception>
         public void Start()
         {
             if (!running && !isDisposed)
@@ -96,22 +151,32 @@ namespace OTEX
                         running = true;
                         try
                         {
-                            //read file
-                            if (File.Exists(FilePath))
+                            OTEXInternalException.Rethrow(() =>
                             {
-                                fileContents = File.ReadAllText(FilePath, FilePath.DetectEncoding());
-                                for (int i = 0; i < fileContents.Length; i += 2048, ++fileSyncIndex)
-                                    masterOperations.Add(new Operation(Guid.Empty, i, fileContents.Substring(i, Math.Min(2048, fileContents.Length - i))));
-                            }
 
-                            //create tcplistener
-                            listener = new TcpListener(IPAddress.Any, ListenPort);
-                            listener.Start();
+                                //read file
+                                if (File.Exists(FilePath))
+                                {
+                                    fileContents = File.ReadAllText(FilePath, FilePath.DetectEncoding());
+                                    for (int i = 0; i < fileContents.Length; i += 2048, ++fileSyncIndex)
+                                        masterOperations.Add(new Operation(Guid.Empty, i, fileContents.Substring(i, Math.Min(2048, fileContents.Length - i))));
+                                }
+
+                                //create tcplistener
+                                listener = new TcpListener(IPAddress.Any, ListenPort);
+                                listener.Start();
+                            });
                         }
                         catch (Exception)
                         {
                             StopInternal();
                             throw;
+                        }
+
+                        //clear thread exceptions
+                        lock (threadExceptionsLock)
+                        {
+                            threadExceptions.Clear();
                         }
 
                         //create master thread
@@ -131,14 +196,8 @@ namespace OTEX
 
                                         //get network stream
                                         NetworkStream stream = null;
-                                        try
+                                        if (CaptureException(() => { stream = client.GetStream(); }))
                                         {
-                                            stream = client.GetStream();
-                                        }
-                                        catch (Exception exc)
-                                        {
-                                            Console.Error.WriteLine("{0} thrown while getting NetworkStream",
-                                                exc.GetType().Name);
                                             client.Close();
                                             return;
                                         }
@@ -156,7 +215,7 @@ namespace OTEX
 
                                             //read request packet in from client
                                             byte[] data = null;
-                                            try
+                                            if (CaptureException(() =>
                                             {
                                                 using (MemoryStream ms = new MemoryStream())
                                                 {
@@ -171,26 +230,13 @@ namespace OTEX
                                                         ms.Write(buffer, 0, read);
                                                     }
                                                 }
-                                            }
-                                            catch (Exception exc)
-                                            {
-                                                Console.Error.WriteLine("{0} thrown while reading from NetworkStream",
-                                                    exc.GetType().Name);
+                                            }))
                                                 break;
-                                            }
 
                                             //deserialize operation request
                                             OperationRequest incoming = null;
-                                            try
-                                            {
-                                                incoming = data.Deserialize<OperationRequest>();
-                                            }
-                                            catch (Exception exc)
-                                            {
-                                                Console.Error.WriteLine("{0} thrown while deserializing OperationRequest",
-                                                    exc.GetType().Name);
+                                            if (CaptureException(() => { incoming = data.Deserialize<OperationRequest>(); }))
                                                 break;
-                                            }
 
                                             //lock operation lists (3a)
                                             lock (operationsLock)
@@ -221,16 +267,8 @@ namespace OTEX
 
                                                 //send response packet
                                                 var responseBytes = response.Serialize();
-                                                try
-                                                {
-                                                    stream.Write(responseBytes, 0, responseBytes.Length);
-                                                }
-                                                catch (Exception exc)
-                                                {
-                                                    Console.Error.WriteLine("{0} thrown while sending response",
-                                                        exc.GetType().Name);
+                                                if (CaptureException(() => { stream.Write(responseBytes, 0, responseBytes.Length); } ))
                                                     break;
-                                                }
                                             }
                                         }
 
@@ -250,7 +288,7 @@ namespace OTEX
                                     flushTimeout = 60000;
                                     lock (operationsLock)
                                     {
-                                        FlushToDisk();
+                                        CaptureException(() => { SyncOperations(); });
                                     }
                                 }
                             }
@@ -259,8 +297,8 @@ namespace OTEX
                             foreach (Thread thread in clientThreads)
                                 thread.Join();
 
-                            //final flush to disk
-                            FlushToDisk();
+                            //final flush to disk (don't need a lock this time, all client threads have stopped)
+                            CaptureException(() => { SyncOperations(); });
                         });
                         thread.IsBackground = false;
                         thread.Start();
@@ -269,7 +307,11 @@ namespace OTEX
             }
         }
 
-        private void FlushToDisk()
+        /////////////////////////////////////////////////////////////////////
+        // SYNC OPERATIONS TO FILE
+        /////////////////////////////////////////////////////////////////////
+
+        private void SyncOperations()
         {
             //flush pending operations to the file contents
             while (fileSyncIndex < masterOperations.Count)
@@ -282,6 +324,10 @@ namespace OTEX
             //write contents to disk
             File.WriteAllText(FilePath, fileContents);
         }
+
+        /////////////////////////////////////////////////////////////////////
+        // STOPPING THE SERVER
+        /////////////////////////////////////////////////////////////////////
 
         private void StopInternal()
         {
@@ -317,12 +363,42 @@ namespace OTEX
             }
         }
 
+        /////////////////////////////////////////////////////////////////////
+        // DISPOSE
+        /////////////////////////////////////////////////////////////////////
+
         public void Dispose()
         {
             if (isDisposed)
                 return;
             isDisposed = true;
             Stop();
+            lock (threadExceptionsLock)
+            {
+                threadExceptions.Clear();
+            }
+        }
+
+        /////////////////////////////////////////////////////////////////////
+        // CAPTURING THREAD EXCEPTIONS
+        /////////////////////////////////////////////////////////////////////
+
+        /// <summary>
+        /// Capture thrown exceptions and store them in the threadexceptions collection.
+        /// Returns true if an exception was caught.
+        /// </summary>
+        private bool CaptureException(Action func)
+        {
+            OTEXInternalException exception = OTEXInternalException.Capture(func);
+            if (exception != null)
+            {
+                lock (threadExceptionsLock)
+                {
+                    threadExceptions.Add(exception);
+                }
+                return true;
+            }
+            return false;
         }
     }
 }
