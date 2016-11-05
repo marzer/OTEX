@@ -98,6 +98,9 @@ namespace OTEX
         {
             get
             {
+                if (isDisposed)
+                    throw new ObjectDisposedException("OTEXServer");
+
                 List<OTEXInternalException> output = null;
                 lock (threadExceptionsLock)
                 {
@@ -142,11 +145,17 @@ namespace OTEX
         /// <exception cref="OTEXInternalException"></exception>
         public void Start()
         {
-            if (!running && !isDisposed)
+            if (isDisposed)
+                throw new ObjectDisposedException("OTEXServer");
+
+            if (!running)
             {
                 lock (runningLock)
                 {
-                    if (!running && !isDisposed)
+                    if (isDisposed)
+                        throw new ObjectDisposedException("OTEXServer");
+
+                    if (!running)
                     {
                         running = true;
                         try
@@ -204,6 +213,7 @@ namespace OTEX
 
                                         //read request blocks
                                         byte[] buffer = new byte[65535];
+                                        bool handshaken = false;
                                         while (running)
                                         {
                                             //check if data is waiting to be read
@@ -213,7 +223,7 @@ namespace OTEX
                                                 continue;
                                             }
 
-                                            //read request packet in from client
+                                            //read packet in from client
                                             byte[] data = null;
                                             if (CaptureException(() =>
                                             {
@@ -233,42 +243,69 @@ namespace OTEX
                                             }))
                                                 break;
 
-                                            //deserialize operation request
-                                            OperationRequest incoming = null;
-                                            if (CaptureException(() => { incoming = data.Deserialize<OperationRequest>(); }))
-                                                break;
-
-                                            //lock operation lists (3a)
-                                            lock (operationsLock)
+                                            //is this the first packet from a new client?
+                                            if (!handshaken)
                                             {
-                                                //get the list of staged operations for the sender
-                                                List<Operation> outgoing = null;
-                                                if (!outgoingOperations.TryGetValue(incoming.Sender, out outgoing))
-                                                    outgoingOperations[incoming.Sender] = outgoing = new List<Operation>();
+                                                //deserialize guid
+                                                Guid guid = Guid.Empty;
+                                                if (CaptureException(() => { guid = data.Deserialize<Guid>(); })
+                                                    || guid.CompareTo(Guid.Empty) == 0)
+                                                    break;
 
-                                                //if this oplist is not an empty request
-                                                if (incoming.Operations != null && incoming.Operations.Count > 0)
+                                                //perform initial synchronization
+                                                lock (operationsLock)
                                                 {
-                                                    //transform incoming ops against outgoing ops (3b)
-                                                    if (outgoing.Count > 0)
-                                                        Operation.SymmetricLinearTransform(incoming.Operations, outgoing);
+                                                    //create a list of operations containing all ops from the master
+                                                    OperationRequest operations = new OperationRequest(Guid.Empty, masterOperations);
 
-                                                    //append incoming ops to master and to all other outgoing (3c)
-                                                    masterOperations.AddRange(incoming.Operations);
-                                                    foreach (var kvp in outgoingOperations)
-                                                        if (kvp.Key.CompareTo(incoming.Sender) != 0)
-                                                            kvp.Value.AddRange(incoming.Operations);
+                                                    //send operations
+                                                    var operationsBytes = operations.Serialize();
+                                                    if (CaptureException(() => { stream.Write(operationsBytes, 0, operationsBytes.Length); }))
+                                                        break;
+
+                                                    //create the list of staged operations for this client
+                                                    outgoingOperations[guid] = new List<Operation>();
                                                 }
 
-                                                //move all outgoing into our response packet (3d)
-                                                OperationRequest response = new OperationRequest(Guid.Empty,
-                                                    outgoing.Count > 0 ? new List<Operation>(outgoing) : null);
-                                                outgoing.Clear();
-
-                                                //send response packet
-                                                var responseBytes = response.Serialize();
-                                                if (CaptureException(() => { stream.Write(responseBytes, 0, responseBytes.Length); } ))
+                                                handshaken = true;
+                                            }
+                                            else //initial handshake sync has been performed, handle normal requests
+                                            {
+                                                //deserialize operation request
+                                                OperationRequest incoming = null;
+                                                if (CaptureException(() => { incoming = data.Deserialize<OperationRequest>(); }))
                                                     break;
+
+                                                //lock operation lists (3a)
+                                                lock (operationsLock)
+                                                {
+                                                    //get the list of staged operations for the sender
+                                                    List<Operation> outgoing = outgoingOperations[incoming.Sender];
+
+                                                    //if this oplist is not an empty request
+                                                    if (incoming.Operations != null && incoming.Operations.Count > 0)
+                                                    {
+                                                        //transform incoming ops against outgoing ops (3b)
+                                                        if (outgoing.Count > 0)
+                                                            Operation.SymmetricLinearTransform(incoming.Operations, outgoing);
+
+                                                        //append incoming ops to master and to all other outgoing (3c)
+                                                        masterOperations.AddRange(incoming.Operations);
+                                                        foreach (var kvp in outgoingOperations)
+                                                            if (kvp.Key.CompareTo(incoming.Sender) != 0)
+                                                                kvp.Value.AddRange(incoming.Operations);
+                                                    }
+
+                                                    //move all outgoing into our response packet (3d)
+                                                    OperationRequest response = new OperationRequest(Guid.Empty,
+                                                        outgoing.Count > 0 ? new List<Operation>(outgoing) : null);
+                                                    outgoing.Clear();
+
+                                                    //send response packet
+                                                    var responseBytes = response.Serialize();
+                                                    if (CaptureException(() => { stream.Write(responseBytes, 0, responseBytes.Length); }))
+                                                        break;
+                                                }
                                             }
                                         }
 
@@ -288,7 +325,7 @@ namespace OTEX
                                     flushTimeout = 60000;
                                     lock (operationsLock)
                                     {
-                                        CaptureException(() => { SyncOperations(); });
+                                        CaptureException(() => { SyncFileContents(); });
                                     }
                                 }
                             }
@@ -298,7 +335,7 @@ namespace OTEX
                                 thread.Join();
 
                             //final flush to disk (don't need a lock this time, all client threads have stopped)
-                            CaptureException(() => { SyncOperations(); });
+                            CaptureException(() => { SyncFileContents(); });
                         });
                         thread.IsBackground = false;
                         thread.Start();
@@ -311,7 +348,11 @@ namespace OTEX
         // SYNC OPERATIONS TO FILE
         /////////////////////////////////////////////////////////////////////
 
-        private void SyncOperations()
+        /// <summary>
+        /// Applies the output of all new operations to the internal file contents string, then
+        /// writes the new contents to disk.
+        /// </summary>
+        private void SyncFileContents()
         {
             //flush pending operations to the file contents
             while (fileSyncIndex < masterOperations.Count)
@@ -329,6 +370,9 @@ namespace OTEX
         // STOPPING THE SERVER
         /////////////////////////////////////////////////////////////////////
 
+        /// <summary>
+        /// Stops the server. Not thread-safe.
+        /// </summary>
         private void StopInternal()
         {
             running = false;
@@ -351,6 +395,9 @@ namespace OTEX
             fileContents = "";
         }
 
+        /// <summary>
+        /// Stops the server. 
+        /// </summary>
         public void Stop()
         {
             if (running)
@@ -367,6 +414,9 @@ namespace OTEX
         // DISPOSE
         /////////////////////////////////////////////////////////////////////
 
+        /// <summary>
+        /// Disposes this server, stopping it (if it was running) and releasing resources.
+        /// </summary>
         public void Dispose()
         {
             if (isDisposed)
