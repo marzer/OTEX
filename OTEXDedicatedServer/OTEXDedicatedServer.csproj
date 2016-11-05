@@ -64,13 +64,17 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Program.cs" />
+    <Compile Include="OTEXDedicatedServer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\marzersoft-lib\Marzersoft\Marzersoft.csproj">
+      <Project>{73858149-a09b-41b4-a64c-c6a78cbfaf2d}</Project>
+      <Name>Marzersoft</Name>
+    </ProjectReference>
     <ProjectReference Include="..\OTEX\OTEX.csproj">
       <Project>{732a23bd-fada-4d41-b61d-e786c1100ed8}</Project>
       <Name>OTEX</Name>
