@@ -13,7 +13,7 @@ namespace OTEX
     public class OperationRequest
     {
         /// <summary>
-        /// Client sending the request.
+        /// Session ID of the client sending the request.
         /// </summary>
         public readonly Guid Sender;
 
