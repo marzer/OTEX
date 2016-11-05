@@ -16,7 +16,7 @@ namespace OTEX
         [STAThread]
         static void Main(string[] args)
         {
-            App.MainFormType = typeof(OTEXEditorForm);
+            App.MainFormType = typeof(EditorForm);
             App.Name = "OTEX Editor";
             App.Description = "Editor client for OTEX collaborative text editor framework.";
             //App.Mutex = true;
