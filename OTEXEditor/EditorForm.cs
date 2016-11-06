@@ -112,7 +112,7 @@ namespace OTEX
             };
             otexServer.OnStarted += (s) =>
             {
-                Debugger.I("Server: started for {0} on port {1}", s.FilePath, s.ListenPort);
+                Debugger.I("Server: started for {0} on port {1}", s.FilePath, s.Port);
             };
             otexServer.OnStopped += (s) =>
             {

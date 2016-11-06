@@ -10,7 +10,7 @@ namespace OTEX
     /// A single operation.
     /// </summary>
     [Serializable]
-    public class Operation
+    public sealed class Operation
     {
         /////////////////////////////////////////////////////////////////////
         // PROPERTIES
@@ -37,20 +37,20 @@ namespace OTEX
         /// <summary>
         /// String used for insertions. Null for deletions.
         /// </summary>
-        public string Payload
+        public string Text
         {
-            get { return payload; }
+            get { return text; }
         }
-        public string payload;
+        public string text;
 
         /// <summary>
         /// Length of character span affected by this operation.
         /// </summary>
-        public ushort Length
+        public int Length
         {
             get { return length; }
         }
-        public ushort length;
+        public int length;
 
         /// <summary>
         /// Is this operation a no-op?
@@ -65,7 +65,7 @@ namespace OTEX
         /// </summary>
         public bool IsInsertion
         {
-            get { return !IsNoop && payload != null; }
+            get { return !IsNoop && text != null; }
         }
 
         /// <summary>
@@ -73,7 +73,7 @@ namespace OTEX
         /// </summary>
         public bool IsDeletion
         {
-            get { return !IsNoop && payload == null; }
+            get { return !IsNoop && text == null; }
         }
 
         /////////////////////////////////////////////////////////////////////
@@ -83,25 +83,25 @@ namespace OTEX
         /// <summary>
         /// Create a text insertion operation.
         /// </summary>
-        public Operation(Guid clientGuid, int offset, string insert)
+        public Operation(Guid clientGuid, int offset, string text)
         {
-            if (insert == null)
+            if (text == null)
                 throw new ArgumentNullException("insert text cannot be null");
             client = clientGuid;
             this.offset = offset;
-            length = (ushort)insert.Length;
-            payload = insert;
+            length = text.Length;
+            this.text = text;
         }
 
         /// <summary>
         /// Create a text deletion operation.
         /// </summary>
-        public Operation(Guid clientGuid, int offset, ushort length)
+        public Operation(Guid clientGuid, int offset, int length)
         {
             client = clientGuid;
             this.offset = offset;
             this.length = length;
-            payload = null;
+            text = null;
         }
 
         /// <summary>
@@ -114,7 +114,7 @@ namespace OTEX
             client = operation.Client;
             offset = operation.Offset;
             length = operation.Length;
-            payload = operation.Payload;
+            text = operation.text;
         }
 
         /////////////////////////////////////////////////////////////////////
@@ -135,10 +135,9 @@ namespace OTEX
             {
                 for (int j = 0; j < list1.Count(); j++)
                 {
-                    Operation tmpOp1 = new Operation(list2.ElementAt(i));
-                    Operation tmpOp2 = new Operation(list1.ElementAt(j));
-                    list2.ElementAt(i).TransformAgainst(tmpOp2);
-                    list1.ElementAt(j).TransformAgainst(tmpOp1);
+                    Operation list2i = new Operation(list2.ElementAt(i));
+                    list2.ElementAt(i).TransformAgainst(list1.ElementAt(j));
+                    list1.ElementAt(j).TransformAgainst(list2i);
                 }
             }
         }
@@ -205,18 +204,18 @@ namespace OTEX
             {
                 var tmpOffset = offset;
                 offset = operation.offset;
-                length = (ushort)((tmpOffset + length) - (operation.offset + operation.length));
+                length = (tmpOffset + length) - (operation.offset + operation.length);
             }
             else if (operation.offset > offset && operation.offset + operation.length >= offset + length)
-                length = (ushort)(operation.offset - offset);
+                length = operation.offset - offset;
             else if (operation.offset > offset && operation.offset + operation.length < offset + length)
-                length = (ushort)(length - operation.length);
+                length = length - operation.length;
         }
 
         private void MakeNoop()
         {
             length = 0;
-            payload = null;
+            text = null;
         }
 
         /////////////////////////////////////////////////////////////////////
@@ -234,7 +233,7 @@ namespace OTEX
             if (offset < 0)
                 throw new ArgumentOutOfRangeException("offset cannot be negative");
 
-            return IsInsertion ? document.Insert(offset, payload) : document.Remove(offset, length);
+            return IsInsertion ? document.Insert(offset, text) : document.Remove(offset, length);
         }
     }
 }

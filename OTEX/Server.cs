@@ -52,7 +52,7 @@ namespace OTEX
         /// <summary>
         /// Port to listen on.
         /// </summary>
-        public ushort ListenPort
+        public ushort Port
         {
             get { return listenPort; }
         }
@@ -62,6 +62,16 @@ namespace OTEX
         /// Master list of operations, used for synchronizing newly-connected clients.
         /// </summary>
         private readonly List<Operation> masterOperations = new List<Operation>();
+
+        /// <summary>
+        /// Staging lists for storing outgoing operations.
+        /// </summary>
+        private readonly HashSet<Guid> connectedClients = new HashSet<Guid>();
+
+        /// <summary>
+        /// Lock object for connected clients collection.
+        /// </summary>
+        private readonly object connectedClientsLock = new object();
 
         /// <summary>
         /// Staging lists for storing outgoing operations.
@@ -81,11 +91,6 @@ namespace OTEX
             get { return isDisposed; }
         }
         private volatile bool isDisposed = false;
-
-        /// <summary>
-        /// TCP listener for dispatching clients.
-        /// </summary>
-        private TcpListener listener = null;
 
         /// <summary>
         /// Master thread for listening for new clients and controlling sub-threads.
@@ -116,6 +121,11 @@ namespace OTEX
         /// </summary>
         private volatile int fileSyncIndex = 0;
 
+        /// <summary>
+        /// Password required by the current session, if any.
+        /// </summary>
+        private Password password;
+
         /////////////////////////////////////////////////////////////////////
         // CONSTRUCTION
         /////////////////////////////////////////////////////////////////////
@@ -123,7 +133,7 @@ namespace OTEX
         /// <summary>
         /// Creates an OTEX server.
         /// </summary>
-        public Server()
+        public Server() : base(Guid.Empty) //server id is always 0
         {
             //
         }
@@ -137,11 +147,15 @@ namespace OTEX
         /// </summary>
         /// <param name="path">Path to the text file the server will edit/create.</param>
         /// <param name="port">Port to listen on. Must be between 1024 and 65535.</param>
+        /// <param name="password">Password required to connect to this server. Leave as null for none.</param>
         /// <exception cref="ArgumentException" />
         /// <exception cref="ArgumentOutOfRangeException" />
         /// <exception cref="ObjectDisposedException" />
-        /// <exception cref="InternalException" />
-        public void Start(string path, ushort port = 55555)
+        /// <exception cref="UnauthorizedAccessException" />
+        /// <exception cref="PathTooLongException" />
+        /// <exception cref="FileNotFoundException" />
+        /// <exception cref="IOException" />
+        public void Start(string path, ushort port = 55555, Password password = null)
         {
             if (isDisposed)
                 throw new ObjectDisposedException("OTEX.Server");
@@ -155,49 +169,44 @@ namespace OTEX
 
                     if (!running)
                     {
+                        //session state
                         if ((path = (path ?? "").Trim()).Length == 0)
                             throw new ArgumentException("Path cannot be empty");
                         filePath = path;
-
                         if (port < 1024)
                             throw new ArgumentOutOfRangeException("Port must be between 1024 and 65535");
                         listenPort = port;
+                        this.password = password;
 
-                        running = true;
+                        //session initialization
+                        TcpListener listener = null;
                         try
                         {
-                            InternalException.Rethrow(() =>
-                            {
+                            //read file
+                            if (File.Exists(FilePath))
+                                masterOperations.Add(new Operation(Guid.Empty, 0, fileContents = File.ReadAllText(FilePath, FilePath.DetectEncoding())));
 
-                                //read file
-                                if (File.Exists(FilePath))
-                                {
-                                    fileContents = File.ReadAllText(FilePath, FilePath.DetectEncoding());
-                                    for (int i = 0; i < fileContents.Length; i += 2048, ++fileSyncIndex)
-                                        masterOperations.Add(new Operation(Guid.Empty, i, fileContents.Substring(i, Math.Min(2048, fileContents.Length - i))));
-                                }
-
-                                //create tcplistener
-                                listener = new TcpListener(IPAddress.Any, ListenPort);
-                                listener.Start();
-                            });
+                            //create tcplistener
+                            listener = new TcpListener(IPAddress.Any, Port);
+                            listener.Start();
                         }
                         catch (Exception)
                         {
-                            running = false;
                             ClearRunningState();
                             throw;
                         }
+                        running = true;
 
-                        //create master thread
-                        thread = new Thread(() =>
+                        //create thread
+                        thread = new Thread((list) =>
                         {
                             List<Thread> clientThreads = new List<Thread>();
+                            TcpListener tcpListener = list as TcpListener;
                             int flushTimeout = 60000;
                             while (running)
                             {
                                 //listen for new connections
-                                while (listener.Pending())
+                                while (tcpListener.Pending())
                                 {
                                     //create client thread
                                     clientThreads.Add(new Thread((cl) =>
@@ -212,9 +221,8 @@ namespace OTEX
                                             return;
                                         }
 
-                                        //read request blocks
-                                        byte[] buffer = new byte[65535];
-                                        bool handshaken = false;
+                                        //read from stream
+                                        Guid clientGUID = Guid.Empty;
                                         while (running)
                                         {
                                             //check if data is waiting to be read
@@ -224,97 +232,137 @@ namespace OTEX
                                                 continue;
                                             }
 
-                                            //read packet in from client
-                                            byte[] data = null;
-                                            if (CaptureException(() =>
-                                            {
-                                                using (MemoryStream ms = new MemoryStream())
-                                                {
-                                                    while (true)
-                                                    {
-                                                        int read = stream.Read(buffer, 0, buffer.Length);
-                                                        if (read <= 0)
-                                                        {
-                                                            data = ms.ToArray();
-                                                            break;
-                                                        }
-                                                        ms.Write(buffer, 0, read);
-                                                    }
-                                                }
-                                            }))
+                                            //read incoming packet sequence
+                                            PacketSequence packetSequence = null;
+                                            if (CaptureException(() => { packetSequence = new PacketSequence(stream); }))
                                                 break;
 
+                                            //check guid
+                                            if (packetSequence.Sender.Equals(Guid.Empty))
+                                                break; //do not accept packets from other servers
+
                                             //is this the first packet from a new client?
-                                            if (!handshaken)
+                                            if (clientGUID.Equals(Guid.Empty))
                                             {
-                                                //deserialize guid
-                                                Guid guid = Guid.Empty;
-                                                if (CaptureException(() => { guid = data.Deserialize<Guid>(); })
-                                                    || guid.CompareTo(Guid.Empty) == 0)
+                                                //check if packet is a request type
+                                                if (packetSequence.PayloadType != ConnectionRequest.PayloadType)
+                                                    continue; //ignore
+
+                                                //deserialize packet
+                                                ConnectionRequest request = null;
+                                                if (CaptureException(() => { request = packetSequence.Payload.Deserialize<ConnectionRequest>(); }))
                                                     break;
 
-                                                //perform initial synchronization
-                                                lock (operationsLock)
+                                                //check password
+                                                if ((password != null && (request.Password == null || !password.Matches(password))) //requires password
+                                                    || (password == null && request.Password != null)) //no password required (reject incoming requests with passwords)
                                                 {
-                                                    //create a list of operations containing all ops from the master
-                                                    OperationRequest operations = new OperationRequest(Guid.Empty, masterOperations);
-
-                                                    //send operations
-                                                    var operationsBytes = operations.Serialize();
-                                                    if (CaptureException(() => { stream.Write(operationsBytes, 0, operationsBytes.Length); }))
-                                                        break;
-
-                                                    //create the list of staged operations for this client
-                                                    outgoingOperations[guid] = new List<Operation>();
+                                                    CaptureException(() =>
+                                                    {
+                                                        PacketSequence.Send(stream, GUID,
+                                                            new ConnectionResponse(ConnectionResponse.ResponseCode.IncorrectPassword));
+                                                    });
+                                                    break;
                                                 }
 
-                                                handshaken = true;
+                                                //check client id
+                                                lock (connectedClientsLock)
+                                                {
+                                                    //duplicate id (already connected)
+                                                    if (connectedClients.Contains(packetSequence.Sender))
+                                                    {
+                                                        CaptureException(() =>
+                                                        {
+                                                            PacketSequence.Send(stream, GUID,
+                                                                new ConnectionResponse(ConnectionResponse.ResponseCode.DuplicateGUID));
+                                                        });
+                                                        break;
+                                                    }
+
+                                                    //id ok
+                                                    connectedClients.Add(clientGUID = packetSequence.Sender);
+                                                }
+
+                                                //request OK, send response with initial sync
+                                                lock (operationsLock)
+                                                {
+                                                    //create the list of staged operations for this client
+                                                    outgoingOperations[clientGUID] = new List<Operation>();
+
+                                                    //send response
+                                                    if (CaptureException(() =>
+                                                        { PacketSequence.Send(stream, GUID, new ConnectionResponse(filePath, masterOperations)); }))
+                                                            break;
+                                                }
                                             }
                                             else //initial handshake sync has been performed, handle normal requests
                                             {
-                                                //deserialize operation request
-                                                OperationRequest incoming = null;
-                                                if (CaptureException(() => { incoming = data.Deserialize<OperationRequest>(); }))
-                                                    break;
+                                                //check guid
+                                                if (!packetSequence.Sender.Equals(clientGUID))
+                                                    continue; //ignore (shouldn't happen?)
 
-                                                //lock operation lists (3a)
-                                                lock (operationsLock)
+                                                switch (packetSequence.PayloadType)
                                                 {
-                                                    //get the list of staged operations for the sender
-                                                    List<Operation> outgoing = outgoingOperations[incoming.Sender];
-
-                                                    //if this oplist is not an empty request
-                                                    if (incoming.Operations != null && incoming.Operations.Count > 0)
+                                                    case OperationList.PayloadType: //normal update request
                                                     {
-                                                        //transform incoming ops against outgoing ops (3b)
-                                                        if (outgoing.Count > 0)
-                                                            Operation.SymmetricLinearTransform(incoming.Operations, outgoing);
+                                                        //deserialize operation request
+                                                        OperationList incoming = null;
+                                                        if (CaptureException(() => { incoming = packetSequence.Payload.Deserialize<OperationList>(); }))
+                                                            break;
 
-                                                        //append incoming ops to master and to all other outgoing (3c)
-                                                        masterOperations.AddRange(incoming.Operations);
-                                                        foreach (var kvp in outgoingOperations)
-                                                            if (kvp.Key.CompareTo(incoming.Sender) != 0)
-                                                                kvp.Value.AddRange(incoming.Operations);
+                                                        //lock operation lists (3a)
+                                                        lock (operationsLock)
+                                                        {
+                                                            //get the list of staged operations for the sender
+                                                            List<Operation> outgoing = outgoingOperations[clientGUID];
+
+                                                            //if this oplist is not an empty request
+                                                            if (incoming.Operations != null && incoming.Operations.Count > 0)
+                                                            {
+                                                                //transform incoming ops against outgoing ops (3b)
+                                                                if (outgoing.Count > 0)
+                                                                    Operation.SymmetricLinearTransform(incoming.Operations, outgoing);
+
+                                                                //append incoming ops to master and to all other outgoing (3c)
+                                                                masterOperations.AddRange(incoming.Operations);
+                                                                foreach (var kvp in outgoingOperations)
+                                                                    if (!kvp.Key.Equals(clientGUID))
+                                                                        kvp.Value.AddRange(incoming.Operations);
+                                                            }
+
+                                                            //move all outgoing into our response packet (3d)
+                                                            OperationList response = new OperationList(outgoing.Count > 0 ? new List<Operation>(outgoing) : null);
+                                                            outgoing.Clear();
+
+                                                            //send response
+                                                            CaptureException(() => { PacketSequence.Send(stream, GUID, response); });
+                                                        }
                                                     }
-
-                                                    //move all outgoing into our response packet (3d)
-                                                    OperationRequest response = new OperationRequest(Guid.Empty,
-                                                        outgoing.Count > 0 ? new List<Operation>(outgoing) : null);
-                                                    outgoing.Clear();
-
-                                                    //send response packet
-                                                    var responseBytes = response.Serialize();
-                                                    if (CaptureException(() => { stream.Write(responseBytes, 0, responseBytes.Length); }))
-                                                        break;
+                                                    break;
                                                 }
                                             }
                                         }
 
+                                        //remove this client's outgoing operation set and connected clients set
+                                        if (!clientGUID.Equals(Guid.Empty))
+                                        {
+                                            lock (operationsLock)
+                                            {
+                                                outgoingOperations.Remove(clientGUID);
+                                            }
+
+                                            lock (connectedClientsLock)
+                                            {
+                                                connectedClients.Remove(clientGUID);
+                                            }
+                                        }
+
+                                        //close stream and tcp client
                                         stream.Dispose();
                                         client.Close();
                                     }));
                                     clientThreads.Last().IsBackground = false;
-                                    clientThreads.Last().Start(listener.AcceptTcpClient());
+                                    clientThreads.Last().Start(tcpListener.AcceptTcpClient());
                                 }
                                 
                                 //sleep a bit (not raw spin-waiting)
@@ -331,6 +379,9 @@ namespace OTEX
                                 }
                             }
 
+                            //stop tcp listener
+                            CaptureException(() => { tcpListener.Stop(); });
+
                             //wait for client threads to close
                             foreach (Thread thread in clientThreads)
                                 thread.Join();
@@ -339,7 +390,7 @@ namespace OTEX
                             CaptureException(() => { SyncFileContents(); });
                         });
                         thread.IsBackground = false;
-                        thread.Start();
+                        thread.Start(listener);
 
                         OnStarted?.Invoke(this);
                     }
@@ -386,17 +437,13 @@ namespace OTEX
                 thread.Join();
                 thread = null;
             }
-            if (listener != null)
-            {
-                listener.Stop();
-                listener = null;
-            }
 
-            //clear lists of operations (should have been flushed to disk by thread anyways)
+            //clear session state
             outgoingOperations.Clear();
             masterOperations.Clear();
             fileContents = "";
             fileSyncIndex = 0;
+            password = null;
         }
 
         /// <summary>

@@ -21,7 +21,29 @@ namespace OTEX
         public event Action<Node, InternalException> OnInternalException;
 
         /////////////////////////////////////////////////////////////////////
-        // CAPTURING THREAD EXCEPTIONS
+        // PROPERTIES/VARIABLES
+        /////////////////////////////////////////////////////////////////////
+
+        /// <summary>
+        /// ID for this node.
+        /// </summary>
+        public readonly Guid GUID;
+
+        /////////////////////////////////////////////////////////////////////
+        // CONSTRUCTOR
+        /////////////////////////////////////////////////////////////////////
+
+        /// <summary>
+        /// Creates an OTEX node.
+        /// </summary>
+        /// <param name="guid">ID for this node. Leaving it null will auto-generate one.</param>
+        public Node(Guid? guid = null)
+        {
+            GUID = guid.HasValue ? guid.Value : Guid.NewGuid();
+        }
+
+        /////////////////////////////////////////////////////////////////////
+        // THREAD EXCEPTIONS
         /////////////////////////////////////////////////////////////////////
 
         /// <summary>

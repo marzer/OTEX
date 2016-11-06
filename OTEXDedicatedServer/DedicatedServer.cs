@@ -45,7 +45,7 @@ namespace OTEX
         {
             get
             {
-                return string.Format("usage: {0} <file path> [/PORT port] [/?]", Process.GetCurrentProcess().ProcessName.ToUpper());
+                return string.Format("usage: {0} <file path> [/PORT port] [/PASSWORD pass] [/?]", Process.GetCurrentProcess().ProcessName.ToUpper());
             }
         }
 
@@ -58,12 +58,13 @@ namespace OTEX
             {
                 StringBuilder sb = new StringBuilder();
                 sb.AppendLine(Splash).AppendLine().AppendLine(Usage).AppendLine();
-                sb.AppendLine(" <file path>: Path to the plain text file to collaboratively edit.");
-                sb.AppendLine("  /PORT port: Port on which to listen for new OTEX client connections, between 1024 and 65535.");
-                sb.AppendLine("              Defaults to 55555.");
-                sb.AppendLine("          /?: Prints help and exits.");
+                sb.AppendLine("   <file path>: Path to the plain text file to collaboratively edit.");
+                sb.AppendLine("    /PORT port: Port on which to listen for new OTEX client connections, between 1024 and 65535.");
+                sb.AppendLine("                Defaults to 55555.");
+                sb.AppendLine("/PASSWORD pass: Password required to connect to this server.");
+                sb.AppendLine("            /?: Prints help and exits.");
                 sb.AppendLine();
-                sb.AppendLine("Arguments may appear in any order and are not case sensitive .");
+                sb.AppendLine("Arguments may appear in any order.");
                 return sb.ToString();
             }
         }
@@ -117,6 +118,7 @@ namespace OTEX
             //handle command line arguments
             string filePath = "";
             ushort port = 55555;
+            Password password = null;
             try
             {
                 var arguments = App.ProcessArguments(args);
@@ -134,11 +136,14 @@ namespace OTEX
                     if (!arguments[i].Flag || arguments[i + 1].Flag)
                         continue;
 
-                    if (arguments[i].Value.CompareTo("port") == 0)
-                    {
+                    bool match = false;
+                    if (match = (arguments[i].Value.CompareTo("port") == 0))
                         port = ushort.Parse(arguments[i + 1].Value);
+                    else if (match = (arguments[i].Value.CompareTo("password") == 0))
+                        password = new Password(arguments[i + 1].Value);
+
+                    if (match)
                         arguments[i].Handled = arguments[i + 1].Handled = true;
-                    }
                 }
 
                 //single, non-flag arguments
@@ -169,7 +174,7 @@ namespace OTEX
             {
                 Out("Server started.");
                 Out("  File: {0}", s.FilePath);
-                Out("  Port: {0}", s.ListenPort);
+                Out("  Port: {0}", s.Port);
             };
             server.OnStopped += (s) =>
             {
@@ -188,7 +193,7 @@ namespace OTEX
             //start server
             try
             {
-                server.Start(filePath, port);
+                server.Start(filePath, port, password);
             }
             catch (Exception exc)
             {

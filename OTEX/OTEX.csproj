@@ -60,10 +60,17 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Client.cs" />
+    <Compile Include="Packets\ConnectionRequest.cs" />
+    <Compile Include="Packets\ConnectionResponse.cs" />
+    <Compile Include="Packets\IPacketPayload.cs" />
     <Compile Include="Node.cs" />
+    <Compile Include="Packets\IOperationList.cs" />
+    <Compile Include="Packets\Packet.cs" />
+    <Compile Include="Packets\PacketSequence.cs" />
     <Compile Include="Operation.cs" />
-    <Compile Include="OperationRequest.cs" />
+    <Compile Include="Packets\OperationList.cs" />
     <Compile Include="InternalException.cs" />
+    <Compile Include="Password.cs" />
     <Compile Include="Server.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
@@ -72,9 +79,6 @@
       <Project>{73858149-a09b-41b4-a64c-c6a78cbfaf2d}</Project>
       <Name>Marzersoft</Name>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="ClientMetadata.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
