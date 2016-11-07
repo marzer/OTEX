@@ -54,7 +54,7 @@ namespace OTEX
 
             //expand buffer if necessary
             if (buffer.Length < size)
-                buffer = new byte[buffer.Length];
+                buffer = new byte[size];
 
             //read packet
             int offset = 0;
