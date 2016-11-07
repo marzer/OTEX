@@ -66,10 +66,10 @@
     <Compile Include="Node.cs" />
     <Compile Include="Packets\IOperationList.cs" />
     <Compile Include="Packets\Packet.cs" />
-    <Compile Include="Packets\PacketSequence.cs" />
     <Compile Include="Operation.cs" />
     <Compile Include="Packets\OperationList.cs" />
     <Compile Include="InternalException.cs" />
+    <Compile Include="Packets\PacketReader.cs" />
     <Compile Include="Password.cs" />
     <Compile Include="Server.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

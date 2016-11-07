@@ -145,7 +145,6 @@ namespace OTEX
                         if (address.Equals(IPAddress.Any) || address.Equals(IPAddress.Broadcast) || address.Equals(IPAddress.None))
                             throw new ArgumentOutOfRangeException("Address must be a valid non-range IP Address.");
 
-
                         //session connection
                         TcpClient client = null;
                         NetworkStream stream = null;
@@ -155,15 +154,16 @@ namespace OTEX
                             client = new TcpClient();
                             client.Connect(address, port);
                             stream = client.GetStream();
+                            PacketReader reader = new PacketReader(stream);
 
                             //send connection request packet
-                            PacketSequence.Send(stream, GUID, new ConnectionRequest(password));
+                            Packet.Send(stream, GUID, new ConnectionRequest(password));
 
                             //get response
-                            PacketSequence responseSequence = new PacketSequence(stream);
-                            if (responseSequence.PayloadType != ConnectionResponse.PayloadType)
+                            Packet responsePacket = reader.Read();
+                            if (responsePacket.PayloadType != ConnectionResponse.PayloadType)
                                 throw new InvalidDataException("unexpected response packet type");
-                            ConnectionResponse response = responseSequence.Payload.Deserialize<ConnectionResponse>();
+                            ConnectionResponse response = responsePacket.Payload.Deserialize<ConnectionResponse>();
                             if (response.Result != ConnectionResponse.ResponseCode.Approved)
                                 throw new Exception(string.Format("connection rejected by server: {0}",response.Result));
 

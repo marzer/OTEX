@@ -26,6 +26,16 @@ namespace OTEX
         public event Action<Server> OnStarted;
 
         /// <summary>
+        /// Triggered when a new client connects.
+        /// </summary>
+        public event Action<Server, Guid> OnClientConnected;
+
+        /// <summary>
+        /// Triggered when a client disconnects.
+        /// </summary>
+        public event Action<Server, Guid> OnClientDisconnected;
+
+        /// <summary>
         /// Triggered when the server is stopped.
         /// </summary>
         public event Action<Server> OnStopped;
@@ -184,7 +194,10 @@ namespace OTEX
                         {
                             //read file
                             if (File.Exists(FilePath))
+                            {
                                 masterOperations.Add(new Operation(Guid.Empty, 0, fileContents = File.ReadAllText(FilePath, FilePath.DetectEncoding())));
+                                ++fileSyncIndex;
+                            }
 
                             //create tcplistener
                             listener = new TcpListener(IPAddress.Any, Port);
@@ -208,6 +221,11 @@ namespace OTEX
                                 //listen for new connections
                                 while (tcpListener.Pending())
                                 {
+                                    //get client
+                                    TcpClient tcpClient = null;
+                                    if (CaptureException(() => { tcpClient = tcpListener.AcceptTcpClient(); }))
+                                        continue;
+
                                     //create client thread
                                     clientThreads.Add(new Thread((cl) =>
                                     {
@@ -221,36 +239,38 @@ namespace OTEX
                                             return;
                                         }
 
+                                        //create packet reader
+                                        PacketReader reader = null;
+                                        if (CaptureException(() => { reader = new PacketReader(stream); }))
+                                            return;
+
                                         //read from stream
                                         Guid clientGUID = Guid.Empty;
                                         while (running)
                                         {
-                                            //check if data is waiting to be read
-                                            if (!stream.DataAvailable)
-                                            {
-                                                Thread.Sleep(1);
-                                                continue;
-                                            }
-
-                                            //read incoming packet sequence
-                                            PacketSequence packetSequence = null;
-                                            if (CaptureException(() => { packetSequence = new PacketSequence(stream); }))
+                                            Thread.Sleep(1);
+                                            
+                                            //read incoming packet
+                                            Packet packet = null;
+                                            if (CaptureException(() => { packet = reader.Read(); }))
                                                 break;
+                                            if (packet == null)
+                                                continue; //no packet at the moment
 
                                             //check guid
-                                            if (packetSequence.Sender.Equals(Guid.Empty))
+                                            if (packet.Sender.Equals(Guid.Empty))
                                                 break; //do not accept packets from other servers
 
                                             //is this the first packet from a new client?
                                             if (clientGUID.Equals(Guid.Empty))
                                             {
                                                 //check if packet is a request type
-                                                if (packetSequence.PayloadType != ConnectionRequest.PayloadType)
+                                                if (packet.PayloadType != ConnectionRequest.PayloadType)
                                                     continue; //ignore
 
                                                 //deserialize packet
                                                 ConnectionRequest request = null;
-                                                if (CaptureException(() => { request = packetSequence.Payload.Deserialize<ConnectionRequest>(); }))
+                                                if (CaptureException(() => { request = packet.Payload.Deserialize<ConnectionRequest>(); }))
                                                     break;
 
                                                 //check password
@@ -259,7 +279,7 @@ namespace OTEX
                                                 {
                                                     CaptureException(() =>
                                                     {
-                                                        PacketSequence.Send(stream, GUID,
+                                                        Packet.Send(stream, GUID,
                                                             new ConnectionResponse(ConnectionResponse.ResponseCode.IncorrectPassword));
                                                     });
                                                     break;
@@ -269,45 +289,48 @@ namespace OTEX
                                                 lock (connectedClientsLock)
                                                 {
                                                     //duplicate id (already connected)
-                                                    if (connectedClients.Contains(packetSequence.Sender))
+                                                    if (connectedClients.Contains(packet.Sender))
                                                     {
                                                         CaptureException(() =>
                                                         {
-                                                            PacketSequence.Send(stream, GUID,
+                                                            Packet.Send(stream, GUID,
                                                                 new ConnectionResponse(ConnectionResponse.ResponseCode.DuplicateGUID));
                                                         });
                                                         break;
                                                     }
 
-                                                    //id ok
-                                                    connectedClients.Add(clientGUID = packetSequence.Sender);
-                                                }
+                                                    //request OK, send response with initial sync
+                                                    lock (operationsLock)
+                                                    {
+                                                        //create the list of staged operations for this client
+                                                        outgoingOperations[clientGUID] = new List<Operation>();
 
-                                                //request OK, send response with initial sync
-                                                lock (operationsLock)
-                                                {
-                                                    //create the list of staged operations for this client
-                                                    outgoingOperations[clientGUID] = new List<Operation>();
-
-                                                    //send response
-                                                    if (CaptureException(() =>
-                                                        { PacketSequence.Send(stream, GUID, new ConnectionResponse(filePath, masterOperations)); }))
+                                                        //send response
+                                                        if (CaptureException(() =>
+                                                        { Packet.Send(stream, GUID, new ConnectionResponse(filePath, masterOperations)); }))
                                                             break;
+                                                    }
+
+                                                    //id ok
+                                                    connectedClients.Add(clientGUID = packet.Sender);
                                                 }
+
+                                                //notify
+                                                OnClientConnected?.Invoke(this, clientGUID);
                                             }
                                             else //initial handshake sync has been performed, handle normal requests
                                             {
                                                 //check guid
-                                                if (!packetSequence.Sender.Equals(clientGUID))
+                                                if (!packet.Sender.Equals(clientGUID))
                                                     continue; //ignore (shouldn't happen?)
 
-                                                switch (packetSequence.PayloadType)
+                                                switch (packet.PayloadType)
                                                 {
                                                     case OperationList.PayloadType: //normal update request
                                                     {
                                                         //deserialize operation request
                                                         OperationList incoming = null;
-                                                        if (CaptureException(() => { incoming = packetSequence.Payload.Deserialize<OperationList>(); }))
+                                                        if (CaptureException(() => { incoming = packet.Payload.Deserialize<OperationList>(); }))
                                                             break;
 
                                                         //lock operation lists (3a)
@@ -335,7 +358,7 @@ namespace OTEX
                                                             outgoing.Clear();
 
                                                             //send response
-                                                            CaptureException(() => { PacketSequence.Send(stream, GUID, response); });
+                                                            CaptureException(() => { Packet.Send(stream, GUID, response); });
                                                         }
                                                     }
                                                     break;
@@ -351,10 +374,13 @@ namespace OTEX
                                                 outgoingOperations.Remove(clientGUID);
                                             }
 
+                                            bool disconnected = false;
                                             lock (connectedClientsLock)
                                             {
-                                                connectedClients.Remove(clientGUID);
+                                                disconnected = connectedClients.Remove(clientGUID);
                                             }
+                                            if (disconnected)
+                                                OnClientDisconnected?.Invoke(this, clientGUID);
                                         }
 
                                         //close stream and tcp client
@@ -362,7 +388,7 @@ namespace OTEX
                                         client.Close();
                                     }));
                                     clientThreads.Last().IsBackground = false;
-                                    clientThreads.Last().Start(tcpListener.AcceptTcpClient());
+                                    clientThreads.Last().Start(tcpClient);
                                 }
                                 
                                 //sleep a bit (not raw spin-waiting)
