@@ -31,7 +31,7 @@
             this.btnServerExisting = new Marzersoft.Themes.ThemedButton();
             this.btnServerNew = new Marzersoft.Themes.ThemedButton();
             this.btnClient = new Marzersoft.Themes.ThemedButton();
-            this.panSplash = new System.Windows.Forms.Panel();
+            this.panMenu = new System.Windows.Forms.Panel();
             this.panControls = new System.Windows.Forms.Panel();
             this.lblTitle = new System.Windows.Forms.Label();
             this.panClient = new Marzersoft.Themes.ThemedPanel();
@@ -41,13 +41,17 @@
             this.tbClientAddress = new System.Windows.Forms.TextBox();
             this.dlgServerOpenExisting = new System.Windows.Forms.OpenFileDialog();
             this.dlgServerCreateNew = new System.Windows.Forms.SaveFileDialog();
-            this.panStatus = new System.Windows.Forms.Panel();
-            this.pbConnecting = new System.Windows.Forms.ProgressBar();
-            this.label2 = new System.Windows.Forms.Label();
-            this.panSplash.SuspendLayout();
+            this.lblStatus = new System.Windows.Forms.Label();
+            this.panBody = new System.Windows.Forms.Panel();
+            this.panSplash = new System.Windows.Forms.Panel();
+            this.lblAbout = new System.Windows.Forms.Label();
+            this.lblVersion = new System.Windows.Forms.Label();
+            this.panCaption = new Marzersoft.Themes.ThemedCaptionBar();
+            this.panMenu.SuspendLayout();
             this.panControls.SuspendLayout();
             this.panClient.SuspendLayout();
-            this.panStatus.SuspendLayout();
+            this.panBody.SuspendLayout();
+            this.panSplash.SuspendLayout();
             this.SuspendLayout();
             // 
             // btnServerExisting
@@ -98,14 +102,14 @@
             this.btnClient.UseVisualStyleBackColor = true;
             this.btnClient.Click += new System.EventHandler(this.btnClient_Click);
             // 
-            // panSplash
+            // panMenu
             // 
-            this.panSplash.Controls.Add(this.panControls);
-            this.panSplash.Controls.Add(this.lblTitle);
-            this.panSplash.Location = new System.Drawing.Point(105, 57);
-            this.panSplash.Name = "panSplash";
-            this.panSplash.Size = new System.Drawing.Size(279, 272);
-            this.panSplash.TabIndex = 3;
+            this.panMenu.Controls.Add(this.panControls);
+            this.panMenu.Controls.Add(this.lblTitle);
+            this.panMenu.Location = new System.Drawing.Point(31, 3);
+            this.panMenu.Name = "panMenu";
+            this.panMenu.Size = new System.Drawing.Size(279, 272);
+            this.panMenu.TabIndex = 3;
             // 
             // panControls
             // 
@@ -133,7 +137,7 @@
             this.panClient.Controls.Add(this.btnClientConnect);
             this.panClient.Controls.Add(this.label1);
             this.panClient.Controls.Add(this.tbClientAddress);
-            this.panClient.Location = new System.Drawing.Point(447, 171);
+            this.panClient.Location = new System.Drawing.Point(349, 82);
             this.panClient.Margin = new System.Windows.Forms.Padding(0);
             this.panClient.Name = "panClient";
             this.panClient.Size = new System.Drawing.Size(267, 48);
@@ -202,52 +206,87 @@
             this.dlgServerCreateNew.Filter = "Plain-text files|*.txt";
             this.dlgServerCreateNew.Title = "Select a new file to create collaboratively";
             // 
-            // panStatus
+            // lblStatus
             // 
-            this.panStatus.Controls.Add(this.pbConnecting);
-            this.panStatus.Controls.Add(this.label2);
-            this.panStatus.Location = new System.Drawing.Point(445, 61);
-            this.panStatus.Margin = new System.Windows.Forms.Padding(0);
-            this.panStatus.Name = "panStatus";
-            this.panStatus.Size = new System.Drawing.Size(267, 48);
-            this.panStatus.TabIndex = 6;
+            this.lblStatus.Location = new System.Drawing.Point(369, 159);
+            this.lblStatus.Name = "lblStatus";
+            this.lblStatus.Size = new System.Drawing.Size(267, 28);
+            this.lblStatus.TabIndex = 2;
+            this.lblStatus.Text = "Connecting...";
+            this.lblStatus.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
-            // pbConnecting
+            // panBody
             // 
-            this.pbConnecting.Location = new System.Drawing.Point(0, 20);
-            this.pbConnecting.MarqueeAnimationSpeed = 10;
-            this.pbConnecting.Name = "pbConnecting";
-            this.pbConnecting.Size = new System.Drawing.Size(267, 23);
-            this.pbConnecting.Style = System.Windows.Forms.ProgressBarStyle.Marquee;
-            this.pbConnecting.TabIndex = 3;
+            this.panBody.Controls.Add(this.panSplash);
+            this.panBody.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.panBody.Location = new System.Drawing.Point(0, 32);
+            this.panBody.Name = "panBody";
+            this.panBody.Size = new System.Drawing.Size(837, 368);
+            this.panBody.TabIndex = 9;
             // 
-            // label2
+            // panSplash
             // 
-            this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(0, 4);
-            this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(70, 13);
-            this.label2.TabIndex = 2;
-            this.label2.Text = "Connecting...";
+            this.panSplash.Controls.Add(this.lblAbout);
+            this.panSplash.Controls.Add(this.lblStatus);
+            this.panSplash.Controls.Add(this.panMenu);
+            this.panSplash.Controls.Add(this.lblVersion);
+            this.panSplash.Controls.Add(this.panClient);
+            this.panSplash.Location = new System.Drawing.Point(27, 19);
+            this.panSplash.Name = "panSplash";
+            this.panSplash.Size = new System.Drawing.Size(798, 313);
+            this.panSplash.TabIndex = 5;
+            // 
+            // lblAbout
+            // 
+            this.lblAbout.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.lblAbout.Location = new System.Drawing.Point(0, 275);
+            this.lblAbout.Margin = new System.Windows.Forms.Padding(0);
+            this.lblAbout.Name = "lblAbout";
+            this.lblAbout.Size = new System.Drawing.Size(100, 30);
+            this.lblAbout.TabIndex = 0;
+            this.lblAbout.TabStop = true;
+            this.lblAbout.Text = "About";
+            this.lblAbout.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            // 
+            // lblVersion
+            // 
+            this.lblVersion.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.lblVersion.Location = new System.Drawing.Point(668, 275);
+            this.lblVersion.Margin = new System.Windows.Forms.Padding(0);
+            this.lblVersion.Name = "lblVersion";
+            this.lblVersion.Size = new System.Drawing.Size(130, 30);
+            this.lblVersion.TabIndex = 4;
+            this.lblVersion.Text = "label2";
+            this.lblVersion.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            // 
+            // panCaption
+            // 
+            this.panCaption.Dock = System.Windows.Forms.DockStyle.Top;
+            this.panCaption.Location = new System.Drawing.Point(0, 0);
+            this.panCaption.Margin = new System.Windows.Forms.Padding(0);
+            this.panCaption.Name = "panCaption";
+            this.panCaption.Size = new System.Drawing.Size(837, 32);
+            this.panCaption.TabIndex = 8;
             // 
             // EditorForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(837, 365);
-            this.Controls.Add(this.panStatus);
-            this.Controls.Add(this.panClient);
-            this.Controls.Add(this.panSplash);
+            this.ClientSize = new System.Drawing.Size(837, 400);
+            this.Controls.Add(this.panBody);
+            this.Controls.Add(this.panCaption);
             this.MinimumSize = new System.Drawing.Size(500, 400);
             this.Name = "EditorForm";
-            this.Text = "Form1 - Program (Administrator) (Debug build)";
+            this.SizeGripStyle = System.Windows.Forms.SizeGripStyle.Hide;
+            this.Text = "OTEX Editor";
+            this.TextFlourishes = false;
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.EditorForm_FormClosing);
-            this.panSplash.ResumeLayout(false);
+            this.panMenu.ResumeLayout(false);
             this.panControls.ResumeLayout(false);
             this.panClient.ResumeLayout(false);
             this.panClient.PerformLayout();
-            this.panStatus.ResumeLayout(false);
-            this.panStatus.PerformLayout();
+            this.panBody.ResumeLayout(false);
+            this.panSplash.ResumeLayout(false);
             this.ResumeLayout(false);
 
         }
@@ -256,7 +295,7 @@
         private Marzersoft.Themes.ThemedButton btnServerNew;
         private Marzersoft.Themes.ThemedButton btnServerExisting;
         private Marzersoft.Themes.ThemedButton btnClient;
-        private System.Windows.Forms.Panel panSplash;
+        private System.Windows.Forms.Panel panMenu;
         private System.Windows.Forms.Label lblTitle;
         private Marzersoft.Themes.ThemedPanel panClient;
         private System.Windows.Forms.TextBox tbClientAddress;
@@ -265,10 +304,13 @@
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.OpenFileDialog dlgServerOpenExisting;
         private System.Windows.Forms.SaveFileDialog dlgServerCreateNew;
-        private System.Windows.Forms.Panel panStatus;
-        private System.Windows.Forms.ProgressBar pbConnecting;
-        private System.Windows.Forms.Label label2;
+        private System.Windows.Forms.Label lblStatus;
         private System.Windows.Forms.Panel panControls;
+        private Marzersoft.Themes.ThemedCaptionBar panCaption;
+        private System.Windows.Forms.Panel panBody;
+        private System.Windows.Forms.Panel panSplash;
+        private System.Windows.Forms.Label lblAbout;
+        private System.Windows.Forms.Label lblVersion;
     }
 }
 

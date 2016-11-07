@@ -13,6 +13,9 @@ using FastColoredTextBoxNS;
 using Marzersoft.Themes;
 using System.Net;
 using System.Text.RegularExpressions;
+using System.Runtime.InteropServices;
+using System.Threading;
+using System.IO;
 
 namespace OTEX
 {
@@ -25,6 +28,7 @@ namespace OTEX
         private FastColoredTextBox tbEditor = null;
         private Server otexServer = null;
         private Client otexClient = null;
+        private volatile Thread clientConnectingThread = null;
 
         private bool EditingServerAddressMode
         {
@@ -38,11 +42,11 @@ namespace OTEX
 
         private bool PendingConnectionMode
         {
-            get { return panStatus.Visible; }
+            get { return lblStatus.Visible; }
             set
             {
-                panStatus.Visible = value;
-                panControls.Visible = !value;
+                lblStatus.Visible = value;
+                panControls.Visible = lblAbout.Visible = lblVersion.Visible = !value;
             }
         }
 
@@ -69,10 +73,23 @@ namespace OTEX
             //title
             lblTitle.Font = App.Theme.Titles.Large.Regular;
 
+            //splash panel
+            panSplash.Dock = DockStyle.Fill;
+
             //colours
             btnServerNew.Accent = 2;
             btnServerExisting.Accent = 3;
             panClient.BackColor = App.Theme.Background.Light.Colour;
+            lblAbout.ForeColor = lblVersion.ForeColor = App.Theme.Background.Light.Colour;
+
+            //about link
+            lblAbout.Cursor = Cursors.Hand;
+            lblAbout.Font = App.Theme.Controls.Normal.Underline;
+            lblAbout.MouseEnter += (s, e) => { lblAbout.ForeColor = App.Theme.Foreground.Mid.Colour; };
+            lblAbout.MouseLeave += (s, e) => { lblAbout.ForeColor = App.Theme.Background.Light.Colour; };
+
+            //version label
+            lblVersion.Text = App.AssemblyVersion.ToString();
 
             //client connection panel
             btnClient.TextAlign = btnServerNew.TextAlign = btnServerExisting.TextAlign = ContentAlignment.MiddleCenter;
@@ -85,12 +102,12 @@ namespace OTEX
             tbClientAddress.BackColor = App.Theme.Background.Light.Colour;
             tbClientAddress.ForeColor = App.Theme.Foreground.BaseColour;
 
-            //'connecting' panel
-            panStatus.Parent = panSplash;
+            //'connecting' status label
+            lblStatus.Parent = panMenu;
 
             //edit text box
             tbEditor = new FastColoredTextBox();
-            tbEditor.Parent = this;
+            tbEditor.Parent = panBody;
             tbEditor.Dock = DockStyle.Fill;
             tbEditor.BackBrush = App.Theme.Background.Mid.Brush;
             tbEditor.IndentBackColor = App.Theme.Background.Dark.Colour;
@@ -103,6 +120,11 @@ namespace OTEX
             EditorMode = false;
             PendingConnectionMode = false;
             EditingServerAddressMode = false;
+
+            //form styles
+            WindowStyles &= ~(WindowStyles.ThickFrame | WindowStyles.DialogFrame);
+            TextFlourishes = false;
+            Text = App.Name;
 
             //create server
             otexServer = new Server();
@@ -141,9 +163,9 @@ namespace OTEX
             {
                 Debugger.I("Client: connected to {0}:{1}.", c.ServerAddress, c.ServerPort);
             };
-            otexClient.OnDisconnected += (c, forced) =>
+            otexClient.OnDisconnected += (c) =>
             {
-                Debugger.I("Client: disconnected{0}.", forced ? " (connection closed by server)" : "");
+                Debugger.I("Client: disconnected.");
             };
         }
 
@@ -151,21 +173,17 @@ namespace OTEX
         // SERVER MODE
         /////////////////////////////////////////////////////////////////////
 
-        private void StartServerMode(string filename)
+        private void StartServerMode(string filename, bool editMode)
         {
-            //toggle ui to 'pending'
-            PendingConnectionMode = true;
-
             //start server
             try
             {
-                otexServer.Start(filename);
+                otexServer.Start(filename, editMode);
             }
             catch (Exception exc)
             {
                 Debugger.ErrorMessage("An error occurred while starting the server:\n\n{0}: {1}",
                     exc.GetType().Name, exc.Message);
-                PendingConnectionMode = false;
                 return;
             }
 
@@ -178,13 +196,13 @@ namespace OTEX
             {
                 Debugger.ErrorMessage("An error occurred while connecting:\n\n{0}: {1}",
                     exc.GetType().Name, exc.Message);
-                PendingConnectionMode = false;
                 return;
             }
 
             //started ok, toggle ui to Editor
             EditingServerAddressMode = false;
             EditorMode = true;
+            Text = string.Format("Editing {0} (host mode)", Path.GetFileName(otexClient.ServerFilePath));
         }
 
         /////////////////////////////////////////////////////////////////////
@@ -198,6 +216,7 @@ namespace OTEX
         {
             //parse port
             long port = 55555;
+            string originalAddressString = addressString;
             Match m = REGEX_PORT.Match(addressString);
             if (m.Success)
             {
@@ -237,24 +256,43 @@ namespace OTEX
                 }
             }
 
-
             //connect to server
+            lblStatus.Text = string.Format("Connecting to {0}...", originalAddressString);
             PendingConnectionMode = true;
-            try
+            clientConnectingThread = new Thread((o) =>
             {
-                otexClient.Connect(address, (ushort)port);
-            }
-            catch (Exception exc)
-            {
-                Debugger.ErrorMessage("An error occurred while connecting to {0}:{1}:\n\n{2}: {3}",
-                    address, port, exc.GetType().Name, exc.Message);
-                PendingConnectionMode = false;
-                return;
-            }
+                Thread.Sleep(1000);
 
-            //started ok, toggle ui to Editor
-            EditingServerAddressMode = false;
-            EditorMode = true;
+                object[] objs = o as object[];
+                var addr = objs[0] as IPAddress;
+                var prt = (ushort)objs[1];
+                var pwd = objs[2] as Password;
+                var saddr = objs[3] as string;
+                try
+                {
+                    otexClient.Connect(addr, prt, pwd);
+                }
+                catch (Exception exc)
+                {
+                    Debugger.ErrorMessage("An error occurred while connecting to {0} ({1}:{2}):\n\n{3}: {4}",
+                    saddr, addr, prt, exc.GetType().Name, exc.Message);
+                    this.Execute(() => { PendingConnectionMode = false; });
+                    clientConnectingThread = null;
+                    return;
+                }
+
+                //started ok, toggle ui to Editor
+                this.Execute(() =>
+                {
+                    EditingServerAddressMode = false;
+                    EditorMode = true;
+                    Text = string.Format("Editing {0} ({1})", Path.GetFileName(otexClient.ServerFilePath), saddr);
+                });
+
+                clientConnectingThread = null;
+            });
+            clientConnectingThread.IsBackground = false;
+            clientConnectingThread.Start(new object[] { address, (ushort)port, null, originalAddressString });
         }
 
         /////////////////////////////////////////////////////////////////////
@@ -263,24 +301,29 @@ namespace OTEX
 
         private void PositionSplashPanel()
         {
-            if (panSplash.Visible)
+            if (panMenu.Visible)
             {
-                panSplash.Location = new Point(
-                    (ClientRectangle.Size.Width / 2) - (panSplash.Size.Width / 2),
-                    (ClientRectangle.Size.Height / 2) - (panSplash.Size.Height / 2));
-                panStatus.Location = panSplash.RectangleToClient(panControls.RectangleToScreen(btnClient.Bounds)).Location;
+                panMenu.Location = new Point(
+                    (panBody.ClientRectangle.Size.Width / 2) - (panMenu.Size.Width / 2),
+                    (panBody.ClientRectangle.Size.Height / 2) - (panMenu.Size.Height / 2));
+                lblStatus.Bounds = lblStatus.Bounds.AlignCenter(panControls.Bounds.Center());
             }
         }
 
         protected override void OnFirstShown(EventArgs e)
         {
             base.OnFirstShown(e);
+            if (IsDesignMode)
+                return;
             PositionSplashPanel();
+            Refresh();
         }
 
         protected override void OnResize(EventArgs e)
         {
             base.OnResize(e);
+            if (IsDesignMode)
+                return;
             PositionSplashPanel();
         }
 
@@ -297,13 +340,13 @@ namespace OTEX
         private void btnServerNew_Click(object sender, EventArgs e)
         {
             if (dlgServerCreateNew.ShowDialog() == DialogResult.OK)
-                StartServerMode(dlgServerCreateNew.FileName);
+                StartServerMode(dlgServerCreateNew.FileName, false);
         }
 
         private void btnServerExisting_Click(object sender, EventArgs e)
         {
             if (dlgServerOpenExisting.ShowDialog() == DialogResult.OK)
-                StartServerMode(dlgServerOpenExisting.FileName);
+                StartServerMode(dlgServerOpenExisting.FileName, true);
         }
 
         private void btnClientConnect_Click(object sender, EventArgs e)
@@ -313,13 +356,20 @@ namespace OTEX
 
         private void EditorForm_FormClosing(object sender, FormClosingEventArgs e)
         {
-            if (otexServer.Running && !Debugger.WarningQuestion("You are currently running in server mode. "
-                + "Closing the application will disconnect all users.\n\nClose OTEX Editor?"))
+            if (otexServer.Running && otexServer.ClientCount > 1 &&
+                !Debugger.WarningQuestion("You are currently running in server mode. "
+                + "Closing the application will disconnect the other {0} connected users.\n\nClose OTEX Editor?", otexServer.ClientCount-1))
                 e.Cancel = true;
         }
 
         protected override void OnClosed(EventArgs e)
         {
+            if (clientConnectingThread != null)
+            {
+                clientConnectingThread.Join();
+                clientConnectingThread = null;
+            }
+
             if (otexClient != null)
             {
                 otexClient.Dispose();
@@ -346,5 +396,13 @@ namespace OTEX
                 e.Handled = true;
             }
         }
+
+        /////////////////////////////////////////////////////////////////////
+        // IMPORTS
+        /////////////////////////////////////////////////////////////////////
+
+        [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool ReleaseCapture();
     }
 }
