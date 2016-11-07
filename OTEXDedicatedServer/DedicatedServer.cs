@@ -45,7 +45,7 @@ namespace OTEX
         {
             get
             {
-                return string.Format("usage: {0} <file path> [/PORT port] [/PASSWORD pass] [/?]", Process.GetCurrentProcess().ProcessName.ToUpper());
+                return string.Format("usage: {0} <file path> [/PORT port] [/PASSWORD pass] [/EDIT|/NEW] [/?]", Process.GetCurrentProcess().ProcessName.ToUpper());
             }
         }
 
@@ -59,9 +59,12 @@ namespace OTEX
                 StringBuilder sb = new StringBuilder();
                 sb.AppendLine(Splash).AppendLine().AppendLine(Usage).AppendLine();
                 sb.AppendLine("   <file path>: Path to the plain text file to collaboratively edit.");
-                sb.AppendLine("    /PORT port: Port on which to listen for new OTEX client connections, between 1024 and 65535.");
-                sb.AppendLine("                Defaults to 55555.");
+                sb.AppendLine("    /PORT port: Port on which to listen for new OTEX client connections,");
+                sb.AppendLine("                between 1024 and 65535. Defaults to 55555.");
                 sb.AppendLine("/PASSWORD pass: Password required to connect to this server.");
+                sb.AppendLine("         /EDIT: If a file already exists at the given path, edit it");
+                sb.AppendLine("                (do not overwrite with a new file). This is default.");
+                sb.AppendLine("          /NEW: Opposite of /EDIT.");
                 sb.AppendLine("            /?: Prints help and exits.");
                 sb.AppendLine();
                 sb.AppendLine("Arguments may appear in any order.");
@@ -118,6 +121,7 @@ namespace OTEX
             //handle command line arguments
             string filePath = "";
             ushort port = 55555;
+            bool editMode = true;
             Password password = null;
             try
             {
@@ -146,7 +150,23 @@ namespace OTEX
                         arguments[i].Handled = arguments[i + 1].Handled = true;
                 }
 
-                //single, non-flag arguments
+                //single flag arguments
+                for (int i = 0; i < arguments.Count; ++i)
+                {
+                    if (!arguments[i].Flag || arguments[i].Handled)
+                        continue;
+
+                    bool match = false;
+                    if (match = (arguments[i].Value.CompareTo("edit") == 0))
+                        editMode = true;
+                    else if (match = (arguments[i].Value.CompareTo("new") == 0))
+                        editMode = false;
+
+                    if (match)
+                        arguments[i].Handled = true;
+                }
+
+                //single non-flag arguments
                 for (int i = 0; i < arguments.Count; ++i)
                 {
                     if (arguments[i].Flag || arguments[i].Handled)
@@ -201,7 +221,7 @@ namespace OTEX
             //start server
             try
             {
-                server.Start(filePath, port, password);
+                server.Start(filePath, editMode, port, password);
             }
             catch (Exception exc)
             {
