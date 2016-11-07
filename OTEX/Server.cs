@@ -84,6 +84,14 @@ namespace OTEX
         private readonly object connectedClientsLock = new object();
 
         /// <summary>
+        /// How many clients are currently connected?
+        /// </summary>
+        public int ClientCount
+        {
+            get { return connectedClients.Count; }
+        }
+
+        /// <summary>
         /// Staging lists for storing outgoing operations.
         /// </summary>
         private readonly Dictionary<Guid, List<Operation>> outgoingOperations = new Dictionary<Guid,List<Operation>>();
@@ -156,6 +164,8 @@ namespace OTEX
         /// Starts the server. Does nothing if the server is already running.
         /// </summary>
         /// <param name="path">Path to the text file the server will edit/create.</param>
+        /// <param name="editMode">If a file at the given path already exists, set this to true
+        /// to read it and apply changes, or false to overwrite it with a blank file (new file mode).</param>
         /// <param name="port">Port to listen on. Must be between 1024 and 65535.</param>
         /// <param name="password">Password required to connect to this server. Leave as null for none.</param>
         /// <exception cref="ArgumentException" />
@@ -165,7 +175,7 @@ namespace OTEX
         /// <exception cref="PathTooLongException" />
         /// <exception cref="FileNotFoundException" />
         /// <exception cref="IOException" />
-        public void Start(string path, ushort port = 55555, Password password = null)
+        public void Start(string path, bool editMode = true, ushort port = 55555, Password password = null)
         {
             if (isDisposed)
                 throw new ObjectDisposedException("OTEX.Server");
@@ -189,19 +199,21 @@ namespace OTEX
                         this.password = password;
 
                         //session initialization
-                        TcpListener listener = null;
+                        TcpListener listener6 = null;
                         try
                         {
                             //read file
-                            if (File.Exists(FilePath))
+                            if (editMode && File.Exists(FilePath))
                             {
                                 masterOperations.Add(new Operation(Guid.Empty, 0, fileContents = File.ReadAllText(FilePath, FilePath.DetectEncoding())));
                                 ++fileSyncIndex;
                             }
 
                             //create tcplistener
-                            listener = new TcpListener(IPAddress.Any, Port);
-                            listener.Start();
+                            listener6 = new TcpListener(IPAddress.IPv6Any, Port);
+                            listener6.Server.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, false);
+                            listener6.AllowNatTraversal(true);
+                            listener6.Start();
                         }
                         catch (Exception)
                         {
@@ -211,19 +223,22 @@ namespace OTEX
                         running = true;
 
                         //create thread
-                        thread = new Thread((list) =>
+                        thread = new Thread((o) =>
                         {
-                            List<Thread> clientThreads = new List<Thread>();
-                            TcpListener tcpListener = list as TcpListener;
+                            TcpListener listener = o as TcpListener;
                             int flushTimeout = 60000;
+                            List<Thread> clientThreads = new List<Thread>();
                             while (running)
                             {
-                                //listen for new connections
-                                while (tcpListener.Pending())
+                                //sleep a bit (not raw spin-waiting)
+                                Thread.Sleep(100);
+
+                                //accept the connection
+                                while (listener.Pending())
                                 {
                                     //get client
                                     TcpClient tcpClient = null;
-                                    if (CaptureException(() => { tcpClient = tcpListener.AcceptTcpClient(); }))
+                                    if (CaptureException(() => { tcpClient = listener.AcceptTcpClient(); }))
                                         continue;
 
                                     //create client thread
@@ -246,10 +261,10 @@ namespace OTEX
 
                                         //read from stream
                                         Guid clientGUID = Guid.Empty;
-                                        while (running)
+                                        while (running && client.Connected)
                                         {
-                                            Thread.Sleep(1);
-                                            
+                                            Thread.Sleep(10);
+
                                             //read incoming packet
                                             Packet packet = null;
                                             if (CaptureException(() => { packet = reader.Read(); }))
@@ -327,41 +342,41 @@ namespace OTEX
                                                 switch (packet.PayloadType)
                                                 {
                                                     case OperationList.PayloadType: //normal update request
-                                                    {
-                                                        //deserialize operation request
-                                                        OperationList incoming = null;
-                                                        if (CaptureException(() => { incoming = packet.Payload.Deserialize<OperationList>(); }))
-                                                            break;
-
-                                                        //lock operation lists (3a)
-                                                        lock (operationsLock)
                                                         {
-                                                            //get the list of staged operations for the sender
-                                                            List<Operation> outgoing = outgoingOperations[clientGUID];
+                                                            //deserialize operation request
+                                                            OperationList incoming = null;
+                                                            if (CaptureException(() => { incoming = packet.Payload.Deserialize<OperationList>(); }))
+                                                                break;
 
-                                                            //if this oplist is not an empty request
-                                                            if (incoming.Operations != null && incoming.Operations.Count > 0)
+                                                            //lock operation lists (3a)
+                                                            lock (operationsLock)
                                                             {
-                                                                //transform incoming ops against outgoing ops (3b)
-                                                                if (outgoing.Count > 0)
-                                                                    Operation.SymmetricLinearTransform(incoming.Operations, outgoing);
+                                                                //get the list of staged operations for the sender
+                                                                List<Operation> outgoing = outgoingOperations[clientGUID];
 
-                                                                //append incoming ops to master and to all other outgoing (3c)
-                                                                masterOperations.AddRange(incoming.Operations);
-                                                                foreach (var kvp in outgoingOperations)
-                                                                    if (!kvp.Key.Equals(clientGUID))
-                                                                        kvp.Value.AddRange(incoming.Operations);
+                                                                //if this oplist is not an empty request
+                                                                if (incoming.Operations != null && incoming.Operations.Count > 0)
+                                                                {
+                                                                    //transform incoming ops against outgoing ops (3b)
+                                                                    if (outgoing.Count > 0)
+                                                                        Operation.SymmetricLinearTransform(incoming.Operations, outgoing);
+
+                                                                    //append incoming ops to master and to all other outgoing (3c)
+                                                                    masterOperations.AddRange(incoming.Operations);
+                                                                    foreach (var kvp in outgoingOperations)
+                                                                        if (!kvp.Key.Equals(clientGUID))
+                                                                            kvp.Value.AddRange(incoming.Operations);
+                                                                }
+
+                                                                //move all outgoing into our response packet (3d)
+                                                                OperationList response = new OperationList(outgoing.Count > 0 ? new List<Operation>(outgoing) : null);
+                                                                outgoing.Clear();
+
+                                                                //send response
+                                                                CaptureException(() => { Packet.Send(stream, GUID, response); });
                                                             }
-
-                                                            //move all outgoing into our response packet (3d)
-                                                            OperationList response = new OperationList(outgoing.Count > 0 ? new List<Operation>(outgoing) : null);
-                                                            outgoing.Clear();
-
-                                                            //send response
-                                                            CaptureException(() => { Packet.Send(stream, GUID, response); });
                                                         }
-                                                    }
-                                                    break;
+                                                        break;
                                                 }
                                             }
                                         }
@@ -390,9 +405,6 @@ namespace OTEX
                                     clientThreads.Last().IsBackground = false;
                                     clientThreads.Last().Start(tcpClient);
                                 }
-                                
-                                //sleep a bit (not raw spin-waiting)
-                                Thread.Sleep(100);
 
                                 //flush file contents to disk periodically
                                 if ((flushTimeout -= 100) <= 0)
@@ -405,8 +417,9 @@ namespace OTEX
                                 }
                             }
 
-                            //stop tcp listener
-                            CaptureException(() => { tcpListener.Stop(); });
+                            //stop tcp listeners
+                            //CaptureException(() => { listener4.Stop(); });
+                            CaptureException(() => { listener6.Stop(); });
 
                             //wait for client threads to close
                             foreach (Thread thread in clientThreads)
@@ -416,7 +429,7 @@ namespace OTEX
                             CaptureException(() => { SyncFileContents(); });
                         });
                         thread.IsBackground = false;
-                        thread.Start(listener);
+                        thread.Start( listener6 );
 
                         OnStarted?.Invoke(this);
                     }

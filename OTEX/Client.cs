@@ -26,9 +26,8 @@ namespace OTEX
 
         /// <summary>
         /// Triggered when the client is disconnected from an OTEX server.
-        /// Bool parameter is true if the connection was forced server-side.
         /// </summary>
-        public event Action<Client, bool> OnDisconnected;
+        public event Action<Client> OnDisconnected;
 
         /////////////////////////////////////////////////////////////////////
         // PROPERTIES/VARIABLES
@@ -142,25 +141,28 @@ namespace OTEX
                             throw new ArgumentOutOfRangeException("Port must be between 1024 and 65535");
                         if (address == null)
                             throw new ArgumentNullException("Address cannot be null");
-                        if (address.Equals(IPAddress.Any) || address.Equals(IPAddress.Broadcast) || address.Equals(IPAddress.None))
+                        if (address.Equals(IPAddress.Any) || address.Equals(IPAddress.Broadcast) || address.Equals(IPAddress.None)
+                            || address.Equals(IPAddress.IPv6Any) || address.Equals(IPAddress.IPv6None))
                             throw new ArgumentOutOfRangeException("Address must be a valid non-range IP Address.");
 
                         //session connection
-                        TcpClient client = null;
-                        NetworkStream stream = null;
+                        TcpClient tcpClient = null;
+                        NetworkStream networkStream = null;
+                        PacketReader packetReader = null;
                         try
                         {
                             //establish tcp connection
-                            client = new TcpClient();
-                            client.Connect(address, port);
-                            stream = client.GetStream();
-                            PacketReader reader = new PacketReader(stream);
+                            tcpClient = new TcpClient(AddressFamily.InterNetworkV6);
+                            tcpClient.Client.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, false);
+                            tcpClient.Connect(address, port);
+                            networkStream = tcpClient.GetStream();
+                            packetReader = new PacketReader(networkStream);
 
                             //send connection request packet
-                            Packet.Send(stream, GUID, new ConnectionRequest(password));
+                            Packet.Send(networkStream, GUID, new ConnectionRequest(password));
 
                             //get response
-                            Packet responsePacket = reader.Read();
+                            Packet responsePacket = packetReader.Read();
                             if (responsePacket.PayloadType != ConnectionResponse.PayloadType)
                                 throw new InvalidDataException("unexpected response packet type");
                             ConnectionResponse response = responsePacket.Payload.Deserialize<ConnectionResponse>();
@@ -175,13 +177,39 @@ namespace OTEX
                         }
                         catch (Exception)
                         {
-                            if (stream != null)
-                                stream.Dispose();
-                            if (client != null)
-                                client.Close();
+                            if (networkStream != null)
+                                networkStream.Dispose();
+                            if (tcpClient != null)
+                                tcpClient.Close();
                             throw;
                         }
 
+                        //create management thread
+                        thread = new Thread((o) =>
+                        {
+                            var objs = o as object[];
+                            var client = objs[0] as TcpClient;
+                            var stream = objs[1] as NetworkStream;
+                            var reader = objs[2] as PacketReader;
+
+                            while (connected)
+                            {
+                                Thread.Sleep(10);
+                            }
+
+                            //disconnect
+                            if (networkStream != null)
+                                networkStream.Dispose();
+                            if (tcpClient != null)
+                                tcpClient.Close();
+
+                            //fire event
+                            OnDisconnected?.Invoke(this);
+                        });
+                        thread.IsBackground = false;
+                        thread.Start(new object[]{ tcpClient, networkStream, packetReader });
+
+                        //fire event
                         OnConnected?.Invoke(this);
                     }
                 }
@@ -201,7 +229,11 @@ namespace OTEX
                     if (connected)
                     {
                         connected = false;
-                        OnDisconnected?.Invoke(this, false);
+                        if (thread != null)
+                        {
+                            thread.Join();
+                            thread = null;
+                        }
                     }
                 }
             }
