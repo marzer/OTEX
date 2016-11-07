@@ -114,6 +114,14 @@ namespace OTEX
             {
                 Debugger.I("Server: started for {0} on port {1}", s.FilePath, s.Port);
             };
+            otexServer.OnClientConnected += (s, id) =>
+            {
+                Debugger.I("Server: Client {0} connected.", id);
+            };
+            otexServer.OnClientDisconnected += (s, id) =>
+            {
+                Debugger.I("Server: Client {0} disconnected.", id);
+            };
             otexServer.OnStopped += (s) =>
             {
                 Debugger.I("Server: stopped.");

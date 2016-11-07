@@ -176,6 +176,14 @@ namespace OTEX
                 Out("  File: {0}", s.FilePath);
                 Out("  Port: {0}", s.Port);
             };
+            server.OnClientConnected += (s,id) =>
+            {
+                Out("Client {0} connected.", id);
+            };
+            server.OnClientDisconnected += (s, id) =>
+            {
+                Out("Client {0} disconnected.", id);
+            };
             server.OnStopped += (s) =>
             {
                 Out("Server stopped.");
