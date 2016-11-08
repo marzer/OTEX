@@ -130,7 +130,13 @@ namespace OTEX
             tbEditor.CaretColor = App.Theme.Accent1.LightLight.Colour;
             tbEditor.Pasting += (sender, args) =>
             {
-                this.Execute(() => EditorInserting(args.InsertingText), false); //OT
+                this.Execute(() =>
+                {
+                    EditorInserting(args.InsertingText = args.InsertingText
+                        .Replace("\t", new string(' ', tbEditor.TabLength))
+                        .Replace("\r\n", "\n").Replace("\r", "\n").Replace("\n", "\r\n")
+                        );
+                }, false); //OT
             };
             tbEditor.KeyPressing += (sender, args) =>
             {
@@ -407,12 +413,19 @@ namespace OTEX
             var selectionStart = Math.Min(
                 tbEditor.PlaceToPosition(tbEditor.Selection.Start),
                 tbEditor.PlaceToPosition(tbEditor.Selection.End));
+            var selectionLength = tbEditor.Selection.Length;
+            var selectionEnd = selectionStart + selectionLength;
 
             //handle tab character (FCTB replaces tabs with spaces)
             if ((byte)character == 0x09)
             {
                 EditorInserting(new string(' ', tbEditor.TabLength
                     - (tbEditor.PositionToPlace(selectionStart).iChar % tbEditor.TabLength)));
+                return;
+            }
+            else if (character == '\r' || character == '\n') //handle return key
+            {
+                EditorInserting("\r\n");
                 return;
             }
 
@@ -425,14 +438,31 @@ namespace OTEX
             {
                 //if a selection will replaced, send a deletion
                 //(always regardless of key if selection.length > 0)
-                if (tbEditor.Selection.Length > 0)
-                    otexClient.Delete((uint)selectionStart, (uint)tbEditor.Selection.Length);
+                if (selectionLength > 0)
+                {
+                    //check if we're splitting a \r\n on the selection boundary
+                    if (selectionStart > 0 && tbEditor.Text[selectionStart] == '\n')
+                    {
+                        --selectionStart;
+                        ++selectionLength;
+                    }
+                    if (selectionEnd < tbEditor.TextLength && tbEditor.Text[selectionEnd] == '\n')
+                    {
+                        ++selectionEnd;
+                        ++selectionLength;
+                    }
+
+                    otexClient.Delete((uint)selectionStart, (uint)selectionLength);
+                }
                 else if (deleteOrBackspace)
                 {
                     if (delete && selectionStart < tbEditor.TextLength)
-                        otexClient.Delete((uint)selectionStart, 1u);
+                        otexClient.Delete((uint)selectionStart, 1u + (tbEditor.Text[selectionStart] == '\r' ? 1u : 0u));
                     else if (backspace && selectionStart > 0)
-                        otexClient.Delete((uint)selectionStart - 1, 1u);
+                    {
+                        var add = (tbEditor.Text[selectionStart - 1] == '\n' ? 1u : 0u);
+                        otexClient.Delete((uint)selectionStart - 1 - add, 1u + add);
+                    }
                 }
             }
 
@@ -451,10 +481,25 @@ namespace OTEX
             var selectionStart = Math.Min(
                 tbEditor.PlaceToPosition(tbEditor.Selection.Start),
                 tbEditor.PlaceToPosition(tbEditor.Selection.End));
+            var selectionLength = tbEditor.Selection.Length;
+            var selectionEnd = selectionStart + selectionLength;
 
             //if a selection will replaced, send a deletion
-            if (tbEditor.Selection.Length > 0)
-                otexClient.Delete((uint)selectionStart, (uint)tbEditor.Selection.Length);
+            if (selectionLength > 0)
+            {
+                //check if we're splitting a \r\n on the selection boundary
+                if (selectionStart > 0 && tbEditor.Text[selectionStart] == '\n')
+                {
+                    --selectionStart;
+                    ++selectionLength;
+                }
+                if (selectionEnd < tbEditor.TextLength && tbEditor.Text[selectionEnd] == '\n')
+                {
+                    ++selectionEnd;
+                    ++selectionLength;
+                }
+                otexClient.Delete((uint)selectionStart, (uint)selectionLength);
+            }
 
             //if text will be inserted, send an insertion
             if (str.Length > 0)

@@ -203,7 +203,11 @@ namespace OTEX
                             //read file
                             if (editMode && File.Exists(FilePath))
                             {
-                                masterOperations.Add(new Operation(ID, 0, fileContents = File.ReadAllText(FilePath, FilePath.DetectEncoding())));
+                                masterOperations.Add(new Operation(ID, 0,
+                                    fileContents = File.ReadAllText(FilePath, FilePath.DetectEncoding())
+                                        .Replace("\t", new string(' ', 4))
+                                        .Replace("\r\n", "\n").Replace("\r", "\n").Replace("\n", "\r\n")
+                                        ));
                                 ++fileSyncIndex;
                             }
 

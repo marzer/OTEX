@@ -245,7 +245,8 @@ namespace OTEX
             if (offset < 0)
                 throw new ArgumentOutOfRangeException("offset cannot be negative");
 
-            return IsInsertion ? document.Insert(offset, text) : document.Remove(offset, length);
+            return IsInsertion ? document.Insert(offset, text)
+                : (offset == 0 && length >= document.Length ? "" : document.Remove(offset, length));
         }
     }
 }
