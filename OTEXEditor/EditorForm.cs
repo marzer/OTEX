@@ -280,17 +280,17 @@ namespace OTEX
         // SERVER MODE
         /////////////////////////////////////////////////////////////////////
 
-        private void StartServerMode(string filename, bool editMode)
+        private void StartServerMode(Server.StartParams startParams)
         {
             //start server
             try
             {
-                otexServer.Start(filename, editMode);
+                otexServer.Start(startParams);
             }
             catch (Exception exc)
             {
-                Debugger.ErrorMessage("An error occurred while starting the server:\n\n{0}: {1}",
-                    exc.GetType().Name, exc.Message);
+                Debugger.ErrorMessage("An error occurred while starting the server:\n\n{0}",
+                    exc.Message);
                 return;
             }
 
@@ -301,8 +301,8 @@ namespace OTEX
             }
             catch (Exception exc)
             {
-                Debugger.ErrorMessage("An error occurred while connecting:\n\n{0}: {1}",
-                    exc.GetType().Name, exc.Message);
+                Debugger.ErrorMessage("An error occurred while connecting:\n\n{0}",
+                    exc.Message);
                 return;
             }
 
@@ -316,51 +316,119 @@ namespace OTEX
         // CLIENT MODE
         /////////////////////////////////////////////////////////////////////
 
-        private static readonly Regex REGEX_PORT
-            = new Regex(@"[:]([0-9]{1,20})$", RegexOptions.Compiled);
+        private static readonly Regex REGEX_IPV4_AND_PORT = new Regex(
+            @"^\s*"
+            //ipv4 octets
+            + @"(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?[.]"
+            + @"25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?[.]"
+            + @"25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?[.]"
+            + @"25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)"
+            //port (optional)
+            + @"(?:[:]\s*([0-9]*))?"
+            //
+            + @"\s*$"
+            , RegexOptions.Compiled);
+
+        private static readonly Regex REGEX_IPV6 = new Regex(
+            @"^\s*("
+            //ipv6 octets
+            + @"[a-fA-F0-9:]+"
+            //ipv4 suffix (optional)
+            + @"(?:[:]25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?[.]"
+            + @"25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?[.]"
+            + @"25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?[.]"
+            + @"25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)?"
+            //
+            + @")\s*$"
+            , RegexOptions.Compiled);
+
+        private static readonly Regex REGEX_IPV6_AND_PORT = new Regex(
+            @"^\s*\[\s*("
+            //ipv6 octets
+            + @"[a-fA-F0-9:]+"
+            //ipv4 suffix (optional)
+            + @"(?:[:]25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?[.]"
+            + @"25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?[.]"
+            + @"25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?[.]"
+            + @"25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)?"
+            //port (optional)
+            + @")\s*\](?:[:]\s*([0-9]*))?\s*$"
+            , RegexOptions.Compiled);
+
+        private static readonly Regex REGEX_PORT = new Regex(@"\s*(?:[:]\s*([0-9]*))\s*$",
+            RegexOptions.Compiled);
 
         private void StartClientMode(string addressString)
         {
-            //parse port
-            long port = 55555;
-            string originalAddressString = addressString;
-            Match m = REGEX_PORT.Match(addressString);
-            if (m.Success)
-            {
-                addressString = REGEX_PORT.Replace(addressString, "").Trim();
-                port = long.Parse(m.Groups[1].Value);
-                if (port < 1024 || port > 65535)
-                {
-                    Debugger.ErrorMessage("Server port must be between 1024 and 65535 (inclusive).");
-                    return;
-                }
-            }
-
-            //parse address
+            //sanity check
             if (addressString.Length == 0)
             {
                 Debugger.ErrorMessage("Server address cannot be blank.");
                 return;
             }
-            IPAddress address;
-            if (!IPAddress.TryParse(addressString, out address))
+
+            string originalAddressString = addressString;
+            long port = 55555;
+            IPAddress address = null;
+            IPHostEntry hostEntry = null;
+
+            //parse
+            try
             {
-                try
+                //check for ipv4 address
+                Match m = null; bool success = false;
+                if (success = (m = REGEX_IPV4_AND_PORT.Match(addressString)).Success)
                 {
-                    IPHostEntry hostEntry = Dns.GetHostEntry(addressString);
-                    if (hostEntry.AddressList.Length == 0)
+                    address = IPAddress.Parse(m.Groups[1].Value);
+                    if (m.Groups.Count >= 2 && m.Groups[2].Value != null)
+                        port = long.Parse(m.Groups[2].Value);
+                }
+
+                //check for ipv6 address (without port)
+                if (!success && (success = (m = REGEX_IPV6.Match(addressString)).Success))
+                    address = IPAddress.Parse(m.Groups[1].Value);
+
+                //check for ipv6 address in bracket notation (possibly with port)
+                if (!success && (success = (m = REGEX_IPV6_AND_PORT.Match(addressString)).Success))
+                {
+                    address = IPAddress.Parse(m.Groups[1].Value);
+                    if (m.Groups.Count >= 2 && m.Groups[2].Value != null)
+                        port = long.Parse(m.Groups[2].Value);
+                }
+
+                //check hostnames
+                if (!success)
+                {
+                    //remove port first
+                    if ((m = REGEX_PORT.Match(addressString)).Success)
                     {
-                        Debugger.ErrorMessage("Could not resolve IP for hostname {0}.", addressString);
-                        return;
+                        port = long.Parse(m.Groups[1].Value);
+                        addressString = REGEX_PORT.Replace(addressString, "").Trim();
                     }
-                    address = hostEntry.AddressList[0];
+
+                    //try to resolve a hostname
+                    success = (address = ((hostEntry = Dns.GetHostEntry(addressString)) != null
+                        && hostEntry.AddressList.Length > 0) ? hostEntry.AddressList[0] : null) != null;
                 }
-                catch (Exception exc)
-                {
-                    Debugger.ErrorMessage("An error occurred while resolving IP for hostname {0}:\n\n{1}: {2}",
-                        addressString, exc.GetType().Name, exc.Message);
-                    return;
-                }
+            }
+            catch (Exception exc)
+            {
+                Debugger.ErrorMessage("An error occurred while parsing address:\n\n{0}", exc.Message);
+                return;
+            }
+
+            //all failed
+            if (address == null)
+            {
+                Debugger.ErrorMessage("Failed to parse a valid address from {0}.", originalAddressString);
+                return;
+            }
+
+            //check port
+            if (port < 1024 || port > 65535)
+            {
+                Debugger.ErrorMessage("Port must be between 1024 and 65535 (inclusive).");
+                return;
             }
 
             //connect to server
@@ -379,8 +447,8 @@ namespace OTEX
                 }
                 catch (Exception exc)
                 {
-                    Debugger.ErrorMessage("An error occurred while connecting to {0} ({1}:{2}):\n\n{3}: {4}",
-                    saddr, addr, prt, exc.GetType().Name, exc.Message);
+                    Debugger.ErrorMessage("An error occurred while connecting to {0} ({1}:{2}):\n\n{3}",
+                    saddr, addr, prt, exc.Message);
                     this.Execute(() => { PendingConnectionMode = false; });
                     clientConnectingThread = null;
                     return;
@@ -551,13 +619,15 @@ namespace OTEX
         private void btnServerNew_Click(object sender, EventArgs e)
         {
             if (dlgServerCreateNew.ShowDialog() == DialogResult.OK)
-                StartServerMode(dlgServerCreateNew.FileName, false);
+                StartServerMode(new Server.StartParams()
+                    { Path = dlgServerCreateNew.FileName, EditMode = false, Announce = true });
         }
 
         private void btnServerExisting_Click(object sender, EventArgs e)
         {
             if (dlgServerOpenExisting.ShowDialog() == DialogResult.OK)
-                StartServerMode(dlgServerOpenExisting.FileName, true);
+                StartServerMode(new Server.StartParams()
+                    { Path = dlgServerOpenExisting.FileName, EditMode = true, Announce = true });
         }
 
         private void btnClientConnect_Click(object sender, EventArgs e)
