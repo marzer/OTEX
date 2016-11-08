@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace OTEX
+namespace OTEX.Packets
 {
     /// <summary>
     /// Connection response packet sent from an OTEX server to client.

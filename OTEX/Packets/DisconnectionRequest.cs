@@ -7,10 +7,10 @@ using System.Threading.Tasks;
 namespace OTEX.Packets
 {
     /// <summary>
-    /// A list of operations.
+    /// Disconnection request packet sent from an OTEX client to server (or vice versa).
     /// </summary>
     [Serializable]
-    public sealed class OperationList : IPacketPayload, IOperationList
+    public sealed class DisconnectionRequest : IPacketPayload
     {
         /////////////////////////////////////////////////////////////////////
         // PROPERTIES/VARIABLES
@@ -19,7 +19,7 @@ namespace OTEX.Packets
         /// <summary>
         /// Payload type ID for this class.
         /// </summary>
-        public const uint PayloadType = 1;
+        public const uint PayloadType = 4;
 
         /// <summary>
         /// Implements IPacketPayload.PacketPayloadType (returns PayloadType).
@@ -29,26 +29,16 @@ namespace OTEX.Packets
             get { return PayloadType; }
         }
 
-        /// <summary>
-        /// New operations from the sender client's local output buffer. Can be null/empty; this
-        /// just means "I don't have any new operations, but still send me any new data"
-        /// </summary>
-        public List<Operation> Operations
-        {
-            get { return operations; }
-        }
-        private List<Operation> operations;
-
         /////////////////////////////////////////////////////////////////////
-        // CONSTRUCTION/INITIALIZATION/DESTRUCTION
+        // CONSTRUCTOR
         /////////////////////////////////////////////////////////////////////
 
         /// <summary>
-        /// Create a text insertion operation.
+        /// Construct a disconnection request packet.
         /// </summary>
-        public OperationList(List<Operation> ops)
+        public DisconnectionRequest()
         {
-            operations = ops;
+            //
         }
     }
 }

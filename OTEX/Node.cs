@@ -27,7 +27,7 @@ namespace OTEX
         /// <summary>
         /// ID for this node.
         /// </summary>
-        public readonly Guid GUID;
+        public readonly Guid ID;
 
         /////////////////////////////////////////////////////////////////////
         // CONSTRUCTOR
@@ -36,10 +36,12 @@ namespace OTEX
         /// <summary>
         /// Creates an OTEX node.
         /// </summary>
-        /// <param name="guid">ID for this node. Leaving it null will auto-generate one.</param>
-        public Node(Guid? guid = null)
+        /// <param name="id">ID for this node. Leaving it null will auto-generate one.</param>
+        /// <exception cref="ArgumentOutOfRangeException" />
+        public Node(Guid? id = null)
         {
-            GUID = guid.HasValue ? guid.Value : Guid.NewGuid();
+            if ((ID = id.HasValue ? id.Value : Guid.NewGuid()).Equals(Guid.Empty))
+                throw new ArgumentOutOfRangeException("id cannot be Guid.Empty");
         }
 
         /////////////////////////////////////////////////////////////////////

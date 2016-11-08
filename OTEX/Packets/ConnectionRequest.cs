@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Marzersoft;
 
-namespace OTEX
+namespace OTEX.Packets
 {
     /// <summary>
     /// Connection request packet sent from an OTEX client to server.

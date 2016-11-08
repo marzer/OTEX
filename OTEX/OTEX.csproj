@@ -62,6 +62,7 @@
     <Compile Include="Client.cs" />
     <Compile Include="Packets\ConnectionRequest.cs" />
     <Compile Include="Packets\ConnectionResponse.cs" />
+    <Compile Include="Packets\DisconnectionRequest.cs" />
     <Compile Include="Packets\IPacketPayload.cs" />
     <Compile Include="Node.cs" />
     <Compile Include="Packets\IOperationList.cs" />
@@ -69,7 +70,7 @@
     <Compile Include="Operation.cs" />
     <Compile Include="Packets\OperationList.cs" />
     <Compile Include="InternalException.cs" />
-    <Compile Include="Packets\PacketReader.cs" />
+    <Compile Include="Packets\PacketStream.cs" />
     <Compile Include="Password.cs" />
     <Compile Include="Server.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

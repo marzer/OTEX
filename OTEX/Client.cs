@@ -7,6 +7,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using Marzersoft;
+using OTEX.Packets;
 
 namespace OTEX
 {
@@ -99,8 +100,7 @@ namespace OTEX
         /// <exception cref="ArgumentOutOfRangeException" />
         public Client(Guid? guid = null) : base(guid)
         {
-            if (GUID.Equals(Guid.Empty))
-                throw new ArgumentOutOfRangeException("guid cannot be Guid.Empty");
+            //
         }
 
         /////////////////////////////////////////////////////////////////////
@@ -147,22 +147,20 @@ namespace OTEX
 
                         //session connection
                         TcpClient tcpClient = null;
-                        NetworkStream networkStream = null;
-                        PacketReader packetReader = null;
+                        PacketStream packetStream = null;
                         try
                         {
                             //establish tcp connection
                             tcpClient = new TcpClient(AddressFamily.InterNetworkV6);
                             tcpClient.Client.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, false);
                             tcpClient.Connect(address, port);
-                            networkStream = tcpClient.GetStream();
-                            packetReader = new PacketReader(networkStream);
+                            packetStream = new PacketStream(tcpClient);
 
                             //send connection request packet
-                            Packet.Send(networkStream, GUID, new ConnectionRequest(password));
+                            packetStream.Write(ID, new ConnectionRequest(password));
 
                             //get response
-                            Packet responsePacket = packetReader.Read();
+                            Packet responsePacket = packetStream.Read();
                             if (responsePacket.PayloadType != ConnectionResponse.PayloadType)
                                 throw new InvalidDataException("unexpected response packet type");
                             ConnectionResponse response = responsePacket.Payload.Deserialize<ConnectionResponse>();
@@ -177,8 +175,8 @@ namespace OTEX
                         }
                         catch (Exception)
                         {
-                            if (networkStream != null)
-                                networkStream.Dispose();
+                            if (packetStream != null)
+                                packetStream.Dispose();
                             if (tcpClient != null)
                                 tcpClient.Close();
                             throw;
@@ -189,8 +187,7 @@ namespace OTEX
                         {
                             var objs = o as object[];
                             var client = objs[0] as TcpClient;
-                            var stream = objs[1] as NetworkStream;
-                            var reader = objs[2] as PacketReader;
+                            var stream = objs[1] as PacketStream;
 
                             while (connected)
                             {
@@ -198,16 +195,15 @@ namespace OTEX
                             }
 
                             //disconnect
-                            if (networkStream != null)
-                                networkStream.Dispose();
-                            if (tcpClient != null)
-                                tcpClient.Close();
+                            CaptureException(() => { stream.Write(ID, new DisconnectionRequest()); });
+                            stream.Dispose();
+                            tcpClient.Close();
 
                             //fire event
                             OnDisconnected?.Invoke(this);
                         });
                         thread.IsBackground = false;
-                        thread.Start(new object[]{ tcpClient, networkStream, packetReader });
+                        thread.Start(new object[]{ tcpClient, packetStream });
 
                         //fire event
                         OnConnected?.Invoke(this);

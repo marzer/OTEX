@@ -21,7 +21,7 @@ namespace OTEX
         /// <summary>
         /// Session ID of the node sending the packet.
         /// </summary>
-        public Guid Sender
+        public Guid SenderID
         {
             get { return sender; }
         }
@@ -55,48 +55,11 @@ namespace OTEX
         /// <param name="sender">ID of the node sending this packet.</param>
         /// <param name="payloadType">Unique type ID for this packet's payload.</param>
         /// <param name="payload">Serialized payload object.</param>
-        private Packet(Guid sender, uint payloadType, byte[] payload = null)
+        internal Packet(Guid sender, uint payloadType, byte[] payload = null)
         {
             this.sender = sender;
             this.payloadType = payloadType;
             this.payload = payload;
-        }
-
-        /////////////////////////////////////////////////////////////////////
-        // SENDING A PACKET
-        /////////////////////////////////////////////////////////////////////
-
-        /// <summary>
-        /// Sends an object to an OTEX node as an OTEX packet.
-        /// </summary>
-        /// <typeparam name="T">Payload object type. Must have the [Serializable] attribute.</typeparam>
-        /// <param name="stream">Stream to write to.</param>
-        /// <param name="sender">ID of the node sending this packet.</param>
-        /// <param name="data">Payload object.</param>
-        /// <exception cref="ArgumentException" />
-        /// <exception cref="ArgumentNullException" />
-        /// <exception cref="System.Runtime.Serialization.SerializationException" />
-        /// <exception cref="System.Security.SecurityException" />
-        /// <exception cref="IOException" />
-        public static void Send<T>(NetworkStream stream, Guid sender, T data) where T : IPacketPayload
-        {
-            if (stream == null)
-                throw new ArgumentNullException("stream cannot be null");
-            if (data == null)
-                throw new ArgumentNullException("data cannot be null");
-            if (!typeof(T).IsSerializable)
-                throw new ArgumentException("data type must have the [Serializable] attribute");
-
-            //packet
-            Packet packet = new Packet(sender, data.PacketPayloadType, data.Serialize());
-            var serializedPacket = packet.Serialize();
-
-            //send length
-            var serializedLength = BitConverter.GetBytes(serializedPacket.Length);
-            stream.Write(serializedLength, 0, serializedLength.Length);
-
-            //send data
-            stream.Write(serializedPacket, 0, serializedPacket.Length);
         }
     }
 }

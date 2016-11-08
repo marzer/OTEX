@@ -17,13 +17,13 @@ namespace OTEX
         /////////////////////////////////////////////////////////////////////
 
         /// <summary>
-        /// Client responsible for the change. An empty GUID means "server".
+        /// Node responsible for the change.
         /// </summary>
-        public Guid Client
+        public Guid NodeID
         {
-            get { return client; }
+            get { return node; }
         }
-        private Guid client;
+        private Guid node;
 
         /// <summary>
         /// Beginning index of the operation.
@@ -83,11 +83,15 @@ namespace OTEX
         /// <summary>
         /// Create a text insertion operation.
         /// </summary>
-        public Operation(Guid clientGuid, int offset, string text)
+        /// <exception cref="ArgumentNullException" />
+        /// <exception cref="ArgumentOutOfRangeException" />
+        public Operation(Guid nodeID, int offset, string text)
         {
             if (text == null)
                 throw new ArgumentNullException("insert text cannot be null");
-            client = clientGuid;
+            if (nodeID.Equals(Guid.Empty))
+                throw new ArgumentOutOfRangeException("nodeID cannot be Guid.Empty");
+            node = nodeID;
             this.offset = offset;
             length = text.Length;
             this.text = text;
@@ -96,9 +100,12 @@ namespace OTEX
         /// <summary>
         /// Create a text deletion operation.
         /// </summary>
-        public Operation(Guid clientGuid, int offset, int length)
+        /// <exception cref="ArgumentOutOfRangeException" />
+        public Operation(Guid nodeID, int offset, int length)
         {
-            client = clientGuid;
+            if (nodeID.Equals(Guid.Empty))
+                throw new ArgumentOutOfRangeException("nodeID cannot be Guid.Empty");
+            node = nodeID;
             this.offset = offset;
             this.length = length;
             text = null;
@@ -107,13 +114,14 @@ namespace OTEX
         /// <summary>
         /// Copy an existing operation.
         /// </summary>
+        /// <exception cref="ArgumentNullException" />
         public Operation(Operation operation)
         {
             if (operation == null)
                 throw new ArgumentNullException("operation to copy cannot be null");
-            client = operation.Client;
-            offset = operation.Offset;
-            length = operation.Length;
+            node = operation.node;
+            offset = operation.offset;
+            length = operation.length;
             text = operation.text;
         }
 
@@ -121,6 +129,10 @@ namespace OTEX
         // TRANSFORMATIONS
         /////////////////////////////////////////////////////////////////////
 
+        /// <summary>
+        /// Perform a symmetric linear transform (SLOT) on two sets of operations.
+        /// </summary>
+        /// <exception cref="ArgumentNullException" />
         public static void SymmetricLinearTransform(IEnumerable<Operation> list1, IEnumerable<Operation> list2)
         {
             if (list1 == null)
@@ -163,7 +175,7 @@ namespace OTEX
 
         private void IT_II(Operation operation)
         {
-            if ((offset > operation.offset) || (offset == operation.offset && client.CompareTo(operation.client) > 0))
+            if ((offset > operation.offset) || (offset == operation.offset && node.CompareTo(operation.node) > 0))
                 offset += operation.length;
         }
 
