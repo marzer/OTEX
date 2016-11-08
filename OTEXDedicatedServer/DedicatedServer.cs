@@ -45,7 +45,8 @@ namespace OTEX
         {
             get
             {
-                return string.Format("usage: {0} <file path> [/PORT port] [/PASSWORD pass] [/EDIT|/NEW] [/?]", Process.GetCurrentProcess().ProcessName.ToUpper());
+                return string.Format("  {0} file [/PORT port] [/NAME name] [/PASSWORD pass] [/EDIT|/NEW] [/ANNOUNCE] [/?]",
+                    Process.GetCurrentProcess().ProcessName.ToUpper());
             }
         }
 
@@ -57,17 +58,24 @@ namespace OTEX
             get
             {
                 StringBuilder sb = new StringBuilder();
-                sb.AppendLine(Splash).AppendLine().AppendLine(Usage).AppendLine();
-                sb.AppendLine("   <file path>: Path to the plain text file to collaboratively edit.");
-                sb.AppendLine("    /PORT port: Port on which to listen for new OTEX client connections,");
-                sb.AppendLine("                between 1024 and 65535. Defaults to 55555.");
-                sb.AppendLine("/PASSWORD pass: Password required to connect to this server.");
-                sb.AppendLine("         /EDIT: If a file already exists at the given path, edit it");
-                sb.AppendLine("                (do not overwrite with a new file). This is default.");
-                sb.AppendLine("          /NEW: Opposite of /EDIT.");
-                sb.AppendLine("            /?: Prints help and exits.");
+                sb.AppendLine(Usage).AppendLine();
+                sb.AppendLine("           file: Path to the plain text file to collaboratively edit.");
+                sb.AppendLine("     /PORT port: Port on which to listen for new OTEX TCP client connections,");
+                sb.AppendLine("                 between 1024 and 65535. Defaults to 55555.");
+                sb.AppendLine("                 Does not change announce port, which is always 55555.");
+                sb.AppendLine("     /NAME name: A friendly name for the server.");
+                sb.AppendLine("                 Limit of 32 characters (overflow is truncated).");
+                sb.AppendLine("                 Omit to allow clients to connect without a password.");
+                sb.AppendLine(" /PASSWORD pass: Password required to connect to this server.");
+                sb.AppendLine("                 Must be between 6 and 32 characters.");
+                sb.AppendLine("                 Omit to allow clients to connect without a password.");
+                sb.AppendLine("          /EDIT: If a file already exists at the given path, edit it");
+                sb.AppendLine("                 (do not overwrite with a new file). This is default.");
+                sb.AppendLine("           /NEW: Opposite of /EDIT.");
+                sb.AppendLine("      /ANNOUNCE: Regularly broadcast the presence of server to OTEX clients.");
+                sb.AppendLine("             /?: Prints help and exits.");
                 sb.AppendLine();
-                sb.AppendLine("Arguments may appear in any order.");
+                sb.AppendLine("Arguments may appear in any order. /SWITCHES and file paths are not case-sensitive.");
                 return sb.ToString();
             }
         }
@@ -80,7 +88,7 @@ namespace OTEX
         // CONSOLE HELPER FUNCTIONS
         /////////////////////////////////////////////////////////////////////
 
-        private static void Write(TextWriter writer, ConsoleColor? colour, string text, params object[] args)
+        private static void Print(TextWriter writer, ConsoleColor? colour, string text, params object[] args)
         {
             if (args != null && args.Length > 0)
                 text = string.Format(text, args);
@@ -91,25 +99,25 @@ namespace OTEX
             {
                 if (colour.HasValue)
                     Console.ForegroundColor = colour.Value;
-                else
-                    Console.ResetColor();
                 writer.WriteLine(text);
+                if (colour.HasValue)
+                    Console.ResetColor();
             }
         }
 
         private static void Out(string text, params object[] args)
         {
-            Write(Console.Out, null, text, args);
+            Print(Console.Out, null, text, args);
         }
 
         private static void Warning(string text, params object[] args)
         {
-            Write(Console.Error, ConsoleColor.Yellow, text, args);
+            Print(Console.Error, ConsoleColor.Yellow, text, args);
         }
 
         private static void Error(string text, params object[] args)
         {
-            Write(Console.Error, ConsoleColor.Red, text, args);
+            Print(Console.Error, ConsoleColor.Red, text, args);
         }
 
         /////////////////////////////////////////////////////////////////////
@@ -119,10 +127,7 @@ namespace OTEX
         static int Main(string[] args)
         {
             //handle command line arguments
-            string filePath = "";
-            ushort port = 55555;
-            bool editMode = true;
-            Password password = null;
+            var startParams = new Server.StartParams();
             try
             {
                 var arguments = App.ProcessArguments(args);
@@ -130,6 +135,8 @@ namespace OTEX
                 //help
                 if (arguments.Find((a) => { return a.Flag && a.Value.CompareTo("?") == 0; }) != null)
                 {
+                    Print(Console.Out, ConsoleColor.Cyan, Splash);
+                    Console.Out.WriteLine();
                     Out(Help);
                     return 0;
                 }
@@ -142,9 +149,11 @@ namespace OTEX
 
                     bool match = false;
                     if (match = (arguments[i].Value.CompareTo("port") == 0))
-                        port = ushort.Parse(arguments[i + 1].Value);
+                        startParams.Port = ushort.Parse(arguments[i + 1].Value);
                     else if (match = (arguments[i].Value.CompareTo("password") == 0))
-                        password = new Password(arguments[i + 1].Value);
+                        startParams.Password = new Password(arguments[i + 1].Value);
+                    else if (match = (arguments[i].Value.CompareTo("name") == 0))
+                        startParams.Name = arguments[i + 1].Value;
 
                     if (match)
                         arguments[i].Handled = arguments[i + 1].Handled = true;
@@ -158,9 +167,11 @@ namespace OTEX
 
                     bool match = false;
                     if (match = (arguments[i].Value.CompareTo("edit") == 0))
-                        editMode = true;
+                        startParams.EditMode = true;
                     else if (match = (arguments[i].Value.CompareTo("new") == 0))
-                        editMode = false;
+                        startParams.EditMode = false;
+                    else if (match = (arguments[i].Value.CompareTo("announce") == 0))
+                        startParams.Announce = true;
 
                     if (match)
                         arguments[i].Handled = true;
@@ -171,13 +182,20 @@ namespace OTEX
                 {
                     if (arguments[i].Flag || arguments[i].Handled)
                         continue;
-                    filePath = arguments[i].Value;
+                    startParams.Path = arguments[i].Value;
                 }
             }
             catch (Exception exc)
             {
-                Error("{0}: {1}", exc.GetType().FullName, exc.Message);
-                Out(Usage);
+#if DEBUG
+                if (System.Diagnostics.Debugger.IsAttached)
+                {
+                    Error("{0}: {1}", exc.GetType().FullName, exc.Message);
+                    throw;
+                }
+#endif
+                Error("Error: {0}", exc.Message);
+                Warning("usage:{0}{1}", Environment.NewLine, Usage);
                 return 1;
             }
 
@@ -193,8 +211,10 @@ namespace OTEX
             server.OnStarted += (s) =>
             {
                 Out("Server started.");
-                Out("  File: {0}", s.FilePath);
-                Out("  Port: {0}", s.Port);
+                Out("      File: {0}", s.FilePath);
+                Out("      Port: {0}", s.Port);
+                Out("  Password: {0}", s.RequiresPassword);
+                Out("  Announce: {0}", s.Announce);
             };
             server.OnClientConnected += (s,id) =>
             {
@@ -221,12 +241,19 @@ namespace OTEX
             //start server
             try
             {
-                server.Start(filePath, editMode, port, password);
+                server.Start(startParams);
             }
             catch (Exception exc)
             {
-                Error("{0}: {1}", exc.GetType().FullName, exc.Message);
-                Out(Usage);
+#if DEBUG
+                if (System.Diagnostics.Debugger.IsAttached)
+                {
+                    Error("{0}: {1}", exc.GetType().FullName, exc.Message);
+                    throw;
+                }
+#endif
+                Error("Error: {0}", exc.Message);
+                Warning("usage:{0}{1}", Environment.NewLine, Usage);
                 return 2;
             }
 

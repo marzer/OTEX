@@ -52,22 +52,84 @@ namespace OTEX
         /////////////////////////////////////////////////////////////////////
 
         /// <summary>
+        /// Bundle of parameters for Server.Start (so the parameter list isn't enormous).
+        /// </summary>
+        [Serializable]
+        public sealed class StartParams
+        {           
+            /// <summary>
+            /// Path to the text file you'd like clients to edit/create.
+            /// </summary>
+            public string Path = "";
+
+            /// <summary>
+            /// How to handle the file given by Path if it already exists.
+            /// True: reads the file in and uses it's contents as the starting point for the session document;
+            /// False: session document is empty, and the existing file is overwritten when the server syncs to disk.
+            /// </summary>
+            public bool EditMode = true;
+
+            /// <summary>
+            /// Listening for new client connections will bind to this port (supports IPv4 and IPv6).
+            /// </summary>
+            public ushort Port = 55555;
+
+            /// <summary>
+            /// A password required for clients to connect to this session (null == no password required).
+            /// </summary>
+            public Password Password = null;
+
+            /// <summary>
+            /// Advertise the presence of this server so it shows up in local server browsers.
+            /// </summary>
+            public bool Announce = false;
+
+            /// <summary>
+            /// The friendly name of the server.
+            /// </summary>
+            public string Name = "";
+        }
+        private volatile StartParams startParams = null;
+
+        /// <summary>
         /// Path to the local file this server is resposible for editing.
         /// </summary>
         public string FilePath
         {
-            get { return filePath; }
+            get { return startParams == null ? "" : startParams.Path; }
         }
-        private volatile string filePath;
 
         /// <summary>
         /// Port to listen on.
         /// </summary>
         public ushort Port
         {
-            get { return listenPort; }
+            get { return startParams == null ? (ushort)55555 : startParams.Port; }
         }
-        private volatile ushort listenPort;
+
+        /// <summary>
+        /// Is this server broadcasting its presence?
+        /// </summary>
+        public bool Announce
+        {
+            get { return startParams == null ? false : startParams.Announce; }
+        }
+
+        /// <summary>
+        /// Does this server require a password?
+        /// </summary>
+        public bool RequiresPassword
+        {
+            get { return startParams == null ? false : startParams.Password != null; }
+        }
+
+        /// <summary>
+        /// The friendly name of the server.
+        /// </summary>
+        public string Name
+        {
+            get { return startParams == null ? "" : startParams.Name; }
+        }
 
         /// <summary>
         /// Master list of operations, used for synchronizing newly-connected clients.
@@ -135,11 +197,6 @@ namespace OTEX
         /// </summary>
         private volatile int fileSyncIndex = 0;
 
-        /// <summary>
-        /// Password required by the current session, if any.
-        /// </summary>
-        private Password password;
-
         /////////////////////////////////////////////////////////////////////
         // CONSTRUCTION
         /////////////////////////////////////////////////////////////////////
@@ -161,11 +218,8 @@ namespace OTEX
         /// <summary>
         /// Starts the server. Does nothing if the server is already running.
         /// </summary>
-        /// <param name="path">Path to the text file the server will edit/create.</param>
-        /// <param name="editMode">If a file at the given path already exists, set this to true
-        /// to read it and apply changes, or false to overwrite it with a blank file (new file mode).</param>
-        /// <param name="port">Port to listen on. Must be between 1024 and 65535.</param>
-        /// <param name="password">Password required to connect to this server. Leave as null for none.</param>
+        /// <param name="startParams">Configuration of this session.</param>
+        /// <exception cref="ArgumentNullException" />
         /// <exception cref="ArgumentException" />
         /// <exception cref="ArgumentOutOfRangeException" />
         /// <exception cref="ObjectDisposedException" />
@@ -173,7 +227,7 @@ namespace OTEX
         /// <exception cref="PathTooLongException" />
         /// <exception cref="FileNotFoundException" />
         /// <exception cref="IOException" />
-        public void Start(string path, bool editMode = true, ushort port = 55555, Password password = null)
+        public void Start(StartParams startParams)
         {
             if (isDisposed)
                 throw new ObjectDisposedException("OTEX.Server");
@@ -187,21 +241,25 @@ namespace OTEX
 
                     if (!running)
                     {
+                        if (startParams == null)
+                            throw new ArgumentNullException("startParams");
+
                         //session state
-                        if ((path = (path ?? "").Trim()).Length == 0)
-                            throw new ArgumentException("Path cannot be empty");
-                        filePath = path;
-                        if (port < 1024)
-                            throw new ArgumentOutOfRangeException("Port must be between 1024 and 65535");
-                        listenPort = port;
-                        this.password = password;
+                        if ((startParams.Path = (startParams.Path ?? "").Trim()).Length == 0)
+                            throw new ArgumentException("startParams.Path cannot be empty", "startParams.Path");
+                        if (startParams.Port < 1024)
+                            throw new ArgumentOutOfRangeException("startParams.Port", "Port must be between 1024 and 65535");
+                        this.startParams = startParams;
+                        if ((this.startParams.Name = (this.startParams.Name ?? "").Trim()).Length > 32)
+                            this.startParams.Name = this.startParams.Name.Substring(0, 32);
 
                         //session initialization
-                        TcpListener listener6 = null;
+                        TcpListener listener = null;
+                        UdpClient announcer = null;
                         try
                         {
                             //read file
-                            if (editMode && File.Exists(FilePath))
+                            if (startParams.EditMode && File.Exists(FilePath))
                             {
                                 masterOperations.Add(new Operation(ID, 0,
                                     fileContents = File.ReadAllText(FilePath, FilePath.DetectEncoding())
@@ -211,23 +269,35 @@ namespace OTEX
                                 ++fileSyncIndex;
                             }
 
-                            //create tcplistener
-                            listener6 = new TcpListener(IPAddress.IPv6Any, Port);
-                            listener6.Server.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, false);
-                            listener6.AllowNatTraversal(true);
-                            listener6.Start();
+                            //create tcp listener
+                            listener = new TcpListener(IPAddress.IPv6Any, Port);
+                            listener.Server.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, false);
+                            listener.AllowNatTraversal(true);
+                            listener.Start();
+
+                            if (startParams.Announce)
+                            {
+                                //create udp client
+                                announcer = new UdpClient();
+                                announcer.EnableBroadcast = true;
+                                announcer.AllowNatTraversal(true);
+                            }
                         }
                         catch (Exception)
                         {
+                            if (listener != null)
+                                listener.Stop();
+                            if (announcer != null)
+                                announcer.Close();
                             ClearRunningState();
                             throw;
                         }
                         running = true;
 
                         //create thread
-                        thread = new Thread(ListenThread);
+                        thread = new Thread(ControlThread);
                         thread.IsBackground = false;
-                        thread.Start( listener6 );
+                        thread.Start(new object[] { listener, announcer });
 
                         //fire event
                         OnStarted?.Invoke(this);
@@ -237,14 +307,20 @@ namespace OTEX
         }
 
         /////////////////////////////////////////////////////////////////////
-        // MAIN LISTENING THREAD
+        // CONTROL (LOOP) THREAD
         /////////////////////////////////////////////////////////////////////
 
-        private void ListenThread(object listenerObject)
+        private void ControlThread(object nobjs)
         {
-            TcpListener listener = listenerObject as TcpListener;
-            List<Thread> clientThreads = new List<Thread>();
+            var networkObjects = nobjs as object[];
+            var listener = networkObjects[0] as TcpListener;
+            var announcer = networkObjects[1] as UdpClient;
+            var clientThreads = new List<Thread>();
             var flushTimer = new Marzersoft.Timer();
+            var announceTimer = new Marzersoft.Timer();
+            var announceData = (new ServerAnnounce(ID, startParams.Name, startParams.Port, startParams.Password != null))
+                .Serialize();
+
             while (running)
             {
                 Thread.Sleep(1);
@@ -261,6 +337,16 @@ namespace OTEX
                     clientThreads.Add(new Thread(ClientThread));
                     clientThreads.Last().IsBackground = false;
                     clientThreads.Last().Start(tcpClient);
+                }
+
+                //announce
+                if (startParams.Announce && announceTimer.Seconds >= 1.0)
+                {
+                    CaptureException(() =>
+                    {
+                        announcer.Send(announceData, announceData.Length, new IPEndPoint(IPAddress.Broadcast, 55555));
+                    });
+                    announceTimer.Reset();
                 }
 
                 //flush file contents to disk periodically
@@ -332,8 +418,8 @@ namespace OTEX
                         break;
 
                     //check password
-                    if ((password != null && (request.Password == null || !password.Matches(password))) //requires password
-                        || (password == null && request.Password != null)) //no password required (reject incoming requests with passwords)
+                    if ((startParams.Password != null && (request.Password == null || !startParams.Password.Matches(request.Password))) //requires password
+                        || (startParams.Password == null && request.Password != null)) //no password required (reject incoming requests with passwords)
                     {
                         CaptureException(() =>
                         {
@@ -357,7 +443,7 @@ namespace OTEX
                         }
 
                         //send response with initial sync list
-                        if (!CaptureException(() => { stream.Write(ID, new ConnectionResponse(filePath, masterOperations)); }))
+                        if (!CaptureException(() => { stream.Write(ID, new ConnectionResponse(startParams.Path, masterOperations)); }))
                         {
                             //create the list of staged operations for this client
                             outgoingOperations[packet.SenderID] = new List<Operation>();
@@ -493,7 +579,7 @@ namespace OTEX
             masterOperations.Clear();
             fileContents = "";
             fileSyncIndex = 0;
-            password = null;
+            startParams = null;
         }
 
         /// <summary>
