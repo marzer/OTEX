@@ -298,7 +298,7 @@ namespace OTEX
             //read from stream
             Guid clientGUID = Guid.Empty;
             bool clientSideDisconnect = false;
-            while (running && client.Connected)
+            while (running && stream.Connected)
             {
                 //check if client has sent data
                 if (!stream.DataAvailable)
@@ -376,7 +376,7 @@ namespace OTEX
 
                     switch (packet.PayloadType)
                     {
-                        case DisconnectionRequest.PayloadType: //disconnection request
+                        case DisconnectionRequest.PayloadType: //disconnection request from client
                             clientSideDisconnect = true;
                             break;
 
