@@ -16,6 +16,7 @@ using System.Text.RegularExpressions;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.IO;
+using static FastColoredTextBoxNS.ReplaceMultipleTextCommand;
 
 namespace OTEX
 {
@@ -58,6 +59,8 @@ namespace OTEX
             {
                 tbEditor.Visible = value;
                 panSplash.Visible = !value;
+                if (!value)
+                    PositionSplashPanel();
             }
         }
 
@@ -115,41 +118,45 @@ namespace OTEX
             tbEditor.IndentBackColor = App.Theme.Background.Dark.Colour;
             tbEditor.ServiceLinesColor = App.Theme.Background.Light.Colour;
             tbEditor.LineNumberColor = App.Theme.Accent1.Mid.Colour;
-            tbEditor.CurrentLineColor = App.Theme.Background.Light.Colour;
+            tbEditor.CurrentLineColor = App.Theme.Background.LightLight.Colour;
             tbEditor.SelectionColor = App.Theme.Accent1.Mid.Colour;
             tbEditor.Font = new Font(App.Theme.Monospaced.Normal.Regular.FontFamily, 11.0f);
             tbEditor.WordWrap = true;
-            tbEditor.WordWrapAutoIndent = false;
+            tbEditor.WordWrapAutoIndent = true;
             tbEditor.WordWrapMode = WordWrapMode.WordWrapControlWidth;
             tbEditor.TabLength = 4;
+            tbEditor.LineInterval = 2;
+            tbEditor.AllowMacroRecording = false;
+            tbEditor.CaretColor = App.Theme.Accent1.LightLight.Colour;
+            tbEditor.Pasting += (sender, args) =>
+            {
+                this.Execute(() => EditorInserting(args.InsertingText), false); //OT
+            };
+            tbEditor.KeyPressing += (sender, args) =>
+            {
+                this.Execute(() => EditorInserting(args.KeyChar), false); //OT
+            };
 
             //file dialog filters
-            dlgServerOpenExisting.Filter = dlgServerCreateNew.Filter =
-                "All plain-text files|"
-                    + "*.txt;*.cs;*.cpp;*.h;*.hpp;*.log;*.java;"
-                    + "*.js;*.vb;*.vbs;*.htm;*.html;*.php;*.css;"
-                    + "*.xml;*.sql;*.lua;*.bat;*.sh;*.ini;*.config;"
-                    + "*.cfg;*.ps;*.reg;*.hlsl;*.glsl;*.fx"
-                + "|Text files|*.txt"
-                + "|C# code files|*.cs"
-                + "|C++ code files|*.cpp;*.h;*.hpp"
-                + "|Log files|*.log"
-                + "|Javacode files|*.java"
-                + "|Javascript files|*.js"
-                + "|Visual Basic code files|*.vb;*.vbs"
-                + "|HTML files|*.htm;*.html"
-                + "|PHP scripts|*.php"
-                + "|CSS files|*.css"
-                + "|XML files|*.xml"
-                + "|SQL scripts|*.sql"
-                + "|Luascript files|*.lua"
-                + "|Batch scripts|*.bat"
-                + "|Shell scripts|*.sh"
-                + "|Settings files|*.ini;*.config;*.cfg"
-                + "|Powershell scripts|*.ps"
-                + "|Registry files|*.reg"
-                + "|Shader code files|*.hlsl;*.glsl;*.fx";
-            dlgServerOpenExisting.DefaultExt = dlgServerOpenExisting.DefaultExt = "txt";
+            FileFilterFactory filterFactory = new FileFilterFactory();
+            filterFactory.Add("Text files", "txt");
+            filterFactory.Add("C# files", "cs");
+            filterFactory.Add("C/C++ files", "cpp", "h", "hpp", "cxx", "cc", "c", "inl", "inc", "rc", "hxx");
+            filterFactory.Add("Log files", "log");
+            filterFactory.Add("Javacode files", "java");
+            filterFactory.Add("Javascript files", "js");
+            filterFactory.Add("Visual Basic files", "vb", "vbs");
+            filterFactory.Add("Web files", "htm", "html", "xml", "css", "htaccess", "php");
+            filterFactory.Add("XML files", "xml", "xsl", "xslt", "xsd", "dtd");
+            filterFactory.Add("PHP scripts", "php");
+            filterFactory.Add("SQL scripts", "sql");
+            filterFactory.Add("Luascript files", "lua");
+            filterFactory.Add("Shell scripts", "bat", "sh", "ps");
+            filterFactory.Add("Settings files", "ini", "config", "cfg", "conf", "reg");
+            filterFactory.Add("Shader files", "hlsl", "glsl", "fx", "csh", "cshader", "dsh", "dshader",
+                "gsh", "gshader", "hlsli", "hsh", "hshader", "psh", "pshader", "vsh", "vshader");
+            filterFactory.Apply(dlgServerCreateNew);
+            filterFactory.Apply(dlgServerOpenExisting);
 
             //set initial visibilities
             EditorMode = false;
@@ -158,6 +165,8 @@ namespace OTEX
 
             //form styles
             WindowStyles &= ~(WindowStyles.ThickFrame | WindowStyles.DialogFrame);
+            //ControlBox = false;
+            //FormBorderStyle = FormBorderStyle.SizableToolWindow;
             TextFlourishes = false;
             Text = App.Name;
 
@@ -203,7 +212,6 @@ namespace OTEX
                     string ext = Path.GetExtension(c.ServerFilePath).ToLower();
                     if (ext.Length > 0 && (ext = ext.Substring(1)).Length > 0)
                     {
-                        Debugger.I("EXT: {0}", ext);
                         switch (ext)
                         {
                             case "cs": tbEditor.Language = Language.CSharp; break;
@@ -223,13 +231,28 @@ namespace OTEX
                         tbEditor.Language = Language.Custom;
                 }, false);
             };
-            otexClient.OnIncomingOperations += (c,ops) =>
+            otexClient.OnRemoteOperations += (c,operations) =>
             {
-                Debugger.I("Client: new operations received.");
-                string text = "";
-                foreach (var o in ops)
-                    text = o.Execute(text);
-                this.Execute(() => { tbEditor.Text = text; }, false);
+                this.Execute(() =>
+                {
+                    foreach (var operation in operations)
+                    {
+                        if (operation.IsInsertion)
+                        {
+                            tbEditor.InsertTextAndRestoreSelection(
+                                new Range(tbEditor, tbEditor.PositionToPlace(operation.Offset),
+                                    tbEditor.PositionToPlace(operation.Offset)),
+                                operation.Text, null);
+                        }
+                        else if (operation.IsDeletion)
+                        {
+                            tbEditor.InsertTextAndRestoreSelection(
+                                new Range(tbEditor, tbEditor.PositionToPlace(operation.Offset),
+                                    tbEditor.PositionToPlace(operation.Offset + operation.Length)),
+                                "", null);
+                        }
+                    }
+                }, false);
             };
             otexClient.OnDisconnected += (c, serverSide) =>
             {
@@ -371,7 +394,75 @@ namespace OTEX
         }
 
         /////////////////////////////////////////////////////////////////////
-        // EVENTS
+        // HANDLING TEXT OPERATIONS
+        /////////////////////////////////////////////////////////////////////
+
+        /// <summary>
+        /// Notifies the OTEX client that a keyboard character is being inserted into the 
+        /// editor box at the current selection point. Handles DELETE, BACKSPACE and TAB appropriately.
+        /// </summary>
+        /// <param name="character">The keyboard character being inserted.</param>
+        private void EditorInserting(char character)
+        {
+            var selectionStart = Math.Min(
+                tbEditor.PlaceToPosition(tbEditor.Selection.Start),
+                tbEditor.PlaceToPosition(tbEditor.Selection.End));
+
+            //handle tab character (FCTB replaces tabs with spaces)
+            if ((byte)character == 0x09)
+            {
+                EditorInserting(new string(' ', tbEditor.TabLength
+                    - (tbEditor.PositionToPlace(selectionStart).iChar % tbEditor.TabLength)));
+                return;
+            }
+
+            var delete = (byte)character == 0xFF;
+            var backspace = (byte)character == 0x08;
+            var deleteOrBackspace = delete || backspace;
+
+            //only worry about deletion logic if there is actually some text
+            if (tbEditor.TextLength > 0)
+            {
+                //if a selection will replaced, send a deletion
+                //(always regardless of key if selection.length > 0)
+                if (tbEditor.Selection.Length > 0)
+                    otexClient.Delete((uint)selectionStart, (uint)tbEditor.Selection.Length);
+                else if (deleteOrBackspace)
+                {
+                    if (delete && selectionStart < tbEditor.TextLength)
+                        otexClient.Delete((uint)selectionStart, 1u);
+                    else if (backspace && selectionStart > 0)
+                        otexClient.Delete((uint)selectionStart - 1, 1u);
+                }
+            }
+
+            //if text will be inserted (not DEL or BACKSPACE keys)
+            if (!deleteOrBackspace)
+                otexClient.Insert((uint)selectionStart, character.ToString());
+        }
+
+        /// <summary>
+        /// Notifies the OTEX client that a string is being inserted into the 
+        /// editor box at the current selection point (e.g. pasting).
+        /// </summary>
+        /// <param name="str">The string being inserted.</param>
+        private void EditorInserting(string str)
+        {
+            var selectionStart = Math.Min(
+                tbEditor.PlaceToPosition(tbEditor.Selection.Start),
+                tbEditor.PlaceToPosition(tbEditor.Selection.End));
+
+            //if a selection will replaced, send a deletion
+            if (tbEditor.Selection.Length > 0)
+                otexClient.Delete((uint)selectionStart, (uint)tbEditor.Selection.Length);
+
+            //if text will be inserted, send an insertion
+            if (str.Length > 0)
+                otexClient.Insert((uint)selectionStart, str);
+        }
+
+        /////////////////////////////////////////////////////////////////////
+        // UI EVENTS
         /////////////////////////////////////////////////////////////////////
 
         private void PositionSplashPanel()

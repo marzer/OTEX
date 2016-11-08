@@ -26,10 +26,10 @@ namespace OTEX
         public event Action<Client> OnConnected;
 
         /// <summary>
-        /// Triggered when the client receives a new list of operations from the server.
-        /// Do not call Connect or Disconnect from this callback or you will deadlock!
+        /// Triggered when the client receives remote operations from the server.
+        /// Do not call any of this object's methods from this callback or you may deadlock!
         /// </summary>
-        public event Action<Client, IEnumerable<Operation>> OnIncomingOperations;
+        public event Action<Client, IEnumerable<Operation>> OnRemoteOperations;
 
         /// <summary>
         /// Triggered when the client is disconnected from an OTEX server.
@@ -110,6 +110,21 @@ namespace OTEX
         /// Have we sent a request for operations to the server?
         /// </summary>
         private volatile bool awaitingOperationList = false;
+
+        /// <summary>
+        /// Staging list for storing outgoing operations.
+        /// </summary>
+        private readonly List<Operation> outgoingOperations = new List<Operation>();
+
+        /// <summary>
+        /// Staging list for storing incoming operations.
+        /// </summary>
+        private readonly List<Operation> incomingOperations = new List<Operation>();
+
+        /// <summary>
+        /// Lock object for operations and clients state;
+        /// </summary>
+        private readonly object stateLock = new object();
 
         /////////////////////////////////////////////////////////////////////
         // CONSTRUCTION
@@ -213,8 +228,7 @@ namespace OTEX
 
                         //fire events
                         OnConnected?.Invoke(this);
-                        if (response.Operations != null && response.Operations.Count > 0)
-                            OnIncomingOperations?.Invoke(this, response.Operations);
+                        InvokeRemoteOperations(response.Operations);
 
                         //create management thread
                         thread = new Thread(ControlThread);
@@ -235,10 +249,11 @@ namespace OTEX
             var objs = o as object[];
             var client = objs[0] as TcpClient;
             var stream = objs[1] as PacketStream;
+            var lastOpsRequestTimer = new Marzersoft.Timer();
 
             while (!clientSideDisconnection && client.Connected)
             {
-                var lastOpsRequestTimer = new Marzersoft.Timer();
+                Thread.Sleep(1);
                 
                 //listen for packets first
                 //(returns true if the server has asked us to disconnect)
@@ -250,12 +265,28 @@ namespace OTEX
                     break;
                 }
 
-                //send period requests for new operations
-                if (!awaitingOperationList && lastOpsRequestTimer.Seconds >= 1.0)
+                //send periodic requests for new operations
+                if (!awaitingOperationList && lastOpsRequestTimer.Seconds >= 0.5)
                 {
-                    //todo: send operations request
+                    lock (stateLock)
+                    {
+                        //perform SLOT(OB,CIB) (1)
+                        if (outgoingOperations.Count > 0 && incomingOperations.Count > 0)
+                            Operation.SymmetricLinearTransform(outgoingOperations, incomingOperations);
 
+                        //send request
+                        if (CaptureException(() => { stream.Write(ID,
+                            new OperationList(outgoingOperations.Count > 0 ? outgoingOperations : null)); }))
+                            break;
+                        awaitingOperationList = true;
 
+                        //clear outgoing packet list (1)
+                        if (outgoingOperations.Count > 0)
+                            outgoingOperations.Clear();
+
+                        //apply any incoming operations (also clears list)
+                        InvokeRemoteOperations(incomingOperations);
+                    }
                     lastOpsRequestTimer.Reset();
                 }
             }
@@ -266,11 +297,18 @@ namespace OTEX
                 CaptureException(() => { stream.Write(ID, new DisconnectionRequest()); });
             stream.Dispose();
             client.Close();
+            outgoingOperations.Clear();
+            incomingOperations.Clear();
 
             //fire event
             OnDisconnected?.Invoke(this, !clientSideDisconnection);
         }
 
+        /// <summary>
+        /// Listen for packets coming in from the server and handle them accordingly.
+        /// </summary>
+        /// <param name="stream">PacketStream in use by the Control thread.</param>
+        /// <returns>True if the server has asked us to disconnect.</returns>
         private bool Listen(PacketStream stream)
         {
             while (stream.Connected && stream.DataAvailable)
@@ -289,12 +327,14 @@ namespace OTEX
                     case DisconnectionRequest.PayloadType: //disconnection request from server
                         return true;
 
-                    case OperationList.PayloadType:  //operation list
+                    case OperationList.PayloadType:  //operation list (4)
                         if (awaitingOperationList)
                         {
-
-                            //todo: process ops list client-side
-
+                            OperationList operationList = null;
+                            if (CaptureException(() => { operationList = packet.Payload.Deserialize<OperationList>(); }))
+                                break;
+                            if (operationList.Operations != null && operationList.Operations.Count > 0)
+                                incomingOperations.AddRange(operationList.Operations);
                             awaitingOperationList = false;
                         }
                         break;
@@ -303,11 +343,79 @@ namespace OTEX
             return false;
         }
 
+        /////////////////////////////////////////////////////////////////////
+        // INVOKE REMOTE OPERATIONS
+        /////////////////////////////////////////////////////////////////////
+
+        private void InvokeRemoteOperations(List<Operation> ops)
+        {
+            if (ops != null && ops.Count() > 0)
+            {
+                OnRemoteOperations.Invoke(this, ops);
+                ops.Clear();
+            }
+        }
+
+        /////////////////////////////////////////////////////////////////////
+        // SEND LOCAL OPERATIONS
+        /////////////////////////////////////////////////////////////////////
+
+        /// <summary>
+        /// Send a notification to the server that some text was inserted at the client end.
+        /// </summary>
+        /// <param name="offset">The index of the insertion.</param>
+        /// <param name="text">The text that was inserted.</param>
+        /// <exception cref="ArgumentException" />
+        /// <exception cref="ArgumentNullException" />
+        /// <exception cref="ObjectDisposedException" />
+        /// <exception cref="InvalidOperationException" />
+        public void Insert(uint offset, string text)
+        {
+            if (text == null)
+                throw new ArgumentNullException("insert text cannot be null");
+            if (text.Length == 0)
+                throw new ArgumentException("insert text cannot be blank");
+            if (isDisposed)
+                throw new ObjectDisposedException("OTEX.Client");
+            if (!connected)
+                throw new InvalidOperationException("cannot send an operation without being connected");
+
+            lock (stateLock)
+            {
+                outgoingOperations.Add(new Operation(ID, (int)offset, text));
+            }
+        }
+
+        /// <summary>
+        /// Send a notification to the server that some text was deleted at the client end.
+        /// </summary>
+        /// <param name="offset">The index of the deletion.</param>
+        /// <param name="text">The length of the deleted range.</param>
+        /// <exception cref="ArgumentNullException" />
+        /// <exception cref="ObjectDisposedException" />
+        /// <exception cref="InvalidOperationException" />
+        public void Delete(uint offset, uint length)
+        {
+            if (length == 0)
+                throw new ArgumentOutOfRangeException("deletion length cannot be zero");
+            if (isDisposed)
+                throw new ObjectDisposedException("OTEX.Client");
+            if (!connected)
+                throw new InvalidOperationException("cannot send an operation without being connected");
+
+            lock (stateLock)
+            {
+                outgoingOperations.Add(new Operation(ID, (int)offset, (int)length));
+            }
+        }
 
         /////////////////////////////////////////////////////////////////////
         // DISCONNECTING FROM THE SERVER
         /////////////////////////////////////////////////////////////////////
 
+        /// <summary>
+        /// Disconnect from an OTEX server. Does nothing if not already connected.
+        /// </summary>
         public void Disconnect()
         {
             if (connected)
