@@ -196,14 +196,10 @@
             // 
             // dlgServerOpenExisting
             // 
-            this.dlgServerOpenExisting.DefaultExt = "txt";
-            this.dlgServerOpenExisting.Filter = "Plain-text files|*.txt";
             this.dlgServerOpenExisting.Title = "Select an existing file to collaboratively edit";
             // 
             // dlgServerCreateNew
             // 
-            this.dlgServerCreateNew.DefaultExt = "txt";
-            this.dlgServerCreateNew.Filter = "Plain-text files|*.txt";
             this.dlgServerCreateNew.Title = "Select a new file to create collaboratively";
             // 
             // lblStatus

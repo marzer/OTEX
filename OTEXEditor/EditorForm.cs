@@ -29,6 +29,7 @@ namespace OTEX
         private Server otexServer = null;
         private Client otexClient = null;
         private volatile Thread clientConnectingThread = null;
+        private volatile bool closing = false;
 
         private bool EditingServerAddressMode
         {
@@ -114,8 +115,41 @@ namespace OTEX
             tbEditor.IndentBackColor = App.Theme.Background.Dark.Colour;
             tbEditor.ServiceLinesColor = App.Theme.Background.Light.Colour;
             tbEditor.LineNumberColor = App.Theme.Accent1.Mid.Colour;
+            tbEditor.CurrentLineColor = App.Theme.Background.Light.Colour;
+            tbEditor.SelectionColor = App.Theme.Accent1.Mid.Colour;
             tbEditor.Font = new Font(App.Theme.Monospaced.Normal.Regular.FontFamily, 11.0f);
+            tbEditor.WordWrap = true;
+            tbEditor.WordWrapAutoIndent = false;
+            tbEditor.WordWrapMode = WordWrapMode.WordWrapControlWidth;
             tbEditor.TabLength = 4;
+
+            //file dialog filters
+            dlgServerOpenExisting.Filter = dlgServerCreateNew.Filter =
+                "All plain-text files|"
+                    + "*.txt;*.cs;*.cpp;*.h;*.hpp;*.log;*.java;"
+                    + "*.js;*.vb;*.vbs;*.htm;*.html;*.php;*.css;"
+                    + "*.xml;*.sql;*.lua;*.bat;*.sh;*.ini;*.config;"
+                    + "*.cfg;*.ps;*.reg;*.hlsl;*.glsl;*.fx"
+                + "|Text files|*.txt"
+                + "|C# code files|*.cs"
+                + "|C++ code files|*.cpp;*.h;*.hpp"
+                + "|Log files|*.log"
+                + "|Javacode files|*.java"
+                + "|Javascript files|*.js"
+                + "|Visual Basic code files|*.vb;*.vbs"
+                + "|HTML files|*.htm;*.html"
+                + "|PHP scripts|*.php"
+                + "|CSS files|*.css"
+                + "|XML files|*.xml"
+                + "|SQL scripts|*.sql"
+                + "|Luascript files|*.lua"
+                + "|Batch scripts|*.bat"
+                + "|Shell scripts|*.sh"
+                + "|Settings files|*.ini;*.config;*.cfg"
+                + "|Powershell scripts|*.ps"
+                + "|Registry files|*.reg"
+                + "|Shader code files|*.hlsl;*.glsl;*.fx";
+            dlgServerOpenExisting.DefaultExt = dlgServerOpenExisting.DefaultExt = "txt";
 
             //set initial visibilities
             EditorMode = false;
@@ -163,10 +197,53 @@ namespace OTEX
             otexClient.OnConnected += (c) =>
             {
                 Debugger.I("Client: connected to {0}:{1}.", c.ServerAddress, c.ServerPort);
+                this.Execute(() =>
+                {
+                    tbEditor.Text = "";
+                    string ext = Path.GetExtension(c.ServerFilePath).ToLower();
+                    if (ext.Length > 0 && (ext = ext.Substring(1)).Length > 0)
+                    {
+                        Debugger.I("EXT: {0}", ext);
+                        switch (ext)
+                        {
+                            case "cs": tbEditor.Language = Language.CSharp; break;
+                            case "htm": tbEditor.Language = Language.HTML; break;
+                            case "html": tbEditor.Language = Language.HTML; break;
+                            case "js": tbEditor.Language = Language.JS; break;
+                            case "lua": tbEditor.Language = Language.Lua; break;
+                            case "php": tbEditor.Language = Language.PHP; break;
+                            case "sql": tbEditor.Language = Language.SQL; break;
+                            case "vb": tbEditor.Language = Language.VB; break;
+                            case "vbs": tbEditor.Language = Language.VB; break;
+                            case "xml": tbEditor.Language = Language.XML; break;
+                            default: tbEditor.Language = Language.Custom; break;
+                        }
+                    }
+                    else
+                        tbEditor.Language = Language.Custom;
+                }, false);
             };
-            otexClient.OnDisconnected += (c) =>
+            otexClient.OnIncomingOperations += (c,ops) =>
             {
-                Debugger.I("Client: disconnected.");
+                Debugger.I("Client: new operations received.");
+                string text = "";
+                foreach (var o in ops)
+                    text = o.Execute(text);
+                this.Execute(() => { tbEditor.Text = text; }, false);
+            };
+            otexClient.OnDisconnected += (c, serverSide) =>
+            {
+                Debugger.I("Client: disconnected {0}.", serverSide ? "(connection closed by server)" : "");
+
+                if (!closing)
+                {
+                    this.Execute(() =>
+                    {
+                        PendingConnectionMode = false;
+                        EditorMode = false;
+                        Text = App.Name;
+                    });
+                }
             };
         }
 
@@ -283,7 +360,6 @@ namespace OTEX
                 //started ok, toggle ui to Editor
                 this.Execute(() =>
                 {
-                    EditingServerAddressMode = false;
                     EditorMode = true;
                     Text = string.Format("Editing {0} ({1})", Path.GetFileName(otexClient.ServerFilePath), saddr);
                 });
@@ -363,12 +439,12 @@ namespace OTEX
 
         protected override void OnClosed(EventArgs e)
         {
+            closing = true;
             if (clientConnectingThread != null)
             {
                 clientConnectingThread.Join();
                 clientConnectingThread = null;
             }
-
             if (otexClient != null)
             {
                 otexClient.Dispose();
