@@ -41,7 +41,7 @@ namespace OTEX
         public Node(Guid? id = null)
         {
             if ((ID = id.HasValue ? id.Value : Guid.NewGuid()).Equals(Guid.Empty))
-                throw new ArgumentOutOfRangeException("id cannot be Guid.Empty");
+                throw new ArgumentOutOfRangeException("id", "id cannot be Guid.Empty");
         }
 
         /////////////////////////////////////////////////////////////////////

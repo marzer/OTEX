@@ -88,9 +88,9 @@ namespace OTEX
         internal Operation(Guid nodeID, int offset, string text)
         {
             if (text == null)
-                throw new ArgumentNullException("insert text cannot be null");
+                throw new ArgumentNullException("text");
             if (nodeID.Equals(Guid.Empty))
-                throw new ArgumentOutOfRangeException("nodeID cannot be Guid.Empty");
+                throw new ArgumentOutOfRangeException("nodeID", "nodeID cannot be Guid.Empty");
             node = nodeID;
             this.offset = offset;
             length = text.Length;
@@ -104,7 +104,7 @@ namespace OTEX
         internal Operation(Guid nodeID, int offset, int length)
         {
             if (nodeID.Equals(Guid.Empty))
-                throw new ArgumentOutOfRangeException("nodeID cannot be Guid.Empty");
+                throw new ArgumentOutOfRangeException("nodeID", "nodeID cannot be Guid.Empty");
             node = nodeID;
             this.offset = offset;
             this.length = length;
@@ -118,7 +118,7 @@ namespace OTEX
         internal Operation(Operation operation)
         {
             if (operation == null)
-                throw new ArgumentNullException("operation to copy cannot be null");
+                throw new ArgumentNullException("operation");
             node = operation.node;
             offset = operation.offset;
             length = operation.length;
@@ -136,9 +136,9 @@ namespace OTEX
         internal static void SymmetricLinearTransform(IEnumerable<Operation> list1, IEnumerable<Operation> list2)
         {
             if (list1 == null)
-                throw new ArgumentNullException("list1 cannot be null");
+                throw new ArgumentNullException("list1");
             if (list2 == null)
-                throw new ArgumentNullException("list2 cannot be null");
+                throw new ArgumentNullException("list2");
 
             if (list1 == null || list1.Count() == 0 || list2 == null || list2.Count() == 0)
                 return;
@@ -157,7 +157,7 @@ namespace OTEX
         internal void TransformAgainst(Operation operation)
         {
             if (operation == null)
-                throw new ArgumentNullException("operation cannot be null");
+                throw new ArgumentNullException("operation");
 
             if (IsInsertion && operation.IsInsertion)
                 IT_II(operation);
@@ -239,11 +239,11 @@ namespace OTEX
             if (IsNoop)
                 return document;
             if (document == null)
-                throw new ArgumentNullException("document cannot be null");
+                throw new ArgumentNullException("document");
             if (offset > document.Length)
-                throw new ArgumentOutOfRangeException("offset cannot be larger than document.length");
+                throw new ArgumentOutOfRangeException("offset", "offset cannot be larger than document.length");
             if (offset < 0)
-                throw new ArgumentOutOfRangeException("offset cannot be negative");
+                throw new ArgumentOutOfRangeException("offset", "offset cannot be negative");
 
             return IsInsertion ? document.Insert(offset, text)
                 : (offset == 0 && length >= document.Length ? "" : document.Remove(offset, length));

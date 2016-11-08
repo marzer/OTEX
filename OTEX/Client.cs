@@ -175,12 +175,12 @@ namespace OTEX
                     {
                         //session state
                         if (port < 1024)
-                            throw new ArgumentOutOfRangeException("Port must be between 1024 and 65535");
+                            throw new ArgumentOutOfRangeException("port","Port must be between 1024 and 65535");
                         if (address == null)
-                            throw new ArgumentNullException("Address cannot be null");
+                            throw new ArgumentNullException("address");
                         if (address.Equals(IPAddress.Any) || address.Equals(IPAddress.Broadcast) || address.Equals(IPAddress.None)
                             || address.Equals(IPAddress.IPv6Any) || address.Equals(IPAddress.IPv6None))
-                            throw new ArgumentOutOfRangeException("Address must be a valid non-range IP Address.");
+                            throw new ArgumentOutOfRangeException("address", "Address must be a valid non-range IP Address.");
 
                         //session connection
                         TcpClient tcpClient = null;
@@ -241,7 +241,7 @@ namespace OTEX
         }
 
         /////////////////////////////////////////////////////////////////////
-        // CONTROL THREAD
+        // CONTROL (LOOP) THREAD
         /////////////////////////////////////////////////////////////////////
 
         private void ControlThread(object o)
@@ -372,9 +372,9 @@ namespace OTEX
         public void Insert(uint offset, string text)
         {
             if (text == null)
-                throw new ArgumentNullException("insert text cannot be null");
+                throw new ArgumentNullException("text");
             if (text.Length == 0)
-                throw new ArgumentException("insert text cannot be blank");
+                throw new ArgumentException("insert text cannot be blank", "text");
             if (isDisposed)
                 throw new ObjectDisposedException("OTEX.Client");
             if (!connected)
@@ -391,13 +391,13 @@ namespace OTEX
         /// </summary>
         /// <param name="offset">The index of the deletion.</param>
         /// <param name="text">The length of the deleted range.</param>
-        /// <exception cref="ArgumentNullException" />
+        /// <exception cref="ArgumentOutOfRangeException" />
         /// <exception cref="ObjectDisposedException" />
         /// <exception cref="InvalidOperationException" />
         public void Delete(uint offset, uint length)
         {
             if (length == 0)
-                throw new ArgumentOutOfRangeException("deletion length cannot be zero");
+                throw new ArgumentOutOfRangeException("length", "deletion length cannot be zero");
             if (isDisposed)
                 throw new ObjectDisposedException("OTEX.Client");
             if (!connected)

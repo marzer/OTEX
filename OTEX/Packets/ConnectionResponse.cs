@@ -82,7 +82,7 @@ namespace OTEX.Packets
         public ConnectionResponse(string filePath, List<Operation> operations)
         {
             if ((filePath = (filePath ?? "").Trim()).Length == 0)
-                throw new ArgumentException("filePath cannot be empty");
+                throw new ArgumentException("filePath cannot be empty", "filePath");
             this.filePath = filePath;
             this.operations = operations;
             result = ResponseCode.Approved;
@@ -96,7 +96,7 @@ namespace OTEX.Packets
         public ConnectionResponse(ResponseCode failReason = ResponseCode.Other)
         {
             if (failReason == ResponseCode.Approved || failReason > ResponseCode.Other)
-                throw new ArgumentOutOfRangeException("failReason must be one of the negative ResponseCode values.");
+                throw new ArgumentOutOfRangeException("failReason", "failReason must be one of the negative ResponseCode values.");
             result = failReason;
         }
     }

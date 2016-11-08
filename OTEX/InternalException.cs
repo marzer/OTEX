@@ -9,9 +9,9 @@ namespace OTEX
     /// <summary>
     /// General-purpose exception class for capturing .NET exceptions.
     /// </summary>
-    public class InternalException : Exception
+    public sealed class InternalException : Exception
     {
-        public InternalException(Exception innerException)
+        internal InternalException(Exception innerException)
             : base(string.Format("{0}: {1}", innerException.GetType().FullName, innerException.Message), innerException) { }
 
         /// <summary>
@@ -19,10 +19,10 @@ namespace OTEX
         /// </summary>
         /// <param name="func">Function to execute.</param>
         /// <exception cref="ArgumentNullException"></exception>
-        public static InternalException Capture(Action func)
+        internal static InternalException Capture(Action func)
         {
             if (func == null)
-                throw new ArgumentNullException("func cannot be null");
+                throw new ArgumentNullException("func");
 
             InternalException output = null;
             try
@@ -34,22 +34,6 @@ namespace OTEX
                 output = new InternalException(exc);
             }
             return output;
-        }
-
-        /// <summary>
-        /// Perform an action, re-throwing any exceptions as an OTEX.InternalException.
-        /// </summary>
-        /// <param name="func">Function to execute.</param>
-        /// <exception cref="ArgumentNullException"></exception>
-        /// <exception cref="InternalException"></exception>
-        public static void Rethrow(Action func)
-        {
-            if (func == null)
-                throw new ArgumentNullException("func cannot be null");
-
-            InternalException thrown = Capture(func);
-            if (thrown != null)
-                throw thrown;
         }
     }
 }
