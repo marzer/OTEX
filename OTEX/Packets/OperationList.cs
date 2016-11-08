@@ -10,7 +10,7 @@ namespace OTEX.Packets
     /// A list of operations.
     /// </summary>
     [Serializable]
-    public sealed class OperationList : IPacketPayload, IOperationList
+    internal sealed class OperationList : IPacketPayload, IOperationList
     {
         /////////////////////////////////////////////////////////////////////
         // PROPERTIES/VARIABLES
@@ -46,7 +46,7 @@ namespace OTEX.Packets
         /// <summary>
         /// Create a text insertion operation.
         /// </summary>
-        public OperationList(List<Operation> ops)
+        internal OperationList(List<Operation> ops)
         {
             operations = ops;
         }

@@ -10,7 +10,7 @@ namespace OTEX.Packets
     /// Connection response packet sent from an OTEX server to client.
     /// </summary>
     [Serializable]
-    public sealed class ConnectionResponse : IPacketPayload, IOperationList
+    internal sealed class ConnectionResponse : IPacketPayload, IOperationList
     {
         /////////////////////////////////////////////////////////////////////
         // PROPERTIES/VARIABLES

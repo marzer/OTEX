@@ -12,7 +12,7 @@ namespace OTEX
     /// Packets sent between OTEX nodes.
     /// </summary>
     [Serializable]
-    public sealed class Packet
+    internal sealed class Packet
     {
         /////////////////////////////////////////////////////////////////////
         // PROPERTIES/VARIABLES

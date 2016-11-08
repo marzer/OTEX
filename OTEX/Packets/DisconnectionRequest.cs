@@ -10,7 +10,7 @@ namespace OTEX.Packets
     /// Disconnection request packet sent from an OTEX client to server (or vice versa).
     /// </summary>
     [Serializable]
-    public sealed class DisconnectionRequest : IPacketPayload
+    internal sealed class DisconnectionRequest : IPacketPayload
     {
         /////////////////////////////////////////////////////////////////////
         // PROPERTIES/VARIABLES

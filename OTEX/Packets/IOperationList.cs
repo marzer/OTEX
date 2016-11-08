@@ -9,7 +9,7 @@ namespace OTEX.Packets
     /// <summary>
     /// Interface for packets that contain a list of operations.
     /// </summary>
-    public interface IOperationList
+    internal interface IOperationList
     {
         List<Operation> Operations { get; }
     }

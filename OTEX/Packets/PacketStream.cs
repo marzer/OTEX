@@ -13,7 +13,7 @@ namespace OTEX.Packets
     /// <summary>
     /// Reads and writes OTEX packets using a TCPClient.
     /// </summary>
-    public class PacketStream : IDisposable
+    internal class PacketStream : IDisposable
     {
         /////////////////////////////////////////////////////////////////////
         // PROPERTIES/VARIABLES

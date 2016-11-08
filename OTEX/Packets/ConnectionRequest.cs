@@ -11,7 +11,7 @@ namespace OTEX.Packets
     /// Connection request packet sent from an OTEX client to server.
     /// </summary>
     [Serializable]
-    public sealed class ConnectionRequest : IPacketPayload
+    internal sealed class ConnectionRequest : IPacketPayload
     {
         /////////////////////////////////////////////////////////////////////
         // PROPERTIES/VARIABLES

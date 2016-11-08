@@ -41,7 +41,7 @@ namespace OTEX
         {
             get { return text; }
         }
-        public string text;
+        private string text;
 
         /// <summary>
         /// Length of character span affected by this operation.
@@ -50,7 +50,7 @@ namespace OTEX
         {
             get { return length; }
         }
-        public int length;
+        private int length;
 
         /// <summary>
         /// Is this operation a no-op?
@@ -85,7 +85,7 @@ namespace OTEX
         /// </summary>
         /// <exception cref="ArgumentNullException" />
         /// <exception cref="ArgumentOutOfRangeException" />
-        public Operation(Guid nodeID, int offset, string text)
+        internal Operation(Guid nodeID, int offset, string text)
         {
             if (text == null)
                 throw new ArgumentNullException("insert text cannot be null");
@@ -101,7 +101,7 @@ namespace OTEX
         /// Create a text deletion operation.
         /// </summary>
         /// <exception cref="ArgumentOutOfRangeException" />
-        public Operation(Guid nodeID, int offset, int length)
+        internal Operation(Guid nodeID, int offset, int length)
         {
             if (nodeID.Equals(Guid.Empty))
                 throw new ArgumentOutOfRangeException("nodeID cannot be Guid.Empty");
@@ -115,7 +115,7 @@ namespace OTEX
         /// Copy an existing operation.
         /// </summary>
         /// <exception cref="ArgumentNullException" />
-        public Operation(Operation operation)
+        internal Operation(Operation operation)
         {
             if (operation == null)
                 throw new ArgumentNullException("operation to copy cannot be null");
@@ -133,7 +133,7 @@ namespace OTEX
         /// Perform a symmetric linear transform (SLOT) on two sets of operations.
         /// </summary>
         /// <exception cref="ArgumentNullException" />
-        public static void SymmetricLinearTransform(IEnumerable<Operation> list1, IEnumerable<Operation> list2)
+        internal static void SymmetricLinearTransform(IEnumerable<Operation> list1, IEnumerable<Operation> list2)
         {
             if (list1 == null)
                 throw new ArgumentNullException("list1 cannot be null");
@@ -154,7 +154,7 @@ namespace OTEX
             }
         }
 
-        public void TransformAgainst(Operation operation)
+        internal void TransformAgainst(Operation operation)
         {
             if (operation == null)
                 throw new ArgumentNullException("operation cannot be null");
