@@ -72,7 +72,7 @@ namespace OTEX.Packets
         {
             //tcp client
             if (client == null)
-                throw new ArgumentNullException("client cannot be null");
+                throw new ArgumentNullException("client");
             if (!client.Connected)
                 throw new IOException("client was not connected");
             this.client = client;
@@ -176,22 +176,22 @@ namespace OTEX.Packets
             if (!client.Connected)
                 throw new IOException("client has been disconnected");
             if (data == null)
-                throw new ArgumentNullException("data cannot be null");
+                throw new ArgumentNullException("data");
             if (!typeof(T).IsSerializable)
-                throw new ArgumentException("data type must have the [Serializable] attribute");
+                throw new ArgumentException("data type must have the [Serializable] attribute", "data");
             if (senderID.Equals(Guid.Empty))
-                throw new ArgumentOutOfRangeException("senderID cannot be Guid.Empty");
+                throw new ArgumentOutOfRangeException("senderID", "senderID cannot be Guid.Empty");
 
-            //packet
+            //packet data
             Packet packet = new Packet(senderID, data.PacketPayloadType, data.Serialize());
             var serializedPacket = packet.Serialize();
-
-            //send length
             var serializedLength = BitConverter.GetBytes(serializedPacket.Length);
-            stream.Write(serializedLength, 0, serializedLength.Length);
 
-            //send data
-            stream.Write(serializedPacket, 0, serializedPacket.Length);
+            //combine and send together (reduce hitting Nagle's)
+            byte[] output = new byte[serializedLength.Length + serializedPacket.Length];
+            serializedLength.CopyTo(output, 0);
+            serializedPacket.CopyTo(output, serializedLength.Length);
+            stream.Write(output, 0, output.Length);
         }
 
         /////////////////////////////////////////////////////////////////////
