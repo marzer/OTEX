@@ -87,9 +87,10 @@ namespace OTEX
             lblAbout.Font = App.Theme.Controls.Normal.Underline;
             lblAbout.MouseEnter += (s, e) => { lblAbout.ForeColor = App.Theme.Foreground.Mid.Colour; };
             lblAbout.MouseLeave += (s, e) => { lblAbout.ForeColor = App.Theme.Background.Light.Colour; };
+            lblAbout.Click += (s, e) => { App.Website.LaunchWebsite(); };
 
             //version label
-            lblVersion.Text = App.AssemblyVersion.ToString();
+            lblVersion.Text = "v" + App.AssemblyVersion.ToString();
 
             //client connection panel
             btnClient.TextAlign = btnServerNew.TextAlign = btnServerExisting.TextAlign = ContentAlignment.MiddleCenter;
@@ -261,8 +262,6 @@ namespace OTEX
             PendingConnectionMode = true;
             clientConnectingThread = new Thread((o) =>
             {
-                Thread.Sleep(1000);
-
                 object[] objs = o as object[];
                 var addr = objs[0] as IPAddress;
                 var prt = (ushort)objs[1];

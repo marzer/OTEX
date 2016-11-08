@@ -221,7 +221,7 @@
             this.panBody.Dock = System.Windows.Forms.DockStyle.Fill;
             this.panBody.Location = new System.Drawing.Point(0, 32);
             this.panBody.Name = "panBody";
-            this.panBody.Size = new System.Drawing.Size(837, 368);
+            this.panBody.Size = new System.Drawing.Size(1074, 446);
             this.panBody.TabIndex = 9;
             // 
             // panSplash
@@ -233,13 +233,13 @@
             this.panSplash.Controls.Add(this.panClient);
             this.panSplash.Location = new System.Drawing.Point(27, 19);
             this.panSplash.Name = "panSplash";
-            this.panSplash.Size = new System.Drawing.Size(798, 313);
+            this.panSplash.Size = new System.Drawing.Size(798, 397);
             this.panSplash.TabIndex = 5;
             // 
             // lblAbout
             // 
             this.lblAbout.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.lblAbout.Location = new System.Drawing.Point(0, 275);
+            this.lblAbout.Location = new System.Drawing.Point(0, 359);
             this.lblAbout.Margin = new System.Windows.Forms.Padding(0);
             this.lblAbout.Name = "lblAbout";
             this.lblAbout.Size = new System.Drawing.Size(100, 30);
@@ -251,10 +251,10 @@
             // lblVersion
             // 
             this.lblVersion.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.lblVersion.Location = new System.Drawing.Point(668, 275);
+            this.lblVersion.Location = new System.Drawing.Point(696, 359);
             this.lblVersion.Margin = new System.Windows.Forms.Padding(0);
             this.lblVersion.Name = "lblVersion";
-            this.lblVersion.Size = new System.Drawing.Size(130, 30);
+            this.lblVersion.Size = new System.Drawing.Size(100, 30);
             this.lblVersion.TabIndex = 4;
             this.lblVersion.Text = "label2";
             this.lblVersion.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
@@ -265,14 +265,14 @@
             this.panCaption.Location = new System.Drawing.Point(0, 0);
             this.panCaption.Margin = new System.Windows.Forms.Padding(0);
             this.panCaption.Name = "panCaption";
-            this.panCaption.Size = new System.Drawing.Size(837, 32);
+            this.panCaption.Size = new System.Drawing.Size(1074, 32);
             this.panCaption.TabIndex = 8;
             // 
             // EditorForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(837, 400);
+            this.ClientSize = new System.Drawing.Size(1074, 478);
             this.Controls.Add(this.panBody);
             this.Controls.Add(this.panCaption);
             this.MinimumSize = new System.Drawing.Size(500, 400);
