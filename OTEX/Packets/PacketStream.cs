@@ -33,6 +33,19 @@ namespace OTEX.Packets
         private volatile bool isDisposed = false;
 
         /// <summary>
+        /// Is the tcp client still connected to the remote endpoint?
+        /// </summary>
+        public bool Connected
+        {
+            get
+            {
+                if (isDisposed)
+                    throw new ObjectDisposedException("OTEX.PacketStream");
+                return client.Connected;
+            }
+        }
+
+        /// <summary>
         /// Is there incoming data waiting to be read?
         /// </summary>
         public bool DataAvailable
