@@ -26,9 +26,16 @@ namespace OTEX
         public event Action<Client> OnConnected;
 
         /// <summary>
-        /// Triggered when the client is disconnected from an OTEX server.
+        /// Triggered when the client receives a new list of operations from the server.
+        /// Do not call Connect or Disconnect from this callback or you will deadlock!
         /// </summary>
-        public event Action<Client> OnDisconnected;
+        public event Action<Client, IEnumerable<Operation>> OnIncomingOperations;
+
+        /// <summary>
+        /// Triggered when the client is disconnected from an OTEX server.
+        /// Boolean parameter is true if the disconnection was forced by the server.
+        /// </summary>
+        public event Action<Client, bool> OnDisconnected;
 
         /////////////////////////////////////////////////////////////////////
         // PROPERTIES/VARIABLES
@@ -51,6 +58,7 @@ namespace OTEX
             get { return connected; }
         }
         private volatile bool connected = false;
+        private volatile bool clientSideDisconnection = false;
 
         /// <summary>
         /// Lock object for connected state.
@@ -85,9 +93,23 @@ namespace OTEX
         private volatile string serverFilePath;
 
         /// <summary>
+        /// ID of server.
+        /// </summary>
+        public Guid ServerID
+        {
+            get { return serverID; }
+        }
+        private Guid serverID = Guid.Empty;
+
+        /// <summary>
         /// Thread for managing client connection.
         /// </summary>
         private Thread thread = null;
+
+        /// <summary>
+        /// Have we sent a request for operations to the server?
+        /// </summary>
+        private volatile bool awaitingOperationList = false;
 
         /////////////////////////////////////////////////////////////////////
         // CONSTRUCTION
@@ -148,6 +170,8 @@ namespace OTEX
                         //session connection
                         TcpClient tcpClient = null;
                         PacketStream packetStream = null;
+                        Packet responsePacket = null;
+                        ConnectionResponse response = null;
                         try
                         {
                             //establish tcp connection
@@ -160,18 +184,14 @@ namespace OTEX
                             packetStream.Write(ID, new ConnectionRequest(password));
 
                             //get response
-                            Packet responsePacket = packetStream.Read();
+                            responsePacket = packetStream.Read();
+                            if (responsePacket.SenderID.Equals(Guid.Empty))
+                                throw new InvalidDataException("responsePacket.SenderID was Guid.Empty");
                             if (responsePacket.PayloadType != ConnectionResponse.PayloadType)
                                 throw new InvalidDataException("unexpected response packet type");
-                            ConnectionResponse response = responsePacket.Payload.Deserialize<ConnectionResponse>();
+                            response = responsePacket.Payload.Deserialize<ConnectionResponse>();
                             if (response.Result != ConnectionResponse.ResponseCode.Approved)
                                 throw new Exception(string.Format("connection rejected by server: {0}",response.Result));
-
-                            //set connected state
-                            connected = true;
-                            serverPort = port;
-                            serverAddress = address;
-                            serverFilePath = response.FilePath;
                         }
                         catch (Exception)
                         {
@@ -182,35 +202,107 @@ namespace OTEX
                             throw;
                         }
 
+                        //set connected state
+                        connected = true;
+                        clientSideDisconnection = false;
+                        serverPort = port;
+                        serverAddress = address;
+                        serverFilePath = response.FilePath;
+                        serverID = responsePacket.SenderID;
+                        awaitingOperationList = false;
+
+                        //fire events
+                        OnConnected?.Invoke(this);
+                        if (response.Operations != null && response.Operations.Count > 0)
+                            OnIncomingOperations?.Invoke(this, response.Operations);
+
                         //create management thread
-                        thread = new Thread((o) =>
-                        {
-                            var objs = o as object[];
-                            var client = objs[0] as TcpClient;
-                            var stream = objs[1] as PacketStream;
-
-                            while (connected)
-                            {
-                                Thread.Sleep(10);
-                            }
-
-                            //disconnect
-                            CaptureException(() => { stream.Write(ID, new DisconnectionRequest()); });
-                            stream.Dispose();
-                            tcpClient.Close();
-
-                            //fire event
-                            OnDisconnected?.Invoke(this);
-                        });
+                        thread = new Thread(ControlThread);
                         thread.IsBackground = false;
                         thread.Start(new object[]{ tcpClient, packetStream });
 
-                        //fire event
-                        OnConnected?.Invoke(this);
                     }
                 }
             }
         }
+
+        /////////////////////////////////////////////////////////////////////
+        // CONTROL THREAD
+        /////////////////////////////////////////////////////////////////////
+
+        private void ControlThread(object o)
+        {
+            var objs = o as object[];
+            var client = objs[0] as TcpClient;
+            var stream = objs[1] as PacketStream;
+
+            while (!clientSideDisconnection && client.Connected)
+            {
+                var lastOpsRequestTimer = new Marzersoft.Timer();
+                
+                //listen for packets first
+                //(returns true if the server has asked us to disconnect)
+                if (Listen(stream))
+                {
+                    //override clientSideDisconnection so we don't send
+                    //unnecessarily send a disconnection to the server
+                    clientSideDisconnection = false;
+                    break;
+                }
+
+                //send period requests for new operations
+                if (!awaitingOperationList && lastOpsRequestTimer.Seconds >= 1.0)
+                {
+                    //todo: send operations request
+
+
+                    lastOpsRequestTimer.Reset();
+                }
+            }
+
+            //disconnect
+            connected = false;
+            if (clientSideDisconnection) //tell the server the user is disconnecting client-side
+                CaptureException(() => { stream.Write(ID, new DisconnectionRequest()); });
+            stream.Dispose();
+            client.Close();
+
+            //fire event
+            OnDisconnected?.Invoke(this, !clientSideDisconnection);
+        }
+
+        private bool Listen(PacketStream stream)
+        {
+            while (stream.Connected && stream.DataAvailable)
+            {
+                //read incoming packet
+                Packet packet = null;
+                if (CaptureException(() => { packet = stream.Read(); }))
+                    break;
+
+                //check if guid of sender matches server
+                if (!packet.SenderID.Equals(serverID))
+                    continue; //ignore 
+
+                switch (packet.PayloadType)
+                {
+                    case DisconnectionRequest.PayloadType: //disconnection request from server
+                        return true;
+
+                    case OperationList.PayloadType:  //operation list
+                        if (awaitingOperationList)
+                        {
+
+                            //todo: process ops list client-side
+
+                            awaitingOperationList = false;
+                        }
+                        break;
+                }
+            }
+            return false;
+        }
+
 
         /////////////////////////////////////////////////////////////////////
         // DISCONNECTING FROM THE SERVER
@@ -222,9 +314,9 @@ namespace OTEX
             {
                 lock (connectedLock)
                 {
-                    if (connected)
+                    if (connected && !clientSideDisconnection)
                     {
-                        connected = false;
+                        clientSideDisconnection = true;
                         if (thread != null)
                         {
                             thread.Join();
