@@ -34,16 +34,18 @@ namespace OTEX
         /// <summary>
         /// Constructs a password.
         /// </summary>
-        /// <param name="plainTextPassword">The password value in plain text.</param>
+        /// <param name="password">The password value in plain text, between 6 and 32 characters long. Whitespace at the ends is trimmed.</param>
         /// <exception cref="ArgumentException" />
-        /// <exception cref="ArgumentNullException" />
-        public Password(string plainTextPassword)
+        /// <exception cref="ArgumentOutOfRangeException" />
+        public Password(string password)
         {
-            if (plainTextPassword == null)
-                throw new ArgumentNullException("plainTextPassword cannot be null");
-            if (plainTextPassword.Length == 0)
-                throw new ArgumentException("plainTextPassword cannot be blank");
-            EncyptedPassword = plainTextPassword.Encrypt(EncryptionKey.ToString());
+            if ((password = (password ?? "").Trim()).Length == 0)
+                throw new ArgumentException("password cannot be blank", "password");
+            if (password.Length < 6 || password.Length > 32)
+                throw new ArgumentOutOfRangeException("password", "password must be between 6 and 32 characters");
+            if (password.IndexOfAny(new char[] { '\r', '\n', '\t', '\f', '\a', '\b', '\v' }) != -1)
+                throw new ArgumentOutOfRangeException("password", "password contains reserved characters");
+            EncyptedPassword = password.Encrypt(EncryptionKey.ToString());
         }
 
         /////////////////////////////////////////////////////////////////////
@@ -55,10 +57,10 @@ namespace OTEX
         /// </summary>
         /// <param name="otherPassword">The other password object to match against.</param>
         /// <exception cref="ArgumentNullException" />
-        public bool Matches(Password otherPassword)
+        internal bool Matches(Password otherPassword)
         {
             if (otherPassword == null)
-                throw new ArgumentNullException("otherPassword cannot be null");
+                throw new ArgumentNullException("otherPassword");
             return otherPassword.EncyptedPassword.Equals(EncyptedPassword);
         }
     }
