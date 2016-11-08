@@ -239,12 +239,11 @@ namespace OTEX
         private void ListenThread(object listenerObject)
         {
             TcpListener listener = listenerObject as TcpListener;
-            int flushTimeout = 60000;
             List<Thread> clientThreads = new List<Thread>();
+            var flushTimer = new Marzersoft.Timer();
             while (running)
             {
-                //sleep a bit (not raw spin-waiting)
-                Thread.Sleep(10);
+                Thread.Sleep(1);
 
                 //accept the connection
                 while (listener.Pending())
@@ -261,13 +260,13 @@ namespace OTEX
                 }
 
                 //flush file contents to disk periodically
-                if ((flushTimeout -= 10) <= 0)
+                if (flushTimer.Seconds >= 15.0)
                 {
-                    flushTimeout = 60000;
                     lock (stateLock)
                     {
                         CaptureException(() => { SyncFileContents(); });
                     }
+                    flushTimer.Reset();
                 }
             }
 
@@ -303,7 +302,7 @@ namespace OTEX
                 //check if client has sent data
                 if (!stream.DataAvailable)
                 {
-                    Thread.Sleep(10);
+                    Thread.Sleep(1);
                     continue;
                 }
 
@@ -357,7 +356,7 @@ namespace OTEX
                         if (!CaptureException(() => { stream.Write(ID, new ConnectionResponse(filePath, masterOperations)); }))
                         {
                             //create the list of staged operations for this client
-                            outgoingOperations[clientGUID] = new List<Operation>();
+                            outgoingOperations[packet.SenderID] = new List<Operation>();
 
                             //add to list of connected clients
                             connectedClients.Add(clientGUID = packet.SenderID);
