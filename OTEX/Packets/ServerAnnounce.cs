@@ -37,6 +37,15 @@ namespace OTEX.Packets
         private string name;
 
         /// <summary>
+        /// Path (on the server) of the file being edited by the session.
+        /// </summary>
+        public string FilePath
+        {
+            get { return filePath; }
+        }
+        private string filePath;
+
+        /// <summary>
         /// Server port.
         /// </summary>
         public ushort Port
@@ -54,6 +63,24 @@ namespace OTEX.Packets
         }
         private bool requiresPassword;
 
+        /// <summary>
+        /// How many clients are currently connected?
+        /// </summary>
+        public byte ClientCount
+        {
+            get { return clientCount; }
+        }
+        private byte clientCount;
+
+        /// <summary>
+        /// How many clients are allowed to be connected at once?
+        /// </summary>
+        public byte MaxClients
+        {
+            get { return maxClients; }
+        }
+        private byte maxClients;
+
         /////////////////////////////////////////////////////////////////////
         // CONSTRUCTORS
         /////////////////////////////////////////////////////////////////////
@@ -61,19 +88,18 @@ namespace OTEX.Packets
         /// <summary>
         /// Constructs a server's announce packet.
         /// </summary>
-        /// <param name="id">Server's session id.</param>
-        /// <param name="name">Server's friendly name.</param>
-        /// <param name="port">Server's listen port.</param>
-        /// <param name="requiresPassword">Does this server require a password?</param>
-        /// <exception cref="ArgumentOutOfRangeException" />
-        public ServerAnnounce(Guid id, string name, ushort port, bool requiresPassword)
+        /// <param name="server">Server being announced</param>
+        /// <exception cref="ArgumentNullException" />
+        public ServerAnnounce(Server server)
         {
-            if ((this.id = id).Equals(Guid.Empty))
-                throw new ArgumentOutOfRangeException("id", "id cannot be Guid.Empty");
-            if ((this.port = port) < 1024)
-                throw new ArgumentOutOfRangeException("Port", "Port must be between 1024 and 65535");
-            this.name = (name ?? "").Trim();
-            this.requiresPassword = requiresPassword;
+            if (server == null)
+                throw new ArgumentNullException("server", "server cannot be null");
+            clientCount = server.ClientCount;
+            maxClients = server.MaxClients;
+            requiresPassword = server.RequiresPassword;
+            port = server.Port;
+            name = server.Name ?? "";
+            filePath = server.FilePath ?? "";
         }
     }
 }

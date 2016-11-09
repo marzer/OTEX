@@ -45,7 +45,7 @@ namespace OTEX
         {
             get
             {
-                return string.Format("  {0} file [/PORT port] [/NAME name] [/PASSWORD pass] [/EDIT|/NEW] [/ANNOUNCE] [/?]",
+                return string.Format("  {0} [file] [/EDIT|/NEW] [/PORT port] [/NAME name] [/PASSWORD pass] [/PUBLIC] [/?]",
                     Process.GetCurrentProcess().ProcessName.ToUpper());
             }
         }
@@ -60,6 +60,11 @@ namespace OTEX
                 StringBuilder sb = new StringBuilder();
                 sb.AppendLine(Usage).AppendLine();
                 sb.AppendLine("           file: Path to the plain text file to collaboratively edit.");
+                sb.AppendLine("                 Omitting file path will create a transient session");
+                sb.AppendLine("                 (client edits will be lost when the server is shut down).");
+                sb.AppendLine("          /EDIT: If a file already exists at the given path, edit it");
+                sb.AppendLine("                 (do not overwrite with a new file). This is default.");
+                sb.AppendLine("           /NEW: Opposite of /EDIT.");
                 sb.AppendLine("     /PORT port: Port on which to listen for new OTEX TCP client connections,");
                 sb.AppendLine("                 between 1024 and 65535. Defaults to 55555.");
                 sb.AppendLine("                 Does not change announce port, which is always 55555.");
@@ -69,10 +74,7 @@ namespace OTEX
                 sb.AppendLine(" /PASSWORD pass: Password required to connect to this server.");
                 sb.AppendLine("                 Must be between 6 and 32 characters.");
                 sb.AppendLine("                 Omit to allow clients to connect without a password.");
-                sb.AppendLine("          /EDIT: If a file already exists at the given path, edit it");
-                sb.AppendLine("                 (do not overwrite with a new file). This is default.");
-                sb.AppendLine("           /NEW: Opposite of /EDIT.");
-                sb.AppendLine("      /ANNOUNCE: Regularly broadcast the presence of server to OTEX clients.");
+                sb.AppendLine("        /PUBLIC: Regularly broadcast the presence of this server to OTEX clients.");
                 sb.AppendLine("             /?: Prints help and exits.");
                 sb.AppendLine();
                 sb.AppendLine("Arguments may appear in any order. /SWITCHES and file paths are not case-sensitive.");
@@ -171,7 +173,7 @@ namespace OTEX
                     else if (match = (arguments[i].Value.CompareTo("new") == 0))
                         startParams.EditMode = false;
                     else if (match = (arguments[i].Value.CompareTo("announce") == 0))
-                        startParams.Announce = true;
+                        startParams.Public = true;
 
                     if (match)
                         arguments[i].Handled = true;
@@ -182,7 +184,7 @@ namespace OTEX
                 {
                     if (arguments[i].Flag || arguments[i].Handled)
                         continue;
-                    startParams.Path = arguments[i].Value;
+                    startParams.FilePath = arguments[i].Value;
                 }
             }
             catch (Exception exc)
@@ -199,7 +201,6 @@ namespace OTEX
                 return 1;
             }
 
-
             //create server
             server = new Server();
 
@@ -214,7 +215,7 @@ namespace OTEX
                 Out("      File: {0}", s.FilePath);
                 Out("      Port: {0}", s.Port);
                 Out("  Password: {0}", s.RequiresPassword);
-                Out("  Announce: {0}", s.Announce);
+                Out("    Public: {0}", s.Public);
             };
             server.OnClientConnected += (s,id) =>
             {

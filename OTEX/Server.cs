@@ -60,7 +60,7 @@ namespace OTEX
             /// <summary>
             /// Path to the text file you'd like clients to edit/create.
             /// </summary>
-            public string Path = "";
+            public string FilePath = "";
 
             /// <summary>
             /// How to handle the file given by Path if it already exists.
@@ -82,12 +82,17 @@ namespace OTEX
             /// <summary>
             /// Advertise the presence of this server so it shows up in local server browsers.
             /// </summary>
-            public bool Announce = false;
+            public bool Public = false;
 
             /// <summary>
             /// The friendly name of the server.
             /// </summary>
             public string Name = "";
+
+            /// <summary>
+            /// How many clients are allowed to be connected at once?
+            /// </summary>
+            public byte MaxClients = 40;
         }
         private volatile StartParams startParams = null;
 
@@ -96,7 +101,7 @@ namespace OTEX
         /// </summary>
         public string FilePath
         {
-            get { return startParams == null ? "" : startParams.Path; }
+            get { return startParams == null ? "" : startParams.FilePath; }
         }
 
         /// <summary>
@@ -110,9 +115,9 @@ namespace OTEX
         /// <summary>
         /// Is this server broadcasting its presence?
         /// </summary>
-        public bool Announce
+        public bool Public
         {
-            get { return startParams == null ? false : startParams.Announce; }
+            get { return startParams == null ? false : startParams.Public; }
         }
 
         /// <summary>
@@ -144,9 +149,17 @@ namespace OTEX
         /// <summary>
         /// How many clients are currently connected?
         /// </summary>
-        public int ClientCount
+        public byte ClientCount
         {
-            get { return connectedClients.Count; }
+            get { return (byte)connectedClients.Count; }
+        }
+
+        /// <summary>
+        /// How many clients are allowed to be connected at once?
+        /// </summary>
+        public byte MaxClients
+        {
+            get { return startParams == null ? (byte)40u : startParams.MaxClients; }
         }
 
         /// <summary>
@@ -245,13 +258,12 @@ namespace OTEX
                             throw new ArgumentNullException("startParams");
 
                         //session state
-                        if ((startParams.Path = (startParams.Path ?? "").Trim()).Length == 0)
-                            throw new ArgumentException("startParams.Path cannot be empty", "startParams.Path");
+                        startParams.FilePath = (startParams.FilePath ?? "").Trim();
                         if (startParams.Port < 1024)
                             throw new ArgumentOutOfRangeException("startParams.Port", "Port must be between 1024 and 65535");
+                        if ((startParams.Name = (startParams.Name ?? "").Trim()).Length > 32)
+                            startParams.Name = startParams.Name.Substring(0, 32);
                         this.startParams = startParams;
-                        if ((this.startParams.Name = (this.startParams.Name ?? "").Trim()).Length > 32)
-                            this.startParams.Name = this.startParams.Name.Substring(0, 32);
 
                         //session initialization
                         TcpListener listener = null;
@@ -259,7 +271,7 @@ namespace OTEX
                         try
                         {
                             //read file
-                            if (startParams.EditMode && File.Exists(FilePath))
+                            if (startParams.FilePath.Length > 0 && startParams.EditMode && File.Exists(FilePath))
                             {
                                 masterOperations.Add(new Operation(ID, 0,
                                     fileContents = File.ReadAllText(FilePath, FilePath.DetectEncoding())
@@ -275,7 +287,7 @@ namespace OTEX
                             listener.AllowNatTraversal(true);
                             listener.Start();
 
-                            if (startParams.Announce)
+                            if (startParams.Public)
                             {
                                 //create udp client
                                 announcer = new UdpClient();
@@ -318,8 +330,6 @@ namespace OTEX
             var clientThreads = new List<Thread>();
             var flushTimer = new Marzersoft.Timer();
             var announceTimer = new Marzersoft.Timer();
-            var announceData = (new ServerAnnounce(ID, startParams.Name, startParams.Port, startParams.Password != null))
-                .Serialize();
 
             while (running)
             {
@@ -340,17 +350,18 @@ namespace OTEX
                 }
 
                 //announce
-                if (startParams.Announce && announceTimer.Seconds >= 1.0)
+                if (startParams.Public && announceTimer.Seconds >= 1.0)
                 {
                     CaptureException(() =>
                     {
+                        var announceData = (new ServerAnnounce(this)).Serialize();
                         announcer.Send(announceData, announceData.Length, new IPEndPoint(IPAddress.Broadcast, 55555));
                     });
                     announceTimer.Reset();
                 }
 
                 //flush file contents to disk periodically
-                if (flushTimer.Seconds >= 15.0)
+                if (startParams.FilePath.Length > 0 && flushTimer.Seconds >= 15.0)
                 {
                     lock (stateLock)
                     {
@@ -368,7 +379,8 @@ namespace OTEX
                 thread.Join();
 
             //final flush to disk (don't need a lock this time, all client threads have stopped)
-            CaptureException(() => { SyncFileContents(); });
+            if (startParams.FilePath.Length > 0)
+                CaptureException(() => { SyncFileContents(); });
         }
 
         /////////////////////////////////////////////////////////////////////
@@ -443,7 +455,7 @@ namespace OTEX
                         }
 
                         //send response with initial sync list
-                        if (!CaptureException(() => { stream.Write(ID, new ConnectionResponse(startParams.Path, masterOperations)); }))
+                        if (!CaptureException(() => { stream.Write(ID, new ConnectionResponse(startParams.FilePath, masterOperations)); }))
                         {
                             //create the list of staged operations for this client
                             outgoingOperations[packet.SenderID] = new List<Operation>();

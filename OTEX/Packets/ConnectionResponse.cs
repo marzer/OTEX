@@ -78,12 +78,9 @@ namespace OTEX.Packets
         /// </summary>
         /// <param name="filePath">Path (on the server) of the file being edited by the session.</param>
         /// <param name="operations">List of initial operations to send back to the client.</param>
-        /// <exception cref="ArgumentException" />
         public ConnectionResponse(string filePath, List<Operation> operations)
         {
-            if ((filePath = (filePath ?? "").Trim()).Length == 0)
-                throw new ArgumentException("filePath cannot be empty", "filePath");
-            this.filePath = filePath;
+            this.filePath = (filePath ?? "").Trim();
             this.operations = operations;
             result = ResponseCode.Approved;
         }

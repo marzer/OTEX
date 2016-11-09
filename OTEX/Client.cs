@@ -222,7 +222,7 @@ namespace OTEX
                         clientSideDisconnection = false;
                         serverPort = port;
                         serverAddress = address;
-                        serverFilePath = response.FilePath;
+                        serverFilePath = response.FilePath ?? "";
                         serverID = responsePacket.SenderID;
                         awaitingOperationList = false;
 
