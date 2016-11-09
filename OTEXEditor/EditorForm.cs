@@ -1,22 +1,15 @@
 ﻿using Marzersoft;
 using Marzersoft.Forms;
 using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using FastColoredTextBoxNS;
-using Marzersoft.Themes;
 using System.Net;
 using System.Text.RegularExpressions;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.IO;
-using static FastColoredTextBoxNS.ReplaceMultipleTextCommand;
+using DiffPlex;
 
 namespace OTEX
 {
@@ -31,6 +24,9 @@ namespace OTEX
         private Client otexClient = null;
         private volatile Thread clientConnectingThread = null;
         private volatile bool closing = false;
+        private volatile string previousText = null;
+        private static readonly Differ differ = new Differ();
+        private volatile bool processingRemoteChanges = false;
 
         private bool EditingServerAddressMode
         {
@@ -94,7 +90,7 @@ namespace OTEX
             lblAbout.Click += (s, e) => { App.Website.LaunchWebsite(); };
 
             //version label
-            lblVersion.Text = "v" + App.AssemblyVersion.ToString();
+            lblVersion.Text = "v" + Marzersoft.Text.REGEX_VERSION_REPEATING_ZEROES.Replace(App.AssemblyVersion.ToString(),"");
 
             //client connection panel
             btnClient.TextAlign = btnServerNew.TextAlign = btnServerExisting.TextAlign = ContentAlignment.MiddleCenter;
@@ -128,19 +124,37 @@ namespace OTEX
             tbEditor.LineInterval = 2;
             tbEditor.AllowMacroRecording = false;
             tbEditor.CaretColor = App.Theme.Accent1.LightLight.Colour;
-            tbEditor.Pasting += (sender, args) =>
+            tbEditor.TextChanging += (sender, args) =>
             {
-                this.Execute(() =>
-                {
-                    EditorInserting(args.InsertingText = args.InsertingText
-                        .Replace("\t", new string(' ', tbEditor.TabLength))
-                        .Replace("\r\n", "\n").Replace("\r", "\n").Replace("\n", "\r\n")
-                        );
-                }, false); //OT
+                if (processingRemoteChanges)
+                    return;
+
+                previousText = tbEditor.Text;
             };
-            tbEditor.KeyPressing += (sender, args) =>
+            tbEditor.TextChanged += (sender, args) =>
             {
-                this.Execute(() => EditorInserting(args.KeyChar), false); //OT
+                if (processingRemoteChanges)
+                    return;
+
+                //do diff on two versions of text
+                var currentText = tbEditor.Text;
+                var diffs = differ.CreateCharacterDiffs(previousText, currentText, false, false);
+
+                //report changes
+                int position = 0;
+                foreach (var diff in diffs.DiffBlocks)
+                {
+                    //skip unchanged characters
+                    position = Math.Min(diff.InsertStartB, currentText.Length);
+
+                    //process a deletion
+                    if (diff.DeleteCountA > 0)
+                        otexClient.Delete((uint)position, (uint)diff.DeleteCountA);
+
+                    //process an insertion
+                    if (position < (diff.InsertStartB + diff.InsertCountB))
+                        otexClient.Insert((uint)position, currentText.Substring(position, diff.InsertCountB));
+                }
             };
 
             //file dialog filters
@@ -214,7 +228,10 @@ namespace OTEX
                 Debugger.I("Client: connected to {0}:{1}.", c.ServerAddress, c.ServerPort);
                 this.Execute(() =>
                 {
+                    processingRemoteChanges = true;
                     tbEditor.Text = "";
+                    processingRemoteChanges = false;
+
                     string ext = Path.GetExtension(c.ServerFilePath).ToLower();
                     if (ext.Length > 0 && (ext = ext.Substring(1)).Length > 0)
                     {
@@ -239,8 +256,9 @@ namespace OTEX
             };
             otexClient.OnRemoteOperations += (c,operations) =>
             {
-                this.Execute(() =>
+                this.Execute(() => //using Execute() ensures this happens on the main thread (editing is blocked)
                 {
+                    processingRemoteChanges = true;
                     foreach (var operation in operations)
                     {
                         if (operation.IsInsertion)
@@ -258,6 +276,7 @@ namespace OTEX
                                 "", null);
                         }
                     }
+                    processingRemoteChanges = false;
                 }, false);
             };
             otexClient.OnDisconnected += (c, serverSide) =>
@@ -465,113 +484,6 @@ namespace OTEX
             });
             clientConnectingThread.IsBackground = false;
             clientConnectingThread.Start(new object[] { address, (ushort)port, null, originalAddressString });
-        }
-
-        /////////////////////////////////////////////////////////////////////
-        // HANDLING TEXT OPERATIONS
-        /////////////////////////////////////////////////////////////////////
-
-        /// <summary>
-        /// Notifies the OTEX client that a keyboard character is being inserted into the 
-        /// editor box at the current selection point. Handles DELETE, BACKSPACE and TAB appropriately.
-        /// </summary>
-        /// <param name="character">The keyboard character being inserted.</param>
-        private void EditorInserting(char character)
-        {
-            var selectionStart = Math.Min(
-                tbEditor.PlaceToPosition(tbEditor.Selection.Start),
-                tbEditor.PlaceToPosition(tbEditor.Selection.End));
-            var selectionLength = tbEditor.Selection.Length;
-            var selectionEnd = selectionStart + selectionLength;
-
-            //handle tab character (FCTB replaces tabs with spaces)
-            if ((byte)character == 0x09)
-            {
-                EditorInserting(new string(' ', tbEditor.TabLength
-                    - (tbEditor.PositionToPlace(selectionStart).iChar % tbEditor.TabLength)));
-                return;
-            }
-            else if (character == '\r' || character == '\n') //handle return key
-            {
-                EditorInserting("\r\n");
-                return;
-            }
-
-            var delete = (byte)character == 0xFF;
-            var backspace = (byte)character == 0x08;
-            var deleteOrBackspace = delete || backspace;
-
-            //only worry about deletion logic if there is actually some text
-            if (tbEditor.TextLength > 0)
-            {
-                //if a selection will replaced, send a deletion
-                //(always regardless of key if selection.length > 0)
-                if (selectionLength > 0)
-                {
-                    //check if we're splitting a \r\n on the selection boundary
-                    if (selectionStart > 0 && tbEditor.Text[selectionStart] == '\n')
-                    {
-                        --selectionStart;
-                        ++selectionLength;
-                    }
-                    if (selectionEnd < tbEditor.TextLength && tbEditor.Text[selectionEnd] == '\n')
-                    {
-                        ++selectionEnd;
-                        ++selectionLength;
-                    }
-
-                    otexClient.Delete((uint)selectionStart, (uint)selectionLength);
-                }
-                else if (deleteOrBackspace)
-                {
-                    if (delete && selectionStart < tbEditor.TextLength)
-                        otexClient.Delete((uint)selectionStart, 1u + (tbEditor.Text[selectionStart] == '\r' ? 1u : 0u));
-                    else if (backspace && selectionStart > 0)
-                    {
-                        var add = (tbEditor.Text[selectionStart - 1] == '\n' ? 1u : 0u);
-                        otexClient.Delete((uint)selectionStart - 1 - add, 1u + add);
-                    }
-                }
-            }
-
-            //if text will be inserted (not DEL or BACKSPACE keys)
-            if (!deleteOrBackspace)
-                otexClient.Insert((uint)selectionStart, character.ToString());
-        }
-
-        /// <summary>
-        /// Notifies the OTEX client that a string is being inserted into the 
-        /// editor box at the current selection point (e.g. pasting).
-        /// </summary>
-        /// <param name="str">The string being inserted.</param>
-        private void EditorInserting(string str)
-        {
-            var selectionStart = Math.Min(
-                tbEditor.PlaceToPosition(tbEditor.Selection.Start),
-                tbEditor.PlaceToPosition(tbEditor.Selection.End));
-            var selectionLength = tbEditor.Selection.Length;
-            var selectionEnd = selectionStart + selectionLength;
-
-            //if a selection will replaced, send a deletion
-            if (selectionLength > 0)
-            {
-                //check if we're splitting a \r\n on the selection boundary
-                if (selectionStart > 0 && tbEditor.Text[selectionStart] == '\n')
-                {
-                    --selectionStart;
-                    ++selectionLength;
-                }
-                if (selectionEnd < tbEditor.TextLength && tbEditor.Text[selectionEnd] == '\n')
-                {
-                    ++selectionEnd;
-                    ++selectionLength;
-                }
-                otexClient.Delete((uint)selectionStart, (uint)selectionLength);
-            }
-
-            //if text will be inserted, send an insertion
-            if (str.Length > 0)
-                otexClient.Insert((uint)selectionStart, str);
         }
 
         /////////////////////////////////////////////////////////////////////
