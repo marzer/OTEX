@@ -9,6 +9,7 @@ using System.Text.RegularExpressions;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.IO;
+using System.Linq;
 using DiffPlex;
 
 namespace OTEX
@@ -28,13 +29,14 @@ namespace OTEX
         private static readonly Differ differ = new Differ();
         private volatile bool processingRemoteChanges = false;
 
-        private bool EditingServerAddressMode
+        private bool ServerBrowserMode
         {
             get { return panClient.Visible; }
             set
             {
                 panClient.Visible = value;
-                btnClient.Visible = !value;
+                panMenu.Visible = !value;
+                PositionSplashPanel();
             }
         }
 
@@ -77,9 +79,8 @@ namespace OTEX
             panSplash.Dock = DockStyle.Fill;
 
             //colours
-            btnServerNew.Accent = 2;
-            btnServerExisting.Accent = 3;
-            panClient.BackColor = App.Theme.Background.Light.Colour;
+            btnServerNew.Accent = btnServerExisting.Accent = 2;
+            btnServerTemporary.Accent = 3;
             lblAbout.ForeColor = lblVersion.ForeColor = App.Theme.Background.Light.Colour;
 
             //about link
@@ -91,17 +92,20 @@ namespace OTEX
 
             //version label
             lblVersion.Text = "v" + Marzersoft.Text.REGEX_VERSION_REPEATING_ZEROES.Replace(App.AssemblyVersion.ToString(),"");
+            if (lblVersion.Text.IndexOf('.') == -1)
+                lblVersion.Text += ".0";
 
-            //client connection panel
-            btnClient.TextAlign = btnServerNew.TextAlign = btnServerExisting.TextAlign = ContentAlignment.MiddleCenter;
-            panClient.Parent = panControls;
-            panClient.Location = btnClient.Location;
+            //client connection/server browser panel
+            btnClient.TextAlign = btnServerNew.TextAlign = btnServerExisting.TextAlign
+                = btnServerTemporary.TextAlign = ContentAlignment.MiddleCenter;
             btnClientConnect.Image = App.Images.Resource("tick");
-            btnClientCancel.Image = App.Images.Resource("close");
+            btnClientCancel.Image = App.Images.Resource("previous");
             btnClientConnect.ImageAlign = btnClientCancel.ImageAlign = ContentAlignment.MiddleCenter;
-            tbClientAddress.Font = App.Theme.Monospaced.Normal.Regular;
-            tbClientAddress.BackColor = App.Theme.Background.Light.Colour;
-            tbClientAddress.ForeColor = App.Theme.Foreground.BaseColour;
+            tbClientAddress.Font = tbClientPassword.Font = App.Theme.Monospaced.Normal.Regular;
+            tbClientAddress.BackColor = tbClientPassword.BackColor = App.Theme.Background.Light.Colour;
+            tbClientAddress.ForeColor = tbClientPassword.ForeColor = App.Theme.Foreground.BaseColour;
+            lblManualEntry.Font = lblServerBrowser.Font = App.Theme.Controls.Large.Regular;
+            panClient.Bounds = new Rectangle(5,5, panSplash.ClientRectangle.Width - 10, panSplash.ClientRectangle.Height - 5 - lblAbout.Height);
 
             //'connecting' status label
             lblStatus.Parent = panMenu;
@@ -181,7 +185,7 @@ namespace OTEX
             //set initial visibilities
             EditorMode = false;
             PendingConnectionMode = false;
-            EditingServerAddressMode = false;
+            ServerBrowserMode = false;
 
             //form styles
             WindowStyles &= ~(WindowStyles.ThickFrame | WindowStyles.DialogFrame);
@@ -326,9 +330,11 @@ namespace OTEX
             }
 
             //started ok, toggle ui to Editor
-            EditingServerAddressMode = false;
+            ServerBrowserMode = false;
             EditorMode = true;
-            Text = string.Format("Editing {0} (host mode)", Path.GetFileName(otexClient.ServerFilePath));
+            Text = string.Format("Hosting {0} - {1}",
+                otexClient.ServerFilePath.Length == 0 ? "a temporary document" : Path.GetFileName(otexClient.ServerFilePath),
+                App.Name);
         }
 
         /////////////////////////////////////////////////////////////////////
@@ -477,7 +483,9 @@ namespace OTEX
                 this.Execute(() =>
                 {
                     EditorMode = true;
-                    Text = string.Format("Editing {0} ({1})", Path.GetFileName(otexClient.ServerFilePath), saddr);
+                    Text = string.Format("Editing {0} ({1}) - {2}",
+                        otexClient.ServerFilePath.Length == 0 ? "a temporary document" : Path.GetFileName(otexClient.ServerFilePath),
+                        saddr, App.Name);
                 });
 
                 clientConnectingThread = null;
@@ -520,26 +528,32 @@ namespace OTEX
 
         private void btnClient_Click(object sender, EventArgs e)
         {
-            EditingServerAddressMode = true;
+            ServerBrowserMode = true;
         }
 
         private void btnClientCancel_Click(object sender, EventArgs e)
         {
-            EditingServerAddressMode = false;
+            ServerBrowserMode = false;
         }
 
         private void btnServerNew_Click(object sender, EventArgs e)
         {
             if (dlgServerCreateNew.ShowDialog() == DialogResult.OK)
                 StartServerMode(new Server.StartParams()
-                    { Path = dlgServerCreateNew.FileName, EditMode = false, Announce = true });
+                    { FilePath = dlgServerCreateNew.FileName, EditMode = false, Public = true });
         }
 
         private void btnServerExisting_Click(object sender, EventArgs e)
         {
             if (dlgServerOpenExisting.ShowDialog() == DialogResult.OK)
                 StartServerMode(new Server.StartParams()
-                    { Path = dlgServerOpenExisting.FileName, EditMode = true, Announce = true });
+                    { FilePath = dlgServerOpenExisting.FileName, EditMode = true, Public = true });
+        }
+
+        private void btnServerTemporary_Click(object sender, EventArgs e)
+        {
+            StartServerMode(new Server.StartParams()
+                { FilePath = "", Public = true });
         }
 
         private void btnClientConnect_Click(object sender, EventArgs e)
