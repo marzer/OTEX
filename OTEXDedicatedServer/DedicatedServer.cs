@@ -45,7 +45,8 @@ namespace OTEX
         {
             get
             {
-                return string.Format("  {0} [file] [/EDIT|/NEW] [/PORT port] [/NAME name] [/PASSWORD pass] [/PUBLIC] [/?]",
+                StringBuilder sb = new StringBuilder();
+                return string.Format("  {0} [file] [/EDIT|/NEW] [/PORT port] [/NAME name] [/PASSWORD pass] [/PUBLIC] [/MAXCLIENTS max] [/?]",
                     Process.GetCurrentProcess().ProcessName.ToUpper());
             }
         }
@@ -59,23 +60,24 @@ namespace OTEX
             {
                 StringBuilder sb = new StringBuilder();
                 sb.AppendLine(Usage).AppendLine();
-                sb.AppendLine("           file: Path to the plain text file to collaboratively edit.");
-                sb.AppendLine("                 Omitting file path will create a transient session");
-                sb.AppendLine("                 (client edits will be lost when the server is shut down).");
-                sb.AppendLine("          /EDIT: If a file already exists at the given path, edit it");
-                sb.AppendLine("                 (do not overwrite with a new file). This is default.");
-                sb.AppendLine("           /NEW: Opposite of /EDIT.");
+                sb.AppendLine("            file: Path to the plain text file to collaboratively edit.");
+                sb.AppendLine("                  Omitting file path will create a transient session");
+                sb.AppendLine("                  (client edits will be lost when the server is shut down).");
+                sb.AppendLine("           /EDIT: If a file already exists at the given path, edit it");
+                sb.AppendLine("                  (do not overwrite with a new file). This is default.");
+                sb.AppendLine("            /NEW: Opposite of /EDIT.");
                 sb.AppendLine("     /PORT port: Port on which to listen for new OTEX TCP client connections,");
-                sb.AppendLine("                 between 1024 and 65535. Defaults to 55555.");
-                sb.AppendLine("                 Does not change announce port, which is always 55555.");
-                sb.AppendLine("     /NAME name: A friendly name for the server.");
-                sb.AppendLine("                 Limit of 32 characters (overflow is truncated).");
-                sb.AppendLine("                 Omit to allow clients to connect without a password.");
-                sb.AppendLine(" /PASSWORD pass: Password required to connect to this server.");
-                sb.AppendLine("                 Must be between 6 and 32 characters.");
-                sb.AppendLine("                 Omit to allow clients to connect without a password.");
-                sb.AppendLine("        /PUBLIC: Regularly broadcast the presence of this server to OTEX clients.");
-                sb.AppendLine("             /?: Prints help and exits.");
+                sb.AppendLine("                  between 1024 and 65535. Defaults to 55555.");
+                sb.AppendLine("                  Does not change announce port, which is always 55555.");
+                sb.AppendLine("      /NAME name: A friendly name for the server.");
+                sb.AppendLine("                  Limit of 32 characters (overflow is truncated).");
+                sb.AppendLine("                  Omit to allow clients to connect without a password.");
+                sb.AppendLine("  /PASSWORD pass: Password required to connect to this server.");
+                sb.AppendLine("                  Must be between 6 and 32 characters.");
+                sb.AppendLine("                  Omit to allow clients to connect without a password.");
+                sb.AppendLine("         /PUBLIC: Regularly broadcast the presence of this server to OTEX clients.");
+                sb.AppendLine(" /MAXCLIENTS max: Maximum number of clients to allow. Defaults to 10, caps at 100.");
+                sb.AppendLine("              /?: Prints help and exits.");
                 sb.AppendLine();
                 sb.AppendLine("Arguments may appear in any order. /SWITCHES and file paths are not case-sensitive.");
                 return sb.ToString();
@@ -156,6 +158,8 @@ namespace OTEX
                         startParams.Password = new Password(arguments[i + 1].Value);
                     else if (match = (arguments[i].Value.CompareTo("name") == 0))
                         startParams.Name = arguments[i + 1].Value;
+                    else if (match = (arguments[i].Value.CompareTo("maxclients") == 0))
+                        startParams.MaxClients = uint.Parse(arguments[i + 1].Value);
 
                     if (match)
                         arguments[i].Handled = arguments[i + 1].Handled = true;
@@ -172,7 +176,7 @@ namespace OTEX
                         startParams.EditMode = true;
                     else if (match = (arguments[i].Value.CompareTo("new") == 0))
                         startParams.EditMode = false;
-                    else if (match = (arguments[i].Value.CompareTo("announce") == 0))
+                    else if (match = (arguments[i].Value.CompareTo("public") == 0))
                         startParams.Public = true;
 
                     if (match)
@@ -212,10 +216,12 @@ namespace OTEX
             server.OnStarted += (s) =>
             {
                 Out("Server started.");
-                Out("      File: {0}", s.FilePath);
-                Out("      Port: {0}", s.Port);
-                Out("  Password: {0}", s.RequiresPassword);
-                Out("    Public: {0}", s.Public);
+                Out("        Name: {0}", s.Name);
+                Out("        File: {0}", s.FilePath);
+                Out("        Port: {0}", s.Port);
+                Out("    Password: {0}", s.RequiresPassword);
+                Out("      Public: {0}", s.Public);
+                Out(" Max clients: {0}", s.MaxClients);
             };
             server.OnClientConnected += (s,id) =>
             {
@@ -228,10 +234,6 @@ namespace OTEX
             server.OnStopped += (s) =>
             {
                 Out("Server stopped.");
-            };
-            server.OnFileSynchronized += (s) =>
-            {
-                Out("File synchronized.");
             };
             Console.CancelKeyPress += (s, e) =>
             {
