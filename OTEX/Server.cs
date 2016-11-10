@@ -93,7 +93,7 @@ namespace OTEX
             /// How many clients are allowed to be connected at once?
             /// Setting it to 0 means "no limit" (there is an internal maximum limit of 100)
             /// </summary>
-            public uint MaxClients = 40;
+            public uint MaxClients = 10;
 
             /// <summary>
             /// Default constructor.
@@ -182,7 +182,7 @@ namespace OTEX
         /// </summary>
         public uint MaxClients
         {
-            get { return startParams == null ? 40u : startParams.MaxClients; }
+            get { return startParams == null ? 10u : startParams.MaxClients; }
         }
 
         /// <summary>
