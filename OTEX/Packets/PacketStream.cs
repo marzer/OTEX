@@ -206,8 +206,11 @@ namespace OTEX.Packets
             if (isDisposed)
                 return;
             isDisposed = true;
-            stream.Dispose();
-            stream = null;
+            if (stream != null)
+            {
+                stream.Dispose();
+                stream = null;
+            }
             client = null;
         }
     }
