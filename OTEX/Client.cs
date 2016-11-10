@@ -145,7 +145,7 @@ namespace OTEX
         /////////////////////////////////////////////////////////////////////
 
         /// <summary>
-        /// Connect to an OTEX server. Does nothing if already connected.
+        /// Connect to an OTEX server.
         /// </summary>
         /// <param name="address">IP Address of the OTEX server.</param>
         /// <param name="port">Listen port of the OTEX server.</param>
@@ -159,7 +159,51 @@ namespace OTEX
         /// <exception cref="System.Runtime.Serialization.SerializationException" />
         /// <exception cref="System.Security.SecurityException" />
         /// <exception cref="IOException" />
+        /// <exception cref="InvalidOperationException" />
         public void Connect(IPAddress address, ushort port = 55555, Password password = null)
+        {
+            Connect(new IPEndPoint(address, port), password);
+        }
+
+        /// <summary>
+        /// Connect to an OTEX server.
+        /// </summary>
+        /// <param name="address">IP Address of the OTEX server.</param>
+        /// <param name="port">Listen port of the OTEX server.</param>
+        /// <param name="password">Password required to connect to the server, if any. Leave as null for none.</param>
+        /// <exception cref="ArgumentException" />
+        /// <exception cref="ArgumentNullException" />
+        /// <exception cref="ArgumentOutOfRangeException" />
+        /// <exception cref="ObjectDisposedException" />
+        /// <exception cref="SocketException" />
+        /// <exception cref="InvalidDataException" />
+        /// <exception cref="System.Runtime.Serialization.SerializationException" />
+        /// <exception cref="System.Security.SecurityException" />
+        /// <exception cref="IOException" />
+        /// <exception cref="InvalidOperationException" />
+        public void Connect(ServerDescription serverDescription, Password password = null)
+        {
+            if (serverDescription == null)
+                throw new ArgumentNullException("serverDescription");
+            Connect(serverDescription.EndPoint, password);
+        }
+
+        /// <summary>
+        /// Connect to an OTEX server.
+        /// </summary>
+        /// <param name="endpoint">IP Endpoint (address and port) of the OTEX server.</param>
+        /// <param name="password">Password required to connect to the server, if any. Leave as null for none.</param>
+        /// <exception cref="ArgumentException" />
+        /// <exception cref="ArgumentNullException" />
+        /// <exception cref="ArgumentOutOfRangeException" />
+        /// <exception cref="ObjectDisposedException" />
+        /// <exception cref="SocketException" />
+        /// <exception cref="InvalidDataException" />
+        /// <exception cref="System.Runtime.Serialization.SerializationException" />
+        /// <exception cref="System.Security.SecurityException" />
+        /// <exception cref="IOException" />
+        /// <exception cref="InvalidOperationException" />
+        public void Connect(IPEndPoint endpoint, Password password = null)
         {
             if (isDisposed)
                 throw new ObjectDisposedException("OTEX.Client");
@@ -170,17 +214,21 @@ namespace OTEX
                 {
                     if (isDisposed)
                         throw new ObjectDisposedException("OTEX.Client");
+                    if (connected)
+                        throw new InvalidOperationException("Client is already connected to a server. Call Disconnect() first.");
 
                     if (!connected)
                     {
                         //session state
-                        if (port < 1024)
-                            throw new ArgumentOutOfRangeException("port","Port must be between 1024 and 65535");
-                        if (address == null)
-                            throw new ArgumentNullException("address");
-                        if (address.Equals(IPAddress.Any) || address.Equals(IPAddress.Broadcast) || address.Equals(IPAddress.None)
-                            || address.Equals(IPAddress.IPv6Any) || address.Equals(IPAddress.IPv6None))
-                            throw new ArgumentOutOfRangeException("address", "Address must be a valid non-range IP Address.");
+                        if (endpoint == null)
+                            throw new ArgumentNullException("endpoint");
+                        if (endpoint.Port < 1024)
+                            throw new ArgumentOutOfRangeException("endpoint.Port", "Port must be between 1024 and 65535");
+
+                        if (endpoint.Address.Equals(IPAddress.Any) || endpoint.Address.Equals(IPAddress.Broadcast)
+                            || endpoint.Address.Equals(IPAddress.None) || endpoint.Address.Equals(IPAddress.IPv6Any)
+                            || endpoint.Address.Equals(IPAddress.IPv6None))
+                            throw new ArgumentOutOfRangeException("endpoint.Address", "Address cannot be Any, None or Broadcast.");
 
                         //session connection
                         TcpClient tcpClient = null;
@@ -192,7 +240,7 @@ namespace OTEX
                             //establish tcp connection
                             tcpClient = new TcpClient(AddressFamily.InterNetworkV6);
                             tcpClient.Client.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, false);
-                            tcpClient.Connect(address, port);
+                            tcpClient.Connect(endpoint);
                             packetStream = new PacketStream(tcpClient);
 
                             //send connection request packet
@@ -220,8 +268,8 @@ namespace OTEX
                         //set connected state
                         connected = true;
                         clientSideDisconnection = false;
-                        serverPort = port;
-                        serverAddress = address;
+                        serverPort = (ushort)endpoint.Port;
+                        serverAddress = endpoint.Address;
                         serverFilePath = response.FilePath ?? "";
                         serverID = responsePacket.SenderID;
                         awaitingOperationList = false;
