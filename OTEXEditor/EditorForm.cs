@@ -11,6 +11,7 @@ using System.Threading;
 using System.IO;
 using System.Linq;
 using DiffPlex;
+using OTEX.Packets;
 
 namespace OTEX
 {
@@ -30,14 +31,27 @@ namespace OTEX
         private static readonly Differ differ = new Differ();
         private volatile bool processingRemoteChanges = false;
 
-        private bool ServerBrowserMode
+        private bool MainMenuMode
         {
-            get { return panClient.Visible; }
+            get { return panMenuPage.Visible; }
             set
             {
-                panClient.Visible = value;
-                panMenu.Visible = !value;
-                PositionSplashPanel();
+                panMenuPage.Visible = value;
+                panServerBrowserPage.Visible = !value;
+                tbEditor.Visible = !value;
+                if (value)
+                    PositionMenuPanel();
+            }
+        }
+
+        private bool ServerBrowserMode
+        {
+            get { return panServerBrowserPage.Visible; }
+            set
+            {
+                panServerBrowserPage.Visible = value;
+                panMenuPage.Visible = !value;
+                tbEditor.Visible = !value;
             }
         }
 
@@ -47,7 +61,7 @@ namespace OTEX
             set
             {
                 lblStatus.Visible = value;
-                panControls.Visible = lblAbout.Visible = lblVersion.Visible = !value;
+                panMenuButtons.Visible = lblAbout.Visible = !value;
             }
         }
 
@@ -57,9 +71,10 @@ namespace OTEX
             set
             {
                 tbEditor.Visible = value;
-                panSplash.Visible = !value;
-                if (!value)
-                    PositionSplashPanel();
+                panMenuPage.Visible = !value;
+                panServerBrowserPage.Visible = !value;
+                
+                
             }
         }
 
@@ -77,7 +92,7 @@ namespace OTEX
             lblTitle.Font = App.Theme.Titles.Large.Regular;
 
             //splash panel
-            panSplash.Dock = DockStyle.Fill;
+            panMenuPage.Dock = DockStyle.Fill;
 
             //colours
             btnServerNew.Accent = btnServerExisting.Accent = 2;
@@ -106,7 +121,7 @@ namespace OTEX
             tbClientAddress.BackColor = tbClientPassword.BackColor = App.Theme.Background.Light.Colour;
             tbClientAddress.ForeColor = tbClientPassword.ForeColor = App.Theme.Foreground.BaseColour;
             lblManualEntry.Font = lblServerBrowser.Font = App.Theme.Controls.Large.Regular;
-            panClient.Bounds = new Rectangle(5,5, panSplash.ClientRectangle.Width - 10, panSplash.ClientRectangle.Height - 5 - lblAbout.Height);
+            panServerBrowserPage.Dock = DockStyle.Fill;
 
             //'connecting' status label
             lblStatus.Parent = panMenu;
@@ -288,7 +303,7 @@ namespace OTEX
                     this.Execute(() =>
                     {
                         PendingConnectionMode = false;
-                        EditorMode = false;
+                        MainMenuMode = true;
                         Text = App.Name;
                     });
                 }
@@ -304,15 +319,35 @@ namespace OTEX
                 };
                 otexServerListener.OnServerAdded += (sl, s) =>
                 {
-                    Debugger.W("ServerListener: new server {0}: {1}", s.ID, s.EndPoint);
+                    Debugger.I("ServerListener: new server {0}: {1}", s.ID, s.EndPoint);
+                    this.Execute(() =>
+                    {
+                        var row = dgvServers.AddRow(s.Name, s.EndPoint.Address,
+                            s.EndPoint.Port, s.RequiresPassword, s.ClientCount, s.MaxClients, 0);
+                        row.Tag = s;
+                        s.Tag = row;
+                    });
 
                     s.OnUpdated += (sd) =>
                     {
-                        Debugger.W("ServerDescription: {0} updated.", sd.ID);
+                        Debugger.I("ServerDescription: {0} updated.", sd.ID);
+                        this.Execute(() =>
+                        {
+                            (s.Tag as DataGridViewRow).Update(s.Name, s.EndPoint.Address,
+                                s.EndPoint.Port, s.RequiresPassword, s.ClientCount, s.MaxClients, 0);
+                        });
                     };
+
                     s.OnInactive += (sd) =>
                     {
-                        Debugger.W("ServerDescription: {0} inactive.", sd.ID);
+                        Debugger.I("ServerDescription: {0} inactive.", sd.ID);
+                        this.Execute(() =>
+                        {
+                            var row = (s.Tag as DataGridViewRow);
+                            row.DataGridView.Rows.Remove(row);
+                            row.Tag = null;
+                            s.Tag = null;
+                        });
                     };
                 };
             }
@@ -322,11 +357,6 @@ namespace OTEX
                     exc.Message);
                 return;
             }
-
-            //set initial visibilities
-            EditorMode = false;
-            PendingConnectionMode = false;
-            ServerBrowserMode = false;
         }
 
         /////////////////////////////////////////////////////////////////////
@@ -360,7 +390,6 @@ namespace OTEX
             }
 
             //started ok, toggle ui to Editor
-            ServerBrowserMode = false;
             EditorMode = true;
             Text = string.Format("Hosting {0} - {1}",
                 otexClient.ServerFilePath.Length == 0 ? "a temporary document" : Path.GetFileName(otexClient.ServerFilePath),
@@ -413,7 +442,7 @@ namespace OTEX
         private static readonly Regex REGEX_PORT = new Regex(@"\s*(?:[:]\s*([0-9]*))\s*$",
             RegexOptions.Compiled);
 
-        private void StartClientMode(string addressString)
+        private void StartClientMode(string addressString, string passwordString)
         {
             //sanity check
             if (addressString.Length == 0)
@@ -427,7 +456,7 @@ namespace OTEX
             IPAddress address = null;
             IPHostEntry hostEntry = null;
 
-            //parse
+            //parse address
             try
             {
                 //check for ipv4 address
@@ -479,31 +508,63 @@ namespace OTEX
                 return;
             }
 
-            //check port
+            //validate port
             if (port < 1024 || port > 65535)
             {
                 Debugger.ErrorMessage("Port must be between 1024 and 65535 (inclusive).");
                 return;
             }
 
+            StartClientMode(new IPEndPoint(address, (int)port), passwordString);
+        }
+
+        private void StartClientMode(IPEndPoint endPoint, string passwordString)
+        {
+            //validate port
+            if (endPoint.Port < 1024 || endPoint.Port > 65535)
+            {
+                Debugger.ErrorMessage("Port must be between 1024 and 65535 (inclusive).");
+                return;
+            }
+
+            //validate password
+            var originalPasswordLength = passwordString.Length;
+            passwordString = (passwordString ?? "").Trim();
+            if (originalPasswordLength > 0 && passwordString.Length == 0)
+            {
+                Debugger.ErrorMessage("Passwords cannot be entirely whitespace.");
+                return;
+            }
+            Password password = null;
+            if (passwordString.Length > 0)
+            {
+                try
+                {
+                    password = new Password(passwordString);
+                }
+                catch (Exception exc)
+                {
+                    Debugger.ErrorMessage("An error occurred while parsing password:\n\n{0}", exc.Message);
+                    return;
+                }
+            }
+
             //connect to server
-            lblStatus.Text = string.Format("Connecting to {0}...", originalAddressString);
+            lblStatus.Text = string.Format("Connecting to {0}...", endPoint);
             PendingConnectionMode = true;
             clientConnectingThread = new Thread((o) =>
             {
                 object[] objs = o as object[];
-                var addr = objs[0] as IPAddress;
-                var prt = (ushort)objs[1];
-                var pwd = objs[2] as Password;
-                var saddr = objs[3] as string;
+                var ep = objs[0] as IPEndPoint;
+                var pwd = objs[1] as Password;
                 try
                 {
-                    otexClient.Connect(addr, prt, pwd);
+                    otexClient.Connect(ep, pwd);
                 }
                 catch (Exception exc)
                 {
-                    Debugger.ErrorMessage("An error occurred while connecting to {0} ({1}:{2}):\n\n{3}",
-                    saddr, addr, prt, exc.Message);
+                    Debugger.ErrorMessage("An error occurred while connecting to {0}:\n\n{1}",
+                    ep, exc.Message);
                     this.Execute(() => { PendingConnectionMode = false; });
                     clientConnectingThread = null;
                     return;
@@ -512,30 +573,31 @@ namespace OTEX
                 //started ok, toggle ui to Editor
                 this.Execute(() =>
                 {
+                    PendingConnectionMode = false;
                     EditorMode = true;
                     Text = string.Format("Editing {0} ({1}) - {2}",
                         otexClient.ServerFilePath.Length == 0 ? "a temporary document" : Path.GetFileName(otexClient.ServerFilePath),
-                        saddr, App.Name);
+                        ep, App.Name);
                 });
 
                 clientConnectingThread = null;
             });
             clientConnectingThread.IsBackground = false;
-            clientConnectingThread.Start(new object[] { address, (ushort)port, null, originalAddressString });
+            clientConnectingThread.Start(new object[] { endPoint, password  });
         }
 
         /////////////////////////////////////////////////////////////////////
         // UI EVENTS
         /////////////////////////////////////////////////////////////////////
 
-        private void PositionSplashPanel()
+        private void PositionMenuPanel()
         {
             if (panMenu.Visible)
             {
                 panMenu.Location = new Point(
                     (panBody.ClientRectangle.Size.Width / 2) - (panMenu.Size.Width / 2),
                     (panBody.ClientRectangle.Size.Height / 2) - (panMenu.Size.Height / 2));
-                lblStatus.Bounds = lblStatus.Bounds.AlignCenter(panControls.Bounds.Center());
+                lblStatus.Bounds = lblStatus.Bounds.AlignCenter(panMenuButtons.Bounds.Center());
             }
         }
 
@@ -544,7 +606,8 @@ namespace OTEX
             base.OnFirstShown(e);
             if (IsDesignMode)
                 return;
-            PositionSplashPanel();
+            PendingConnectionMode = false;
+            MainMenuMode = true;
             Refresh();
         }
 
@@ -553,7 +616,7 @@ namespace OTEX
             base.OnResize(e);
             if (IsDesignMode)
                 return;
-            PositionSplashPanel();
+            PositionMenuPanel();
         }
 
         private void btnClient_Click(object sender, EventArgs e)
@@ -563,21 +626,24 @@ namespace OTEX
 
         private void btnClientCancel_Click(object sender, EventArgs e)
         {
-            ServerBrowserMode = false;
+            MainMenuMode = true;
         }
 
         private void btnServerNew_Click(object sender, EventArgs e)
         {
             if (dlgServerCreateNew.ShowDialog() == DialogResult.OK)
                 StartServerMode(new Server.StartParams()
-                    { FilePath = dlgServerCreateNew.FileName, EditMode = false, Public = true });
+                    { FilePath = dlgServerCreateNew.FileName, EditMode = false,
+                    Public = true });
         }
 
         private void btnServerExisting_Click(object sender, EventArgs e)
         {
             if (dlgServerOpenExisting.ShowDialog() == DialogResult.OK)
                 StartServerMode(new Server.StartParams()
-                    { FilePath = dlgServerOpenExisting.FileName, EditMode = true, Public = true });
+                    { FilePath = dlgServerOpenExisting.FileName, EditMode = true,
+                    Public = true
+                });
         }
 
         private void btnServerTemporary_Click(object sender, EventArgs e)
@@ -588,7 +654,7 @@ namespace OTEX
 
         private void btnClientConnect_Click(object sender, EventArgs e)
         {
-            StartClientMode(tbClientAddress.Text.Trim());
+            StartClientMode(tbClientAddress.Text.Trim(), tbClientPassword.Text.Trim());
         }
 
         private void EditorForm_FormClosing(object sender, FormClosingEventArgs e)
@@ -646,5 +712,14 @@ namespace OTEX
         [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
         private static extern bool ReleaseCapture();
+
+        private void dgvServers_CellContentDoubleClick(object sender, DataGridViewCellEventArgs e)
+        {
+            if (e.ColumnIndex < 0 || e.RowIndex < 0)
+                return;
+            var sd = (dgvServers[e.ColumnIndex, e.RowIndex].OwningRow.Tag as ServerDescription);
+            if (sd != null)
+                StartClientMode(sd.EndPoint, "");
+        }
     }
 }
