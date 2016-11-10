@@ -23,6 +23,7 @@ namespace OTEX
         private FastColoredTextBox tbEditor = null;
         private Server otexServer = null;
         private Client otexClient = null;
+        private ServerListener otexServerListener = null;
         private volatile Thread clientConnectingThread = null;
         private volatile bool closing = false;
         private volatile string previousText = null;
@@ -110,7 +111,35 @@ namespace OTEX
             //'connecting' status label
             lblStatus.Parent = panMenu;
 
-            //edit text box
+            //file dialog filters
+            FileFilterFactory filterFactory = new FileFilterFactory();
+            filterFactory.Add("Text files", "txt");
+            filterFactory.Add("C# files", "cs");
+            filterFactory.Add("C/C++ files", "cpp", "h", "hpp", "cxx", "cc", "c", "inl", "inc", "rc", "hxx");
+            filterFactory.Add("Log files", "log");
+            filterFactory.Add("Javacode files", "java");
+            filterFactory.Add("Javascript files", "js");
+            filterFactory.Add("Visual Basic files", "vb", "vbs");
+            filterFactory.Add("Web files", "htm", "html", "xml", "css", "htaccess", "php");
+            filterFactory.Add("XML files", "xml", "xsl", "xslt", "xsd", "dtd");
+            filterFactory.Add("PHP scripts", "php");
+            filterFactory.Add("SQL scripts", "sql");
+            filterFactory.Add("Luascript files", "lua");
+            filterFactory.Add("Shell scripts", "bat", "sh", "ps");
+            filterFactory.Add("Settings files", "ini", "config", "cfg", "conf", "reg");
+            filterFactory.Add("Shader files", "hlsl", "glsl", "fx", "csh", "cshader", "dsh", "dshader",
+                "gsh", "gshader", "hlsli", "hsh", "hshader", "psh", "pshader", "vsh", "vshader");
+            filterFactory.Apply(dlgServerCreateNew);
+            filterFactory.Apply(dlgServerOpenExisting);
+
+            //form styles
+            WindowStyles &= ~(WindowStyles.ThickFrame | WindowStyles.DialogFrame);
+            //ControlBox = false;
+            //FormBorderStyle = FormBorderStyle.SizableToolWindow;
+            TextFlourishes = false;
+            Text = App.Name;
+
+            // CREATE TEXT EDITOR (handles diff calculation) ////////////////////
             tbEditor = new FastColoredTextBox();
             tbEditor.Parent = panBody;
             tbEditor.Dock = DockStyle.Fill;
@@ -161,42 +190,9 @@ namespace OTEX
                 }
             };
 
-            //file dialog filters
-            FileFilterFactory filterFactory = new FileFilterFactory();
-            filterFactory.Add("Text files", "txt");
-            filterFactory.Add("C# files", "cs");
-            filterFactory.Add("C/C++ files", "cpp", "h", "hpp", "cxx", "cc", "c", "inl", "inc", "rc", "hxx");
-            filterFactory.Add("Log files", "log");
-            filterFactory.Add("Javacode files", "java");
-            filterFactory.Add("Javascript files", "js");
-            filterFactory.Add("Visual Basic files", "vb", "vbs");
-            filterFactory.Add("Web files", "htm", "html", "xml", "css", "htaccess", "php");
-            filterFactory.Add("XML files", "xml", "xsl", "xslt", "xsd", "dtd");
-            filterFactory.Add("PHP scripts", "php");
-            filterFactory.Add("SQL scripts", "sql");
-            filterFactory.Add("Luascript files", "lua");
-            filterFactory.Add("Shell scripts", "bat", "sh", "ps");
-            filterFactory.Add("Settings files", "ini", "config", "cfg", "conf", "reg");
-            filterFactory.Add("Shader files", "hlsl", "glsl", "fx", "csh", "cshader", "dsh", "dshader",
-                "gsh", "gshader", "hlsli", "hsh", "hshader", "psh", "pshader", "vsh", "vshader");
-            filterFactory.Apply(dlgServerCreateNew);
-            filterFactory.Apply(dlgServerOpenExisting);
-
-            //set initial visibilities
-            EditorMode = false;
-            PendingConnectionMode = false;
-            ServerBrowserMode = false;
-
-            //form styles
-            WindowStyles &= ~(WindowStyles.ThickFrame | WindowStyles.DialogFrame);
-            //ControlBox = false;
-            //FormBorderStyle = FormBorderStyle.SizableToolWindow;
-            TextFlourishes = false;
-            Text = App.Name;
-
-            //create server
+            // CREATE OTEX SERVER ///////////////////////////////////////////////
             otexServer = new Server();
-            otexServer.OnInternalException += (s, e) =>
+            otexServer.OnThreadException += (s, e) =>
             {
                 Debugger.W("Server: {0}: {1}", e.InnerException.GetType().FullName, e.InnerException.Message);
             };
@@ -221,9 +217,9 @@ namespace OTEX
                 Debugger.I("Server: File synchronized.");
             };
 
-            //create client
+            // CREATE OTEX CLIENT ///////////////////////////////////////////////
             otexClient = new Client();
-            otexClient.OnInternalException += (c, e) =>
+            otexClient.OnThreadException += (c, e) =>
             {
                 Debugger.W("Client: {0}: {1}", e.InnerException.GetType().FullName, e.InnerException.Message);
             };
@@ -297,6 +293,40 @@ namespace OTEX
                     });
                 }
             };
+
+            // CREATE OTEX SERVER LISTENER //////////////////////////////////////
+            try
+            {
+                otexServerListener = new ServerListener();
+                otexServerListener.OnThreadException += (sl, e) =>
+                {
+                    Debugger.W("ServerListener: {0}: {1}", e.InnerException.GetType().FullName, e.InnerException.Message);
+                };
+                otexServerListener.OnServerAdded += (sl, s) =>
+                {
+                    Debugger.W("ServerListener: new server {0}: {1}", s.ID, s.EndPoint);
+
+                    s.OnUpdated += (sd) =>
+                    {
+                        Debugger.W("ServerDescription: {0} updated.", sd.ID);
+                    };
+                    s.OnInactive += (sd) =>
+                    {
+                        Debugger.W("ServerDescription: {0} inactive.", sd.ID);
+                    };
+                };
+            }
+            catch (Exception exc)
+            {
+                Debugger.ErrorMessage("An error occurred while creating the server listener:\n\n{0}",
+                    exc.Message);
+                return;
+            }
+
+            //set initial visibilities
+            EditorMode = false;
+            PendingConnectionMode = false;
+            ServerBrowserMode = false;
         }
 
         /////////////////////////////////////////////////////////////////////
@@ -576,6 +606,11 @@ namespace OTEX
             {
                 clientConnectingThread.Join();
                 clientConnectingThread = null;
+            }
+            if (otexServerListener != null)
+            {
+                otexServerListener.Dispose();
+                otexServerListener = null;
             }
             if (otexClient != null)
             {
