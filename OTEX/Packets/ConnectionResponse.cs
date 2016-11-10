@@ -34,12 +34,38 @@ namespace OTEX.Packets
         /// </summary>
         public enum ResponseCode : uint
         {
+            /// <summary>
+            /// Connection request was approved and the client
+            /// is now 'connected' according to the Server.
+            /// </summary>
             Approved,
+
+            /// <summary>
+            /// The password provided by client was not correct
+            /// (also fires when clients provide passwords when none is required)
+            /// </summary>
             IncorrectPassword,
-            ServerShuttingDown,
+
+            /// <summary>
+            /// Server has already reached the maximum number of connected clients
+            /// </summary>
             SessionFull,
+
+            /// <summary>
+            /// A client with the same GUID is already connected to the server
+            /// (shouldn't happen, really; fluke!)
+            /// </summary>
             DuplicateGUID,
-            Other //unknown (future)
+
+            /// <summary>
+            /// Client fell into an invalid state(sent non-request packet as first packet)
+            /// </summary>
+            InvalidState,
+
+            /// <summary>
+            /// Other (not used by anything currently)
+            /// </summary>
+            Other
         }
 
         /// <summary>
