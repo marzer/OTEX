@@ -91,8 +91,31 @@ namespace OTEX
 
             /// <summary>
             /// How many clients are allowed to be connected at once?
+            /// Setting it to 0 means "no limit" (there is an internal maximum limit of 100)
             /// </summary>
-            public byte MaxClients = 40;
+            public uint MaxClients = 40;
+
+            /// <summary>
+            /// Default constructor.
+            /// </summary>
+            public StartParams()
+            {
+                //
+            }
+
+            /// <summary>
+            /// Internal copy constructor.
+            /// </summary>
+            internal StartParams(StartParams p)
+            {
+                FilePath = p.FilePath;
+                EditMode = p.EditMode;
+                Port = p.Port;
+                Password = p.Password;
+                Public = p.Public;
+                Name = p.Name;
+                MaxClients = p.MaxClients;
+            }
         }
         private volatile StartParams startParams = null;
 
@@ -149,17 +172,17 @@ namespace OTEX
         /// <summary>
         /// How many clients are currently connected?
         /// </summary>
-        public byte ClientCount
+        public uint ClientCount
         {
-            get { return (byte)connectedClients.Count; }
+            get { return (uint)connectedClients.Count; }
         }
 
         /// <summary>
         /// How many clients are allowed to be connected at once?
         /// </summary>
-        public byte MaxClients
+        public uint MaxClients
         {
-            get { return startParams == null ? (byte)40u : startParams.MaxClients; }
+            get { return startParams == null ? 40u : startParams.MaxClients; }
         }
 
         /// <summary>
@@ -257,13 +280,18 @@ namespace OTEX
                         if (startParams == null)
                             throw new ArgumentNullException("startParams");
 
-                        //session state
-                        startParams.FilePath = (startParams.FilePath ?? "").Trim();
-                        if (startParams.Port < 1024)
+                        //copy params (do not keep reference to input)
+                        StartParams tempParams = new StartParams(startParams);
+
+                        //validate params
+                        tempParams.FilePath = (tempParams.FilePath ?? "").Trim();
+                        if (tempParams.Port < 1024)
                             throw new ArgumentOutOfRangeException("startParams.Port", "Port must be between 1024 and 65535");
-                        if ((startParams.Name = (startParams.Name ?? "").Trim()).Length > 32)
-                            startParams.Name = startParams.Name.Substring(0, 32);
-                        this.startParams = startParams;
+                        if ((tempParams.Name = (tempParams.Name ?? "").Trim()).Length > 32)
+                            tempParams.Name = tempParams.Name.Substring(0, 32);
+                        if (tempParams.MaxClients == 0 || tempParams.MaxClients > 100u)
+                            tempParams.MaxClients = 100u;
+                        this.startParams = tempParams;
 
                         //session initialization
                         TcpListener listener = null;
@@ -271,7 +299,7 @@ namespace OTEX
                         try
                         {
                             //read file
-                            if (startParams.FilePath.Length > 0 && startParams.EditMode && File.Exists(FilePath))
+                            if (this.startParams.FilePath.Length > 0 && this.startParams.EditMode && File.Exists(FilePath))
                             {
                                 masterOperations.Add(new Operation(ID, 0,
                                     fileContents = File.ReadAllText(FilePath, FilePath.DetectEncoding())
@@ -287,7 +315,7 @@ namespace OTEX
                             listener.AllowNatTraversal(true);
                             listener.Start();
 
-                            if (startParams.Public)
+                            if (this.startParams.Public)
                             {
                                 //create udp client
                                 announcer = new UdpClient();
@@ -298,9 +326,13 @@ namespace OTEX
                         catch (Exception)
                         {
                             if (listener != null)
-                                listener.Stop();
+                            {
+                                try { listener.Stop(); } catch (Exception) { };
+                            }
                             if (announcer != null)
-                                announcer.Close();
+                            {
+                                try { announcer.Close(); } catch (Exception) { };
+                            }
                             ClearRunningState();
                             throw;
                         }
@@ -354,7 +386,7 @@ namespace OTEX
                 {
                     CaptureException(() =>
                     {
-                        var announceData = (new ServerAnnounce(this)).Serialize();
+                        var announceData = (new ServerDescription(this)).Serialize();
                         announcer.Send(announceData, announceData.Length, new IPEndPoint(IPAddress.Broadcast, 55555));
                     });
                     announceTimer.Reset();
@@ -371,8 +403,10 @@ namespace OTEX
                 }
             }
 
-            //stop tcp listener
+            //stop tcp listener and announcer
             CaptureException(() => { listener.Stop(); });
+            if (announcer != null)
+                CaptureException(() => { announcer.Close(); });
 
             //wait for client threads to close
             foreach (Thread thread in clientThreads)
@@ -420,9 +454,20 @@ namespace OTEX
                 //is this the first packet from a new client?
                 if (clientGUID.Equals(Guid.Empty))
                 {
-                    //check if packet is a request type
-                    if (packet.PayloadType != ConnectionRequest.PayloadType)
-                        continue; //ignore
+                    //check packet type
+                    //if it's not a connection or disconnection request, abort since the client
+                    //is not funtioning correctly
+                    if (packet.PayloadType != ConnectionRequest.PayloadType
+                        && packet.PayloadType != DisconnectionRequest.PayloadType)
+                    {
+                        //let client know we're cutting them off
+                        CaptureException(() =>
+                        {
+                            stream.Write(ID,
+                                new ConnectionResponse(ConnectionResponse.ResponseCode.InvalidState));
+                        });
+                        break;
+                    }
 
                     //deserialize packet
                     ConnectionRequest request = null;
@@ -450,6 +495,17 @@ namespace OTEX
                             {
                                 stream.Write(ID,
                                     new ConnectionResponse(ConnectionResponse.ResponseCode.DuplicateGUID));
+                            });
+                            break;
+                        }
+
+                        //too many connections already
+                        if (connectedClients.Count >= startParams.MaxClients)
+                        {
+                            CaptureException(() =>
+                            {
+                                stream.Write(ID,
+                                    new ConnectionResponse(ConnectionResponse.ResponseCode.SessionFull));
                             });
                             break;
                         }
