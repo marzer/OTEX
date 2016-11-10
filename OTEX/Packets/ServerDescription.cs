@@ -105,7 +105,7 @@ namespace OTEX.Packets
 
         /// <summary>
         /// What is the average RTT to the server, in milliseconds?
-        /// (not sent, set at recipient end)
+        /// (not serialized, set at recipient end)
         /// </summary>
         public uint Ping
         {
@@ -116,7 +116,7 @@ namespace OTEX.Packets
 
         /// <summary>
         /// Is this server active?
-        /// (not sent, set at recipient end)
+        /// (not serialized, set at recipient end)
         /// </summary>
         public bool Active
         {
@@ -136,6 +136,7 @@ namespace OTEX.Packets
 
         /// <summary>
         /// Time in seconds since this server was last updated by a server listener.
+        /// (not serialized, set at recipient end)
         /// </summary>
         public double LastUpdated
         {
@@ -143,6 +144,13 @@ namespace OTEX.Packets
         }
         [NonSerialized]
         private readonly Marzersoft.Timer lastUpdateTimer;
+
+        /// <summary>
+        /// Tag property for attaching additional data to this server description.
+        /// (not serialized)
+        /// </summary>
+        [NonSerialized]
+        public object Tag = null;
 
         /////////////////////////////////////////////////////////////////////
         // CONSTRUCTORS
