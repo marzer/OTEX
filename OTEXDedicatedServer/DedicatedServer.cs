@@ -205,7 +205,7 @@ namespace OTEX
             server = new Server();
 
             //attach server events
-            server.OnInternalException += (s, e) =>
+            server.OnThreadException += (s, e) =>
             {
                 Error("{0}: {1}", e.InnerException.GetType().FullName, e.InnerException.Message);
             };

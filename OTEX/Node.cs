@@ -9,17 +9,8 @@ namespace OTEX
     /// <summary>
     /// Base class of OTEX framework network nodes.
     /// </summary>
-    public abstract class Node
+    public abstract class Node : ThreadController
     {
-        /////////////////////////////////////////////////////////////////////
-        // EVENTS
-        /////////////////////////////////////////////////////////////////////
-
-        /// <summary>
-        /// Triggered when an internal thread throws an exception.
-        /// </summary>
-        public event Action<Node, InternalException> OnInternalException;
-
         /////////////////////////////////////////////////////////////////////
         // PROPERTIES/VARIABLES
         /////////////////////////////////////////////////////////////////////
@@ -42,25 +33,6 @@ namespace OTEX
         {
             if ((ID = id.HasValue ? id.Value : Guid.NewGuid()).Equals(Guid.Empty))
                 throw new ArgumentOutOfRangeException("id", "id cannot be Guid.Empty");
-        }
-
-        /////////////////////////////////////////////////////////////////////
-        // THREAD EXCEPTIONS
-        /////////////////////////////////////////////////////////////////////
-
-        /// <summary>
-        /// Capture thrown exceptions and trigger the OnInternalException event.
-        /// Returns true if an exception was caught.
-        /// </summary>
-        protected bool CaptureException(Action func)
-        {
-            InternalException exception = InternalException.Capture(func);
-            if (exception != null && OnInternalException != null)
-            {
-                OnInternalException(this, exception);
-                return true;
-            }
-            return false;
         }
     }
 }
