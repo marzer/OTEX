@@ -40,6 +40,16 @@ namespace OTEX
         private volatile bool isDisposed = false;
 
         /// <summary>
+        /// Does this server listener routinely update pings at regular intervals?
+        /// If false, it only attempts to determine ping to a server the first time it learns of it.
+        /// </summary>
+        public bool AutoPing
+        {
+            get { return autoPing; }
+        }
+        private volatile bool autoPing = true;
+
+        /// <summary>
         /// Master thread for listening for new servers.
         /// </summary>
         private Thread thread = null;
@@ -56,30 +66,28 @@ namespace OTEX
 
         /// <summary>
         /// Creates an OTEX server listener.
-        /// Listens for OTEX server announce packets on port 55555.
+        /// Listens for OTEX server announce packets on ports 55555 - 55560.
         /// </summary>
-        /// <exception cref="SocketException" />
+        /// <exception cref="Exception" />
         public ServerListener()
         {
             //create udp client
-            UdpClient udpClient = udpClient = new UdpClient(55555);
-
-            /*
-            try
+            UdpClient udpClient = null;
+            for (int i = 55555; i <= 55560 && udpClient == null; ++i)
             {
-                udpClient = new UdpClient(55555);
-                //udpClient.EnableBroadcast = false;
-                //udpClient.AllowNatTraversal(true);
-            }
-            catch (Exception)
-            {
-                if (udpClient != null)
+                try
                 {
-                    try { udpClient.Close(); } catch (Exception) { };
+                    udpClient = new UdpClient(i);
                 }
-                throw;
+                catch (Exception) { };
             }
-            */
+
+            if (udpClient == null)
+                throw new Exception("Could not acquire a socket on any port in the range 55555-55560. (Are there many instances of ServerListener running?)");
+
+            //configure client
+            udpClient.EnableBroadcast = true;
+            udpClient.AllowNatTraversal(true);
 
             //create thread
             thread = new Thread(ControlThread);
@@ -94,7 +102,8 @@ namespace OTEX
         private void ControlThread(object uc)
         {
             var udpClient = uc as UdpClient;
-            var activeCheckTimer = new Marzersoft.Timer();
+            var checkTimer = new Marzersoft.Timer();
+
             while (!isDisposed)
             {
                 Thread.Sleep(250);
@@ -132,11 +141,12 @@ namespace OTEX
                     }
                 }
 
-                //check timeouts of servers
-                if (activeCheckTimer.Seconds > 3.0f)
+                //periodically check server inactive state and update pings
+                if (checkTimer.Seconds >= 1.0)
                 {
                     lock (activeServers)
                     {
+                        //cull inactive servers
                         var inactiveServers = activeServers
                             .Where((kvp) => { return kvp.Value.LastUpdated >= 10.0; })
                             .ToList();
@@ -145,8 +155,18 @@ namespace OTEX
                             activeServers.Remove(inactive.Key);
                             inactive.Value.Active = false; //invokes event
                         }
+
+                        //update pings
+                        if (autoPing)
+                        {
+                            foreach (var active in activeServers)
+                            {
+                                if (active.Value.LastPinged >= 10.0)
+                                    active.Value.UpdatePing();
+                            }
+                        }
                     }
-                    activeCheckTimer.Reset();
+                    checkTimer.Reset();
                 }
             }
 

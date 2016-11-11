@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Net.NetworkInformation;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace OTEX.Packets
@@ -21,7 +23,7 @@ namespace OTEX.Packets
 
         /// <summary>
         /// Triggered when some value of this server description is updated internally
-        /// by a server listener.
+        /// by a server listener (e.g. ping, name, requires passsword, etc.).
         /// </summary>
         [field: NonSerialized]
         public event Action<ServerDescription> OnUpdated;
@@ -75,6 +77,16 @@ namespace OTEX.Packets
         private volatile bool requiresPassword;
 
         /// <summary>
+        /// Is the document a temporary one?
+        /// (i.e. not backed by a file, will be lost when the server is shutdown)
+        /// </summary>
+        public bool TemporaryDocument
+        {
+            get { return temporaryDocument; }
+        }
+        private bool temporaryDocument;
+
+        /// <summary>
         /// How many clients are currently connected?
         /// </summary>
         public uint ClientCount
@@ -110,6 +122,14 @@ namespace OTEX.Packets
         public uint Ping
         {
             get { return ping; }
+            private set
+            {
+                if (value != ping)
+                {
+                    ping = value;
+                    OnUpdated?.Invoke(this);
+                }
+            }
         }
         [NonSerialized]
         private volatile uint ping = 0;
@@ -135,7 +155,7 @@ namespace OTEX.Packets
         private volatile bool active = true;
 
         /// <summary>
-        /// Time in seconds since this server was last updated by a server listener.
+        /// Time in seconds since a server listener last recieved an update packet from this server.
         /// (not serialized, set at recipient end)
         /// </summary>
         public double LastUpdated
@@ -151,6 +171,24 @@ namespace OTEX.Packets
         /// </summary>
         [NonSerialized]
         public object Tag = null;
+
+        /// <summary>
+        /// Thread responsible for pinging the server.
+        /// (not serialized)
+        /// </summary>
+        [NonSerialized]
+        private volatile Thread pingThread = null;
+
+        /// <summary>
+        /// Time in seconds since this server was last updated by a server listener.
+        /// (not serialized, set at recipient end)
+        /// </summary>
+        internal double LastPinged
+        {
+            get { return lastPingTimer == null ? 0.0 : lastPingTimer.Seconds; }
+        }
+        [NonSerialized]
+        private readonly Marzersoft.Timer lastPingTimer;
 
         /////////////////////////////////////////////////////////////////////
         // CONSTRUCTORS
@@ -171,8 +209,10 @@ namespace OTEX.Packets
             requiresPassword = server.RequiresPassword;
             port = server.Port;
             name = server.Name ?? "";
+            temporaryDocument = (server.FilePath ?? "").Length == 0;
             endPoint = null;
             lastUpdateTimer = null;
+            lastPingTimer = null;
         }
 
         /// <summary>
@@ -193,8 +233,11 @@ namespace OTEX.Packets
             requiresPassword = packet.RequiresPassword;
             port = packet.Port;
             name = packet.Name ?? "";
+            temporaryDocument = packet.temporaryDocument;
             endPoint = listenEndpoint;
             lastUpdateTimer = new Marzersoft.Timer();
+            lastPingTimer = new Marzersoft.Timer();
+            UpdatePing();
         }
 
         /////////////////////////////////////////////////////////////////////
@@ -204,6 +247,9 @@ namespace OTEX.Packets
         /// <summary>
         /// Updates a server description from an announce packet.
         /// Must be from the same sender (GUID, address and listen port must match).
+        /// Not all aspects of the server can be changed; some properties are fixed for the session
+        /// (e.g. file path, temporary). If differences are detected in these properies, an exception will be thrown.
+        /// Does not update Ping, that is updated separately.
         /// </summary>
         /// <param name="listenEndpoint">Endpoint of the sender (listen server, NOT the announce source)</param>
         /// <param name="packet">Packet that was sent</param>
@@ -221,6 +267,8 @@ namespace OTEX.Packets
                 throw new ArgumentException("packet port did not match", "packet");
             if (!listenEndpoint.Equals(endPoint))
                 throw new ArgumentException("listenEndpoint port did not match", "listenEndpoint");
+            if (temporaryDocument != packet.temporaryDocument)
+                throw new ArgumentException("temporaryDocument did not match", "temporaryDocument");
 
             bool changed = false;
             if (changed = (packet.ClientCount != clientCount))
@@ -234,6 +282,30 @@ namespace OTEX.Packets
             lastUpdateTimer.Reset();
             if (changed)
                 OnUpdated?.Invoke(this);
+        }
+
+        /////////////////////////////////////////////////////////////////////
+        // PING
+        /////////////////////////////////////////////////////////////////////
+
+        internal void UpdatePing()
+        {
+            if (!active || endPoint == null || pingThread != null)
+                return;
+            pingThread = new Thread(() =>
+            {
+                Ping pinger = new Ping();
+                try
+                {
+                    PingReply reply = pinger.Send(endPoint.Address);
+                    if (reply.Status == IPStatus.Success && active)
+                        Ping = (uint)reply.RoundtripTime;
+                }
+                catch (Exception) { }
+                lastPingTimer.Reset();
+                pingThread = null;
+            });
+            pingThread.Start();
         }
     }
 }
