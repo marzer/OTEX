@@ -126,6 +126,17 @@ namespace OTEX
         /// </summary>
         private readonly object stateLock = new object();
 
+        /// <summary>
+        /// Time, in seconds, between each request for updates sent to the server
+        /// (clamped between 0.5 and 5.0).
+        /// </summary>
+        public float UpdateInterval
+        {
+            get { return updateInterval; }
+            set { updateInterval = value.Clamp(0.5f,5.0f); }
+        }
+        private volatile float updateInterval;
+
         /////////////////////////////////////////////////////////////////////
         // CONSTRUCTION
         /////////////////////////////////////////////////////////////////////
@@ -314,7 +325,7 @@ namespace OTEX
                 }
 
                 //send periodic requests for new operations
-                if (!awaitingOperationList && lastOpsRequestTimer.Seconds >= 0.5)
+                if (!awaitingOperationList && lastOpsRequestTimer.Seconds >= updateInterval)
                 {
                     lock (stateLock)
                     {
