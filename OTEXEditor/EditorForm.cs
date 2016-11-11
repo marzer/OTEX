@@ -161,9 +161,14 @@ namespace OTEX
             CustomTitleBar = true;
             ResizeHandleOverride = true;
 
+            //settings menu
+            var button = AddCustomTitleBarButton();
+            button.Colour = App.Theme.Accent3.Light.Colour;
+            button.Image = App.Images.Resource("settings");
+
             // CREATE TEXT EDITOR (handles diff calculation) ////////////////////
             tbEditor = new FastColoredTextBox();
-            tbEditor.Parent = panBody;
+            tbEditor.Parent = this;
             tbEditor.Dock = DockStyle.Fill;
             tbEditor.BackBrush = App.Theme.Background.Mid.Brush;
             tbEditor.IndentBackColor = App.Theme.Background.Dark.Colour;
@@ -177,7 +182,6 @@ namespace OTEX
             tbEditor.WordWrapMode = WordWrapMode.WordWrapControlWidth;
             tbEditor.TabLength = 4;
             tbEditor.LineInterval = 2;
-            tbEditor.AllowMacroRecording = false;
             tbEditor.CaretColor = App.Theme.Accent1.LightLight.Colour;
             tbEditor.TextChanging += (sender, args) =>
             {
@@ -281,6 +285,14 @@ namespace OTEX
                 this.Execute(() => //using Execute() ensures this happens on the main thread (editing is blocked)
                 {
                     processingRemoteChanges = true;
+                    
+                    //set up autoscroll prevention
+                    var selection = tbEditor.Selection;
+                    var selectionStart = Math.Min(tbEditor.PlaceToPosition(selection.Start),
+                        tbEditor.PlaceToPosition(selection.End));
+                    var selectionEnd = Math.Max(tbEditor.PlaceToPosition(selection.Start),
+                        tbEditor.PlaceToPosition(selection.End));
+
                     foreach (var operation in operations)
                     {
                         if (operation.IsInsertion)
@@ -298,6 +310,7 @@ namespace OTEX
                                 "", null);
                         }
                     }
+
                     processingRemoteChanges = false;
                 }, false);
             };
@@ -603,8 +616,8 @@ namespace OTEX
             if (panMenu.Visible)
             {
                 panMenu.Location = new Point(
-                    (panBody.ClientRectangle.Size.Width / 2) - (panMenu.Size.Width / 2),
-                    (panBody.ClientRectangle.Size.Height / 2) - (panMenu.Size.Height / 2));
+                    (panMenu.Parent.ClientRectangle.Size.Width / 2) - (panMenu.Size.Width / 2),
+                    (panMenu.Parent.ClientRectangle.Size.Height / 2) - (panMenu.Size.Height / 2));
                 lblStatus.Bounds = lblStatus.Bounds.AlignCenter(panMenuButtons.Bounds.Center());
             }
         }
