@@ -362,6 +362,7 @@ namespace OTEX
             var clientThreads = new List<Thread>();
             var flushTimer = new Marzersoft.Timer();
             var announceTimer = new Marzersoft.Timer();
+            var announceEndpoints = new List<IPEndPoint>();
 
             while (running)
             {
@@ -386,8 +387,17 @@ namespace OTEX
                 {
                     CaptureException(() =>
                     {
+                        //create endpoints if they don't exist
+                        if (announceEndpoints.Count == 0)
+                            for (int i = 55555; i <= 55560; ++i)
+                                announceEndpoints.Add(new IPEndPoint(IPAddress.Broadcast, i));
+
+                        //serialize a server description of the current state
                         var announceData = (new ServerDescription(this)).Serialize();
-                        announcer.Send(announceData, announceData.Length, new IPEndPoint(IPAddress.Broadcast, 55555));
+
+                        //broadcast to the port range
+                        foreach (IPEndPoint ep in announceEndpoints)
+                            announcer.Send(announceData, announceData.Length, ep);
                     });
                     announceTimer.Reset();
                 }
