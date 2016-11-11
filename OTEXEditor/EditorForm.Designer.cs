@@ -55,7 +55,6 @@
             this.dlgServerOpenExisting = new System.Windows.Forms.OpenFileDialog();
             this.dlgServerCreateNew = new System.Windows.Forms.SaveFileDialog();
             this.lblStatus = new System.Windows.Forms.Label();
-            this.panBody = new System.Windows.Forms.Panel();
             this.panServerPassword = new System.Windows.Forms.Panel();
             this.labServerPassword = new System.Windows.Forms.Label();
             this.tbServerPassword = new System.Windows.Forms.TextBox();
@@ -66,7 +65,6 @@
             this.panMenuButtons.SuspendLayout();
             this.panServerBrowserPage.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dgvServers)).BeginInit();
-            this.panBody.SuspendLayout();
             this.panServerPassword.SuspendLayout();
             this.panMenuPage.SuspendLayout();
             this.SuspendLayout();
@@ -179,17 +177,17 @@
             this.panServerBrowserPage.Controls.Add(this.btnClientCancel);
             this.panServerBrowserPage.Controls.Add(this.btnClientConnect);
             this.panServerBrowserPage.Controls.Add(this.tbClientAddress);
-            this.panServerBrowserPage.Location = new System.Drawing.Point(42, 13);
+            this.panServerBrowserPage.Location = new System.Drawing.Point(15, 22);
             this.panServerBrowserPage.Margin = new System.Windows.Forms.Padding(0);
             this.panServerBrowserPage.Name = "panServerBrowserPage";
-            this.panServerBrowserPage.Size = new System.Drawing.Size(461, 354);
+            this.panServerBrowserPage.Size = new System.Drawing.Size(471, 391);
             this.panServerBrowserPage.TabIndex = 4;
             this.panServerBrowserPage.Visible = false;
             // 
             // label1
             // 
             this.label1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.label1.Location = new System.Drawing.Point(127, 292);
+            this.label1.Location = new System.Drawing.Point(137, 329);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(60, 20);
             this.label1.TabIndex = 108;
@@ -199,7 +197,7 @@
             // lblManualEntry
             // 
             this.lblManualEntry.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.lblManualEntry.Location = new System.Drawing.Point(121, 255);
+            this.lblManualEntry.Location = new System.Drawing.Point(131, 292);
             this.lblManualEntry.Margin = new System.Windows.Forms.Padding(0);
             this.lblManualEntry.Name = "lblManualEntry";
             this.lblManualEntry.Size = new System.Drawing.Size(327, 28);
@@ -213,7 +211,7 @@
             | System.Windows.Forms.AnchorStyles.Right)));
             this.lblServerBrowser.Location = new System.Drawing.Point(11, 6);
             this.lblServerBrowser.Name = "lblServerBrowser";
-            this.lblServerBrowser.Size = new System.Drawing.Size(437, 28);
+            this.lblServerBrowser.Size = new System.Drawing.Size(447, 28);
             this.lblServerBrowser.TabIndex = 106;
             this.lblServerBrowser.Text = "Public servers";
             this.lblServerBrowser.TextAlign = System.Drawing.ContentAlignment.BottomLeft;
@@ -253,7 +251,7 @@
             this.dgvServers.ShowCellToolTips = false;
             this.dgvServers.ShowEditingIcon = false;
             this.dgvServers.ShowRowErrors = false;
-            this.dgvServers.Size = new System.Drawing.Size(437, 215);
+            this.dgvServers.Size = new System.Drawing.Size(447, 252);
             this.dgvServers.TabIndex = 2000;
             this.dgvServers.CellDoubleClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.dgvServers_CellContentDoubleClick);
             // 
@@ -329,7 +327,7 @@
             // label2
             // 
             this.label2.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.label2.Location = new System.Drawing.Point(127, 320);
+            this.label2.Location = new System.Drawing.Point(137, 357);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(60, 20);
             this.label2.TabIndex = 104;
@@ -340,7 +338,7 @@
             // 
             this.tbClientPassword.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.tbClientPassword.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.tbClientPassword.Location = new System.Drawing.Point(193, 320);
+            this.tbClientPassword.Location = new System.Drawing.Point(203, 357);
             this.tbClientPassword.MaxLength = 32;
             this.tbClientPassword.Name = "tbClientPassword";
             this.tbClientPassword.Size = new System.Drawing.Size(166, 20);
@@ -353,7 +351,7 @@
             this.btnClientCancel.FlatAppearance.BorderSize = 0;
             this.btnClientCancel.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnClientCancel.ImageAlign = System.Drawing.ContentAlignment.MiddleRight;
-            this.btnClientCancel.Location = new System.Drawing.Point(11, 294);
+            this.btnClientCancel.Location = new System.Drawing.Point(11, 331);
             this.btnClientCancel.Margin = new System.Windows.Forms.Padding(0);
             this.btnClientCancel.Name = "btnClientCancel";
             this.btnClientCancel.Size = new System.Drawing.Size(80, 48);
@@ -370,7 +368,7 @@
             this.btnClientConnect.FlatAppearance.BorderSize = 0;
             this.btnClientConnect.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnClientConnect.ImageAlign = System.Drawing.ContentAlignment.MiddleRight;
-            this.btnClientConnect.Location = new System.Drawing.Point(368, 294);
+            this.btnClientConnect.Location = new System.Drawing.Point(378, 331);
             this.btnClientConnect.Margin = new System.Windows.Forms.Padding(0);
             this.btnClientConnect.Name = "btnClientConnect";
             this.btnClientConnect.Size = new System.Drawing.Size(80, 48);
@@ -385,7 +383,7 @@
             // 
             this.tbClientAddress.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.tbClientAddress.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.tbClientAddress.Location = new System.Drawing.Point(193, 292);
+            this.tbClientAddress.Location = new System.Drawing.Point(203, 329);
             this.tbClientAddress.MaxLength = 256;
             this.tbClientAddress.Name = "tbClientAddress";
             this.tbClientAddress.Size = new System.Drawing.Size(166, 20);
@@ -404,29 +402,18 @@
             // 
             // lblStatus
             // 
-            this.lblStatus.Location = new System.Drawing.Point(-57, 323);
+            this.lblStatus.Location = new System.Drawing.Point(176, 357);
             this.lblStatus.Name = "lblStatus";
             this.lblStatus.Size = new System.Drawing.Size(267, 28);
             this.lblStatus.TabIndex = 2;
             this.lblStatus.Text = "Connecting...";
             this.lblStatus.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
-            // panBody
-            // 
-            this.panBody.Controls.Add(this.panServerPassword);
-            this.panBody.Controls.Add(this.panMenuPage);
-            this.panBody.Controls.Add(this.panServerBrowserPage);
-            this.panBody.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.panBody.Location = new System.Drawing.Point(5, 32);
-            this.panBody.Name = "panBody";
-            this.panBody.Size = new System.Drawing.Size(1064, 441);
-            this.panBody.TabIndex = 9;
-            // 
             // panServerPassword
             // 
             this.panServerPassword.Controls.Add(this.labServerPassword);
             this.panServerPassword.Controls.Add(this.tbServerPassword);
-            this.panServerPassword.Location = new System.Drawing.Point(535, 198);
+            this.panServerPassword.Location = new System.Drawing.Point(642, 22);
             this.panServerPassword.Name = "panServerPassword";
             this.panServerPassword.Size = new System.Drawing.Size(204, 56);
             this.panServerPassword.TabIndex = 6;
@@ -463,15 +450,15 @@
             this.panMenuPage.Controls.Add(this.lblAbout);
             this.panMenuPage.Controls.Add(this.lblStatus);
             this.panMenuPage.Controls.Add(this.lblVersion);
-            this.panMenuPage.Location = new System.Drawing.Point(639, 13);
+            this.panMenuPage.Location = new System.Drawing.Point(628, 121);
             this.panMenuPage.Name = "panMenuPage";
-            this.panMenuPage.Size = new System.Drawing.Size(1044, 397);
+            this.panMenuPage.Size = new System.Drawing.Size(512, 345);
             this.panMenuPage.TabIndex = 5;
             // 
             // lblAbout
             // 
             this.lblAbout.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.lblAbout.Location = new System.Drawing.Point(0, 365);
+            this.lblAbout.Location = new System.Drawing.Point(0, 313);
             this.lblAbout.Margin = new System.Windows.Forms.Padding(0);
             this.lblAbout.Name = "lblAbout";
             this.lblAbout.Size = new System.Drawing.Size(100, 30);
@@ -483,7 +470,7 @@
             // lblVersion
             // 
             this.lblVersion.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.lblVersion.Location = new System.Drawing.Point(942, 365);
+            this.lblVersion.Location = new System.Drawing.Point(410, 313);
             this.lblVersion.Margin = new System.Windows.Forms.Padding(0);
             this.lblVersion.Name = "lblVersion";
             this.lblVersion.Size = new System.Drawing.Size(100, 30);
@@ -496,7 +483,9 @@
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1074, 478);
-            this.Controls.Add(this.panBody);
+            this.Controls.Add(this.panMenuPage);
+            this.Controls.Add(this.panServerPassword);
+            this.Controls.Add(this.panServerBrowserPage);
             this.MinimumSize = new System.Drawing.Size(500, 400);
             this.Name = "EditorForm";
             this.SizeGripStyle = System.Windows.Forms.SizeGripStyle.Hide;
@@ -508,7 +497,6 @@
             this.panServerBrowserPage.ResumeLayout(false);
             this.panServerBrowserPage.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dgvServers)).EndInit();
-            this.panBody.ResumeLayout(false);
             this.panServerPassword.ResumeLayout(false);
             this.panServerPassword.PerformLayout();
             this.panMenuPage.ResumeLayout(false);
@@ -530,7 +518,6 @@
         private System.Windows.Forms.SaveFileDialog dlgServerCreateNew;
         private System.Windows.Forms.Label lblStatus;
         private System.Windows.Forms.Panel panMenuButtons;
-        private System.Windows.Forms.Panel panBody;
         private System.Windows.Forms.Panel panMenuPage;
         private System.Windows.Forms.Label lblAbout;
         private System.Windows.Forms.Label lblVersion;
