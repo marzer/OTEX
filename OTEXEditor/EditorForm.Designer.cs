@@ -39,13 +39,13 @@
             this.label1 = new System.Windows.Forms.Label();
             this.lblManualEntry = new System.Windows.Forms.Label();
             this.lblServerBrowser = new System.Windows.Forms.Label();
-            this.dgvServers = new System.Windows.Forms.DataGridView();
+            this.dgvServers = new Marzersoft.Themes.ThemedDataGridView();
             this.colServerName = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.colTemporary = new System.Windows.Forms.DataGridViewCheckBoxColumn();
             this.colServerAddress = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.colServerPort = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.colPassword = new System.Windows.Forms.DataGridViewCheckBoxColumn();
             this.colUserCount = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.colMaxUsers = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.colPing = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.label2 = new System.Windows.Forms.Label();
             this.tbClientPassword = new System.Windows.Forms.TextBox();
@@ -56,6 +56,9 @@
             this.dlgServerCreateNew = new System.Windows.Forms.SaveFileDialog();
             this.lblStatus = new System.Windows.Forms.Label();
             this.panBody = new System.Windows.Forms.Panel();
+            this.panServerPassword = new System.Windows.Forms.Panel();
+            this.labServerPassword = new System.Windows.Forms.Label();
+            this.tbServerPassword = new System.Windows.Forms.TextBox();
             this.panMenuPage = new System.Windows.Forms.Panel();
             this.lblAbout = new System.Windows.Forms.Label();
             this.lblVersion = new System.Windows.Forms.Label();
@@ -65,6 +68,7 @@
             this.panServerBrowserPage.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dgvServers)).BeginInit();
             this.panBody.SuspendLayout();
+            this.panServerPassword.SuspendLayout();
             this.panMenuPage.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -176,17 +180,17 @@
             this.panServerBrowserPage.Controls.Add(this.btnClientCancel);
             this.panServerBrowserPage.Controls.Add(this.btnClientConnect);
             this.panServerBrowserPage.Controls.Add(this.tbClientAddress);
-            this.panServerBrowserPage.Location = new System.Drawing.Point(32, 13);
+            this.panServerBrowserPage.Location = new System.Drawing.Point(42, 13);
             this.panServerBrowserPage.Margin = new System.Windows.Forms.Padding(0);
             this.panServerBrowserPage.Name = "panServerBrowserPage";
-            this.panServerBrowserPage.Size = new System.Drawing.Size(561, 359);
+            this.panServerBrowserPage.Size = new System.Drawing.Size(471, 359);
             this.panServerBrowserPage.TabIndex = 4;
             this.panServerBrowserPage.Visible = false;
             // 
             // label1
             // 
             this.label1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.label1.Location = new System.Drawing.Point(227, 297);
+            this.label1.Location = new System.Drawing.Point(137, 297);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(60, 20);
             this.label1.TabIndex = 108;
@@ -196,7 +200,7 @@
             // lblManualEntry
             // 
             this.lblManualEntry.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.lblManualEntry.Location = new System.Drawing.Point(221, 260);
+            this.lblManualEntry.Location = new System.Drawing.Point(131, 260);
             this.lblManualEntry.Margin = new System.Windows.Forms.Padding(0);
             this.lblManualEntry.Name = "lblManualEntry";
             this.lblManualEntry.Size = new System.Drawing.Size(327, 28);
@@ -210,7 +214,7 @@
             | System.Windows.Forms.AnchorStyles.Right)));
             this.lblServerBrowser.Location = new System.Drawing.Point(11, 6);
             this.lblServerBrowser.Name = "lblServerBrowser";
-            this.lblServerBrowser.Size = new System.Drawing.Size(537, 28);
+            this.lblServerBrowser.Size = new System.Drawing.Size(447, 28);
             this.lblServerBrowser.TabIndex = 106;
             this.lblServerBrowser.Text = "Public servers";
             this.lblServerBrowser.TextAlign = System.Drawing.ContentAlignment.BottomLeft;
@@ -224,15 +228,17 @@
             this.dgvServers.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
+            this.dgvServers.BorderStyle = System.Windows.Forms.BorderStyle.None;
+            this.dgvServers.CellBorderStyle = System.Windows.Forms.DataGridViewCellBorderStyle.None;
             this.dgvServers.ColumnHeadersBorderStyle = System.Windows.Forms.DataGridViewHeaderBorderStyle.None;
             this.dgvServers.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.DisableResizing;
             this.dgvServers.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
             this.colServerName,
+            this.colTemporary,
             this.colServerAddress,
             this.colServerPort,
             this.colPassword,
             this.colUserCount,
-            this.colMaxUsers,
             this.colPing});
             this.dgvServers.EditMode = System.Windows.Forms.DataGridViewEditMode.EditProgrammatically;
             this.dgvServers.Location = new System.Drawing.Point(11, 37);
@@ -248,7 +254,7 @@
             this.dgvServers.ShowCellToolTips = false;
             this.dgvServers.ShowEditingIcon = false;
             this.dgvServers.ShowRowErrors = false;
-            this.dgvServers.Size = new System.Drawing.Size(537, 220);
+            this.dgvServers.Size = new System.Drawing.Size(447, 220);
             this.dgvServers.TabIndex = 2000;
             this.dgvServers.CellDoubleClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.dgvServers_CellContentDoubleClick);
             // 
@@ -258,6 +264,19 @@
             this.colServerName.HeaderText = "Name";
             this.colServerName.Name = "colServerName";
             this.colServerName.ReadOnly = true;
+            this.colServerName.ToolTipText = "The name of this server.";
+            // 
+            // colTemporary
+            // 
+            this.colTemporary.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.ColumnHeader;
+            this.colTemporary.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.colTemporary.HeaderText = "Temporary?";
+            this.colTemporary.Name = "colTemporary";
+            this.colTemporary.ReadOnly = true;
+            this.colTemporary.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Automatic;
+            this.colTemporary.ToolTipText = "Is the document hosted by this server a temporary one? Temporary documents are no" +
+    "t backed by files, and will be lost when the server shuts down.";
+            this.colTemporary.Width = 88;
             // 
             // colServerAddress
             // 
@@ -266,6 +285,7 @@
             this.colServerAddress.Name = "colServerAddress";
             this.colServerAddress.ReadOnly = true;
             this.colServerAddress.Resizable = System.Windows.Forms.DataGridViewTriState.False;
+            this.colServerAddress.ToolTipText = "The IP address of this server.";
             this.colServerAddress.Width = 70;
             // 
             // colServerPort
@@ -275,15 +295,19 @@
             this.colServerPort.Name = "colServerPort";
             this.colServerPort.ReadOnly = true;
             this.colServerPort.Resizable = System.Windows.Forms.DataGridViewTriState.False;
+            this.colServerPort.ToolTipText = "The port used by this server.";
             this.colServerPort.Width = 51;
             // 
             // colPassword
             // 
             this.colPassword.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.ColumnHeader;
+            this.colPassword.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.colPassword.HeaderText = "Password?";
             this.colPassword.Name = "colPassword";
             this.colPassword.ReadOnly = true;
-            this.colPassword.Width = 65;
+            this.colPassword.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Automatic;
+            this.colPassword.ToolTipText = "Does this server require a password?";
+            this.colPassword.Width = 84;
             // 
             // colUserCount
             // 
@@ -291,15 +315,8 @@
             this.colUserCount.HeaderText = "Users";
             this.colUserCount.Name = "colUserCount";
             this.colUserCount.ReadOnly = true;
+            this.colUserCount.ToolTipText = "The number of users currently connected to this server.";
             this.colUserCount.Width = 59;
-            // 
-            // colMaxUsers
-            // 
-            this.colMaxUsers.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.ColumnHeader;
-            this.colMaxUsers.HeaderText = "Max";
-            this.colMaxUsers.Name = "colMaxUsers";
-            this.colMaxUsers.ReadOnly = true;
-            this.colMaxUsers.Width = 52;
             // 
             // colPing
             // 
@@ -307,12 +324,13 @@
             this.colPing.HeaderText = "Ping";
             this.colPing.Name = "colPing";
             this.colPing.ReadOnly = true;
+            this.colPing.ToolTipText = "The last recorded round-trip-time (RTT) to this server, in milliseconds.";
             this.colPing.Width = 53;
             // 
             // label2
             // 
             this.label2.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.label2.Location = new System.Drawing.Point(227, 325);
+            this.label2.Location = new System.Drawing.Point(137, 325);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(60, 20);
             this.label2.TabIndex = 104;
@@ -323,7 +341,7 @@
             // 
             this.tbClientPassword.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.tbClientPassword.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.tbClientPassword.Location = new System.Drawing.Point(293, 325);
+            this.tbClientPassword.Location = new System.Drawing.Point(203, 325);
             this.tbClientPassword.MaxLength = 32;
             this.tbClientPassword.Name = "tbClientPassword";
             this.tbClientPassword.Size = new System.Drawing.Size(166, 20);
@@ -353,7 +371,7 @@
             this.btnClientConnect.FlatAppearance.BorderSize = 0;
             this.btnClientConnect.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnClientConnect.ImageAlign = System.Drawing.ContentAlignment.MiddleRight;
-            this.btnClientConnect.Location = new System.Drawing.Point(468, 299);
+            this.btnClientConnect.Location = new System.Drawing.Point(378, 299);
             this.btnClientConnect.Margin = new System.Windows.Forms.Padding(0);
             this.btnClientConnect.Name = "btnClientConnect";
             this.btnClientConnect.Size = new System.Drawing.Size(80, 48);
@@ -368,7 +386,7 @@
             // 
             this.tbClientAddress.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.tbClientAddress.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.tbClientAddress.Location = new System.Drawing.Point(293, 297);
+            this.tbClientAddress.Location = new System.Drawing.Point(203, 297);
             this.tbClientAddress.MaxLength = 256;
             this.tbClientAddress.Name = "tbClientAddress";
             this.tbClientAddress.Size = new System.Drawing.Size(166, 20);
@@ -396,6 +414,7 @@
             // 
             // panBody
             // 
+            this.panBody.Controls.Add(this.panServerPassword);
             this.panBody.Controls.Add(this.panMenuPage);
             this.panBody.Controls.Add(this.panServerBrowserPage);
             this.panBody.Dock = System.Windows.Forms.DockStyle.Fill;
@@ -403,6 +422,41 @@
             this.panBody.Name = "panBody";
             this.panBody.Size = new System.Drawing.Size(1074, 446);
             this.panBody.TabIndex = 9;
+            // 
+            // panServerPassword
+            // 
+            this.panServerPassword.Controls.Add(this.labServerPassword);
+            this.panServerPassword.Controls.Add(this.tbServerPassword);
+            this.panServerPassword.Location = new System.Drawing.Point(535, 198);
+            this.panServerPassword.Name = "panServerPassword";
+            this.panServerPassword.Size = new System.Drawing.Size(204, 56);
+            this.panServerPassword.TabIndex = 6;
+            this.panServerPassword.Visible = false;
+            // 
+            // labServerPassword
+            // 
+            this.labServerPassword.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.labServerPassword.Location = new System.Drawing.Point(10, 0);
+            this.labServerPassword.Margin = new System.Windows.Forms.Padding(0);
+            this.labServerPassword.Name = "labServerPassword";
+            this.labServerPassword.Size = new System.Drawing.Size(185, 20);
+            this.labServerPassword.TabIndex = 2005;
+            this.labServerPassword.Text = "Enter password:";
+            this.labServerPassword.TextAlign = System.Drawing.ContentAlignment.BottomLeft;
+            // 
+            // tbServerPassword
+            // 
+            this.tbServerPassword.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.tbServerPassword.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.tbServerPassword.Location = new System.Drawing.Point(10, 25);
+            this.tbServerPassword.MaxLength = 32;
+            this.tbServerPassword.Name = "tbServerPassword";
+            this.tbServerPassword.Size = new System.Drawing.Size(185, 20);
+            this.tbServerPassword.TabIndex = 2006;
+            this.tbServerPassword.UseSystemPasswordChar = true;
+            this.tbServerPassword.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.tbServerPassword_KeyPress);
             // 
             // panMenuPage
             // 
@@ -466,6 +520,8 @@
             this.panServerBrowserPage.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dgvServers)).EndInit();
             this.panBody.ResumeLayout(false);
+            this.panServerPassword.ResumeLayout(false);
+            this.panServerPassword.PerformLayout();
             this.panMenuPage.ResumeLayout(false);
             this.ResumeLayout(false);
 
@@ -493,17 +549,20 @@
         private Marzersoft.Themes.ThemedButton btnServerTemporary;
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.TextBox tbClientPassword;
-        private System.Windows.Forms.DataGridView dgvServers;
+        private Marzersoft.Themes.ThemedDataGridView dgvServers;
         private System.Windows.Forms.Label lblServerBrowser;
         private System.Windows.Forms.Label lblManualEntry;
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.DataGridViewTextBoxColumn colServerName;
+        private System.Windows.Forms.DataGridViewCheckBoxColumn colTemporary;
         private System.Windows.Forms.DataGridViewTextBoxColumn colServerAddress;
         private System.Windows.Forms.DataGridViewTextBoxColumn colServerPort;
         private System.Windows.Forms.DataGridViewCheckBoxColumn colPassword;
         private System.Windows.Forms.DataGridViewTextBoxColumn colUserCount;
-        private System.Windows.Forms.DataGridViewTextBoxColumn colMaxUsers;
         private System.Windows.Forms.DataGridViewTextBoxColumn colPing;
+        private System.Windows.Forms.Panel panServerPassword;
+        private System.Windows.Forms.Label labServerPassword;
+        private System.Windows.Forms.TextBox tbServerPassword;
     }
 }
 

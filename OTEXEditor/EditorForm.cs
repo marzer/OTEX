@@ -30,6 +30,7 @@ namespace OTEX
         private volatile string previousText = null;
         private static readonly Differ differ = new Differ();
         private volatile bool processingRemoteChanges = false;
+        private FlyoutForm passwordForm = null;
 
         private bool MainMenuMode
         {
@@ -117,11 +118,17 @@ namespace OTEX
             btnClientConnect.Image = App.Images.Resource("tick");
             btnClientCancel.Image = App.Images.Resource("previous");
             btnClientConnect.ImageAlign = btnClientCancel.ImageAlign = ContentAlignment.MiddleCenter;
-            tbClientAddress.Font = tbClientPassword.Font = App.Theme.Monospaced.Normal.Regular;
-            tbClientAddress.BackColor = tbClientPassword.BackColor = App.Theme.Background.Light.Colour;
-            tbClientAddress.ForeColor = tbClientPassword.ForeColor = App.Theme.Foreground.BaseColour;
+            tbClientAddress.Font = tbClientPassword.Font = tbServerPassword.Font
+                = App.Theme.Monospaced.Normal.Regular;
+            tbClientAddress.BackColor = tbClientPassword.BackColor = tbServerPassword.BackColor
+                = App.Theme.Background.Light.Colour;
+            tbClientAddress.ForeColor = tbClientPassword.ForeColor = tbServerPassword.ForeColor
+                = App.Theme.Foreground.BaseColour;
             lblManualEntry.Font = lblServerBrowser.Font = App.Theme.Controls.Large.Regular;
             panServerBrowserPage.Dock = DockStyle.Fill;
+            dgvServers.ColumnHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleLeft;
+            dgvServers.Columns[1].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleLeft;
+            dgvServers.ShowCellToolTips = true;
 
             //'connecting' status label
             lblStatus.Parent = panMenu;
@@ -209,38 +216,38 @@ namespace OTEX
             otexServer = new Server();
             otexServer.OnThreadException += (s, e) =>
             {
-                Debugger.W("Server: {0}: {1}", e.InnerException.GetType().FullName, e.InnerException.Message);
+                Logger.W("Server: {0}: {1}", e.InnerException.GetType().FullName, e.InnerException.Message);
             };
             otexServer.OnStarted += (s) =>
             {
-                Debugger.I("Server: started for {0} on port {1}", s.FilePath, s.Port);
+                Logger.I("Server: started for {0} on port {1}", s.FilePath, s.Port);
             };
             otexServer.OnClientConnected += (s, id) =>
             {
-                Debugger.I("Server: Client {0} connected.", id);
+                Logger.I("Server: Client {0} connected.", id);
             };
             otexServer.OnClientDisconnected += (s, id) =>
             {
-                Debugger.I("Server: Client {0} disconnected.", id);
+                Logger.I("Server: Client {0} disconnected.", id);
             };
             otexServer.OnStopped += (s) =>
             {
-                Debugger.I("Server: stopped.");
+                Logger.I("Server: stopped.");
             };
             otexServer.OnFileSynchronized += (s) =>
             {
-                Debugger.I("Server: File synchronized.");
+                Logger.I("Server: File synchronized.");
             };
 
             // CREATE OTEX CLIENT ///////////////////////////////////////////////
             otexClient = new Client();
             otexClient.OnThreadException += (c, e) =>
             {
-                Debugger.W("Client: {0}: {1}", e.InnerException.GetType().FullName, e.InnerException.Message);
+                Logger.W("Client: {0}: {1}", e.InnerException.GetType().FullName, e.InnerException.Message);
             };
             otexClient.OnConnected += (c) =>
             {
-                Debugger.I("Client: connected to {0}:{1}.", c.ServerAddress, c.ServerPort);
+                Logger.I("Client: connected to {0}:{1}.", c.ServerAddress, c.ServerPort);
                 this.Execute(() =>
                 {
                     processingRemoteChanges = true;
@@ -296,7 +303,7 @@ namespace OTEX
             };
             otexClient.OnDisconnected += (c, serverSide) =>
             {
-                Debugger.I("Client: disconnected {0}.", serverSide ? "(connection closed by server)" : "");
+                Logger.I("Client: disconnected {0}.", serverSide ? "(connection closed by server)" : "");
 
                 if (!closing)
                 {
@@ -315,32 +322,32 @@ namespace OTEX
                 otexServerListener = new ServerListener();
                 otexServerListener.OnThreadException += (sl, e) =>
                 {
-                    Debugger.W("ServerListener: {0}: {1}", e.InnerException.GetType().FullName, e.InnerException.Message);
+                    Logger.W("ServerListener: {0}: {1}", e.InnerException.GetType().FullName, e.InnerException.Message);
                 };
                 otexServerListener.OnServerAdded += (sl, s) =>
                 {
-                    Debugger.I("ServerListener: new server {0}: {1}", s.ID, s.EndPoint);
+                    Logger.I("ServerListener: new server {0}: {1}", s.ID, s.EndPoint);
                     this.Execute(() =>
                     {
-                        var row = dgvServers.AddRow(s.Name, s.EndPoint.Address,
-                            s.EndPoint.Port, s.RequiresPassword, s.ClientCount, s.MaxClients, 0);
+                        var row = dgvServers.AddRow(s.Name, s.TemporaryDocument ? "Yes" : "", s.EndPoint.Address,
+                            s.EndPoint.Port, s.RequiresPassword ? "Yes" : "", string.Format("{0} / {1}",s.ClientCount, s.MaxClients), 0);
                         row.Tag = s;
                         s.Tag = row;
                     });
 
                     s.OnUpdated += (sd) =>
                     {
-                        Debugger.I("ServerDescription: {0} updated.", sd.ID);
+                        Logger.I("ServerDescription: {0} updated.", sd.ID);
                         this.Execute(() =>
                         {
-                            (s.Tag as DataGridViewRow).Update(s.Name, s.EndPoint.Address,
-                                s.EndPoint.Port, s.RequiresPassword, s.ClientCount, s.MaxClients, 0);
+                            (s.Tag as DataGridViewRow).Update(s.Name, s.TemporaryDocument ? "Yes" : "", s.EndPoint.Address,
+                                s.EndPoint.Port, s.RequiresPassword ? "Yes" : "", string.Format("{0} / {1}", s.ClientCount, s.MaxClients), 0);
                         });
                     };
 
                     s.OnInactive += (sd) =>
                     {
-                        Debugger.I("ServerDescription: {0} inactive.", sd.ID);
+                        Logger.I("ServerDescription: {0} inactive.", sd.ID);
                         this.Execute(() =>
                         {
                             var row = (s.Tag as DataGridViewRow);
@@ -353,7 +360,7 @@ namespace OTEX
             }
             catch (Exception exc)
             {
-                Debugger.ErrorMessage("An error occurred while creating the server listener:\n\n{0}",
+                Logger.ErrorMessage("An error occurred while creating the server listener:\n\n{0}",
                     exc.Message);
                 return;
             }
@@ -372,7 +379,7 @@ namespace OTEX
             }
             catch (Exception exc)
             {
-                Debugger.ErrorMessage("An error occurred while starting the server:\n\n{0}",
+                Logger.ErrorMessage("An error occurred while starting the server:\n\n{0}",
                     exc.Message);
                 return;
             }
@@ -384,7 +391,7 @@ namespace OTEX
             }
             catch (Exception exc)
             {
-                Debugger.ErrorMessage("An error occurred while connecting:\n\n{0}",
+                Logger.ErrorMessage("An error occurred while connecting:\n\n{0}",
                     exc.Message);
                 return;
             }
@@ -442,13 +449,13 @@ namespace OTEX
         private static readonly Regex REGEX_PORT = new Regex(@"\s*(?:[:]\s*([0-9]*))\s*$",
             RegexOptions.Compiled);
 
-        private void StartClientMode(string addressString, string passwordString)
+        private bool StartClientMode(string addressString, string passwordString)
         {
             //sanity check
             if (addressString.Length == 0)
             {
-                Debugger.ErrorMessage("Server address cannot be blank.");
-                return;
+                Logger.ErrorMessage("Server address cannot be blank.");
+                return false;
             }
 
             string originalAddressString = addressString;
@@ -497,34 +504,34 @@ namespace OTEX
             }
             catch (Exception exc)
             {
-                Debugger.ErrorMessage("An error occurred while parsing address:\n\n{0}", exc.Message);
-                return;
+                Logger.ErrorMessage("An error occurred while parsing address:\n\n{0}", exc.Message);
+                return false;
             }
 
             //all failed
             if (address == null)
             {
-                Debugger.ErrorMessage("Failed to parse a valid address from {0}.", originalAddressString);
-                return;
+                Logger.ErrorMessage("Failed to parse a valid address from {0}.", originalAddressString);
+                return false;
             }
 
             //validate port
             if (port < 1024 || port > 65535)
             {
-                Debugger.ErrorMessage("Port must be between 1024 and 65535 (inclusive).");
-                return;
+                Logger.ErrorMessage("Port must be between 1024 and 65535 (inclusive).");
+                return false;
             }
 
-            StartClientMode(new IPEndPoint(address, (int)port), passwordString);
+            return StartClientMode(new IPEndPoint(address, (int)port), passwordString);
         }
 
-        private void StartClientMode(IPEndPoint endPoint, string passwordString)
+        private bool StartClientMode(IPEndPoint endPoint, string passwordString)
         {
             //validate port
             if (endPoint.Port < 1024 || endPoint.Port > 65535)
             {
-                Debugger.ErrorMessage("Port must be between 1024 and 65535 (inclusive).");
-                return;
+                Logger.ErrorMessage("Port must be between 1024 and 65535 (inclusive).");
+                return false;
             }
 
             //validate password
@@ -532,8 +539,8 @@ namespace OTEX
             passwordString = (passwordString ?? "").Trim();
             if (originalPasswordLength > 0 && passwordString.Length == 0)
             {
-                Debugger.ErrorMessage("Passwords cannot be entirely whitespace.");
-                return;
+                Logger.ErrorMessage("Passwords cannot be entirely whitespace.");
+                return false;
             }
             Password password = null;
             if (passwordString.Length > 0)
@@ -544,8 +551,8 @@ namespace OTEX
                 }
                 catch (Exception exc)
                 {
-                    Debugger.ErrorMessage("An error occurred while parsing password:\n\n{0}", exc.Message);
-                    return;
+                    Logger.ErrorMessage("An error occurred while parsing password:\n\n{0}", exc.Message);
+                    return false;
                 }
             }
 
@@ -563,7 +570,7 @@ namespace OTEX
                 }
                 catch (Exception exc)
                 {
-                    Debugger.ErrorMessage("An error occurred while connecting to {0}:\n\n{1}",
+                    Logger.ErrorMessage("An error occurred while connecting to {0}:\n\n{1}",
                     ep, exc.Message);
                     this.Execute(() => { PendingConnectionMode = false; });
                     clientConnectingThread = null;
@@ -584,6 +591,7 @@ namespace OTEX
             });
             clientConnectingThread.IsBackground = false;
             clientConnectingThread.Start(new object[] { endPoint, password  });
+            return true;
         }
 
         /////////////////////////////////////////////////////////////////////
@@ -660,7 +668,7 @@ namespace OTEX
         private void EditorForm_FormClosing(object sender, FormClosingEventArgs e)
         {
             if (otexServer.Running && otexServer.ClientCount > 1 &&
-                !Debugger.WarningQuestion("You are currently running in server mode. "
+                !Logger.WarningQuestion("You are currently running in server mode. "
                 + "Closing the application will disconnect the other {0} connected users.\n\nClose OTEX Editor?", otexServer.ClientCount-1))
                 e.Cancel = true;
         }
@@ -688,6 +696,11 @@ namespace OTEX
                 otexServer.Dispose();
                 otexServer = null;
             }
+            if (passwordForm != null)
+            {
+                passwordForm.Dispose();
+                passwordForm = null;
+            }
             base.OnClosed(e);
         }
 
@@ -705,6 +718,43 @@ namespace OTEX
             }
         }
 
+        private void dgvServers_CellContentDoubleClick(object sender, DataGridViewCellEventArgs e)
+        {
+            if (e.ColumnIndex < 0 || e.RowIndex < 0)
+                return;
+            var sd = (dgvServers[e.ColumnIndex, e.RowIndex].OwningRow.Tag as ServerDescription);
+            if (sd != null)
+            {
+                if (sd.RequiresPassword)
+                {
+                    if (passwordForm == null)
+                        passwordForm = new FlyoutForm(panServerPassword);
+                    passwordForm.Tag = sd;
+                    passwordForm.Flyout();
+                }
+                else
+                    StartClientMode(sd.EndPoint, "");
+            }
+        }
+
+        private void tbServerPassword_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            if (passwordForm == null || passwordForm.Tag == null)
+                return;
+
+            if (e.KeyChar == '\n' || e.KeyChar == '\r')
+            {
+                if (tbServerPassword.Text.Length > 0)
+                {
+                    var pw = tbServerPassword.Text;
+                    tbServerPassword.Text = "";
+                    if (StartClientMode((passwordForm.Tag as ServerDescription).EndPoint, pw))
+                        this.Activate();
+                }
+                e.Handled = true;
+            }
+        }
+
         /////////////////////////////////////////////////////////////////////
         // IMPORTS
         /////////////////////////////////////////////////////////////////////
@@ -712,14 +762,5 @@ namespace OTEX
         [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
         private static extern bool ReleaseCapture();
-
-        private void dgvServers_CellContentDoubleClick(object sender, DataGridViewCellEventArgs e)
-        {
-            if (e.ColumnIndex < 0 || e.RowIndex < 0)
-                return;
-            var sd = (dgvServers[e.ColumnIndex, e.RowIndex].OwningRow.Tag as ServerDescription);
-            if (sd != null)
-                StartClientMode(sd.EndPoint, "");
-        }
     }
 }
