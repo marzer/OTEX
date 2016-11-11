@@ -233,6 +233,15 @@ namespace OTEX
         /// </summary>
         private volatile int fileSyncIndex = 0;
 
+        /// <summary>
+        /// Line ending scheme used by loaded file (defaults to CRLF on windows).
+        /// </summary>
+        public string FileLineEndings
+        {
+            get { return fileLineEnding; }
+        }
+        private volatile string fileLineEnding = Environment.NewLine;
+
         /////////////////////////////////////////////////////////////////////
         // CONSTRUCTION
         /////////////////////////////////////////////////////////////////////
@@ -298,14 +307,33 @@ namespace OTEX
                         UdpClient announcer = null;
                         try
                         {
-                            //read file
+                            
                             if (this.startParams.FilePath.Length > 0 && this.startParams.EditMode && File.Exists(FilePath))
                             {
-                                masterOperations.Add(new Operation(ID, 0,
-                                    fileContents = File.ReadAllText(FilePath, FilePath.DetectEncoding())
-                                        .Replace("\t", new string(' ', 4))
-                                        .Replace("\r\n", "\n").Replace("\r", "\n").Replace("\n", "\r\n")
-                                        ));
+                                //read file
+                                fileContents = File.ReadAllText(FilePath, FilePath.DetectEncoding())
+                                    .Replace("\t", new string(' ', 4)); //otex editor normalizes tabs to spaces :(:(
+
+                                //detect line ending type
+                                int crlfCount = Text.REGEX_CRLF.Split(fileContents).Length;
+                                string fileContentsNoCRLF = Text.REGEX_CRLF.Replace(fileContents, "");
+                                int crCount = Text.REGEX_CR.Split(fileContentsNoCRLF).Length;
+                                int lfCount = Text.REGEX_LF.Split(fileContentsNoCRLF).Length;
+                                if (crlfCount > crCount && crlfCount > lfCount)
+                                    fileLineEnding = "\r\n";
+                                else if (crCount > crlfCount && crCount > lfCount)
+                                    fileLineEnding = "\r";
+                                else if (lfCount > crlfCount && lfCount > crCount)
+                                    fileLineEnding = "\n";
+                                else //??
+                                    fileLineEnding = Environment.NewLine;
+                                fileContentsNoCRLF = null;
+
+                                //normalize line endings to crlf for otex editor
+                                fileContents = fileContents.Replace("\r\n", "\n").Replace("\r", "\n").Replace("\n", "\r\n");
+                               
+                                //add initial operation
+                                masterOperations.Add(new Operation(ID, 0, fileContents));
                                 ++fileSyncIndex;
                             }
 
@@ -630,9 +658,15 @@ namespace OTEX
                 ++fileSyncIndex;
             }
 
-            //write contents to disk
-            File.WriteAllText(FilePath, fileContents);
+            //check line ending normalization
+            var fileOutput = fileContents;
+            if (!fileLineEnding.Equals("\r\n"))
+                fileOutput = fileContents.Replace("\r\n", fileLineEnding);
 
+            //write contents to disk
+            File.WriteAllText(FilePath, fileOutput);
+
+            //trigger event
             OnFileSynchronized?.Invoke(this);
         }
 

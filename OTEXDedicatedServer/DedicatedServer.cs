@@ -216,11 +216,12 @@ namespace OTEX
             server.OnStarted += (s) =>
             {
                 Out("Server started.");
-                Out("        Name: {0}", s.Name);
-                Out("        File: {0}", s.FilePath);
-                Out("        Port: {0}", s.Port);
-                Out("    Password: {0}", s.RequiresPassword);
-                Out("      Public: {0}", s.Public);
+                Out("         Name: {0}", s.Name);
+                Out("         File: {0}", s.FilePath);
+                Out("         Port: {0}", s.Port);
+                Out("     Password: {0}", s.RequiresPassword);
+                Out("       Public: {0}", s.Public);
+                Out(" Line endings: {0}", s.FileLineEndings.Equals("\r\n") ? "CRLF" : (s.FileLineEndings.Equals("\r") ? "CR" : "LF"));
                 Out(" Max clients: {0}", s.MaxClients);
             };
             server.OnClientConnected += (s,id) =>
