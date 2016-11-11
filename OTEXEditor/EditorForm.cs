@@ -155,11 +155,11 @@ namespace OTEX
             filterFactory.Apply(dlgServerOpenExisting);
 
             //form styles
-            WindowStyles &= ~(WindowStyles.ThickFrame | WindowStyles.DialogFrame);
-            //ControlBox = false;
-            //FormBorderStyle = FormBorderStyle.SizableToolWindow;
+            FormBorderStyle = FormBorderStyle.None;
             TextFlourishes = false;
             Text = App.Name;
+            CustomTitleBar = true;
+            ResizeHandleOverride = true;
 
             // CREATE TEXT EDITOR (handles diff calculation) ////////////////////
             tbEditor = new FastColoredTextBox();
