@@ -12,13 +12,27 @@ namespace OTEX
     public abstract class ThreadController
     {
         /////////////////////////////////////////////////////////////////////
+        // THREAD EXCEPTION
+        /////////////////////////////////////////////////////////////////////
+
+        /// <summary>
+        /// General-purpose exception class for capturing other exceptions thrown on a thread managed by
+        /// a ThreadController subclass.
+        /// </summary>
+        public sealed class ThreadException : Exception
+        {
+            internal ThreadException(Exception innerException)
+                : base(string.Format("{0}: {1}", innerException.GetType().FullName, innerException.Message), innerException) { }
+        }
+
+        /////////////////////////////////////////////////////////////////////
         // EVENTS
         /////////////////////////////////////////////////////////////////////
 
         /// <summary>
         /// Triggered when an internal thread throws an exception.
         /// </summary>
-        public event Action<ThreadController, InternalException> OnThreadException;
+        public event Action<ThreadController, ThreadException> OnThreadException;
 
         /////////////////////////////////////////////////////////////////////
         // THREAD EXCEPTIONS
@@ -30,10 +44,16 @@ namespace OTEX
         /// </summary>
         protected bool CaptureException(Action func)
         {
-            InternalException exception = InternalException.Capture(func);
-            if (exception != null && OnThreadException != null)
+            if (func == null)
+                throw new ArgumentNullException("func");
+
+            try
             {
-                OnThreadException(this, exception);
+                func();
+            }
+            catch (Exception exc)
+            {
+                OnThreadException?.Invoke(this, new ThreadException(exc));
                 return true;
             }
             return false;

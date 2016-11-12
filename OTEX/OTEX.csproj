@@ -69,7 +69,6 @@
     <Compile Include="Packets\Packet.cs" />
     <Compile Include="Operation.cs" />
     <Compile Include="Packets\OperationList.cs" />
-    <Compile Include="InternalException.cs" />
     <Compile Include="Packets\PacketStream.cs" />
     <Compile Include="Packets\ServerDescription.cs" />
     <Compile Include="Password.cs" />
