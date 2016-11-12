@@ -11,6 +11,17 @@ using OTEX.Packets;
 
 namespace OTEX
 {
+    /*
+     * COMP7722: The class implemented below is the Client side of the OTEX framework.
+     * It is responsible for collecting local operations and periodically sending them
+     * off to the server, and then listening for the response. The client-side of the SLOT
+     * algorithm from the NICE approach is applied within.
+     * 
+     * Unlike the server, the client does not maintain it's own internal copy of the document;
+     * instead all new incoming operations are handled using callbacks which advertise the
+     * operations. This allows applications to use the Client as an intermediary.
+     */
+
     /// <summary>
     /// Client class for the OTEX framework.
     /// </summary>
@@ -93,6 +104,15 @@ namespace OTEX
         private volatile string serverFilePath;
 
         /// <summary>
+        /// The friendly name of the server.
+        /// </summary>
+        public string ServerName
+        {
+            get { return serverName; }
+        }
+        private volatile string serverName;
+
+        /// <summary>
         /// ID of server.
         /// </summary>
         public Guid ServerID
@@ -135,7 +155,7 @@ namespace OTEX
             get { return updateInterval; }
             set { updateInterval = value.Clamp(0.5f,5.0f); }
         }
-        private volatile float updateInterval;
+        private volatile float updateInterval = 0.5f;
 
         /////////////////////////////////////////////////////////////////////
         // CONSTRUCTION
@@ -173,6 +193,8 @@ namespace OTEX
         /// <exception cref="InvalidOperationException" />
         public void Connect(IPAddress address, ushort port = 55555, Password password = null)
         {
+            if (address == null)
+                throw new ArgumentNullException("address");
             Connect(new IPEndPoint(address, port), password);
         }
 
@@ -282,6 +304,7 @@ namespace OTEX
                         serverPort = (ushort)endpoint.Port;
                         serverAddress = endpoint.Address;
                         serverFilePath = response.FilePath ?? "";
+                        serverName = response.Name ?? "";
                         serverID = responsePacket.SenderID;
                         awaitingOperationList = false;
 
@@ -291,6 +314,7 @@ namespace OTEX
 
                         //create management thread
                         thread = new Thread(ControlThread);
+                        thread.Name = "OTEX Client ControlThread";
                         thread.IsBackground = false;
                         thread.Start(new object[]{ tcpClient, packetStream });
 
@@ -310,7 +334,7 @@ namespace OTEX
             var stream = objs[1] as PacketStream;
             var lastOpsRequestTimer = new Marzersoft.Timer();
 
-            while (!clientSideDisconnection && client.Connected)
+            while (!clientSideDisconnection && stream.Connected)
             {
                 Thread.Sleep(1);
                 
@@ -329,11 +353,16 @@ namespace OTEX
                 {
                     lock (stateLock)
                     {
+                        /*
+                         * COMP7722: step 1 & 2 of HOB: all outgoing operations sent to the server,
+                         * clearing the local outgoing operation buffer.
+                         */
+
                         //perform SLOT(OB,CIB) (1)
                         if (outgoingOperations.Count > 0 && incomingOperations.Count > 0)
                             Operation.SymmetricLinearTransform(outgoingOperations, incomingOperations);
 
-                        //send request
+                        //send request (2)
                         if (CaptureException(() => { stream.Write(ID,
                             new OperationList(outgoingOperations.Count > 0 ? outgoingOperations : null)); }))
                             break;
@@ -361,6 +390,7 @@ namespace OTEX
 
             //fire event
             OnDisconnected?.Invoke(this, !clientSideDisconnection);
+            clientSideDisconnection = false;
         }
 
         /// <summary>
@@ -387,6 +417,10 @@ namespace OTEX
                         return true;
 
                     case OperationList.PayloadType:  //operation list (4)
+                        /*
+                         * COMP7722: step 4 of HOB: incoming operations are appended to the local
+                         * incoming operation buffer.
+                         */
                         if (awaitingOperationList)
                         {
                             OperationList operationList = null;
@@ -406,6 +440,11 @@ namespace OTEX
         // INVOKE REMOTE OPERATIONS
         /////////////////////////////////////////////////////////////////////
 
+        /*
+        * COMP7722: This function notifies any callback subscribers
+        * clearing the local outgoing operation buffer.
+        */
+
         private void InvokeRemoteOperations(List<Operation> ops)
         {
             if (ops != null && ops.Count() > 0)
@@ -418,6 +457,13 @@ namespace OTEX
         /////////////////////////////////////////////////////////////////////
         // SEND LOCAL OPERATIONS
         /////////////////////////////////////////////////////////////////////
+
+        /*
+        * COMP7722: Because the OTEX client acts as an intemediary, and does not directly maintain
+        * it's own internal document buffer, it must provide applications with a method of
+        * notifying the OTEX server when a local operation has been generated. The functions below
+        * provide this functionality.
+        */
 
         /// <summary>
         /// Send a notification to the server that some text was inserted at the client end.
@@ -477,7 +523,7 @@ namespace OTEX
         /// </summary>
         public void Disconnect()
         {
-            if (connected)
+            if (connected && !clientSideDisconnection)
             {
                 lock (connectedLock)
                 {

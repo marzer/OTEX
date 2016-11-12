@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Marzersoft;
+using Marzersoft.Extensions;
 
 namespace OTEX.Packets
 {
@@ -22,6 +23,9 @@ namespace OTEX.Packets
         private byte[] buffer = new byte[4096];
         private TcpClient client = null;
         private NetworkStream stream = null;
+        private volatile bool connected = false;
+        private readonly Marzersoft.Timer lastConnectPollTimer = new Marzersoft.Timer();
+        private readonly object connectionCheckLock = new object();
 
         /// <summary>
         /// Has this PacketStream been disposed?
@@ -41,7 +45,19 @@ namespace OTEX.Packets
             {
                 if (isDisposed)
                     throw new ObjectDisposedException("OTEX.PacketStream");
-                return client.Connected;
+                if (connected && lastConnectPollTimer.Seconds >= 0.5)
+                {
+                    try
+                    {
+                        connected = client.IsConnected();
+                    }
+                    catch (SocketException)
+                    {
+                        connected = false;
+                    }
+                    lastConnectPollTimer.Reset();
+                }
+                return connected;
             }
         }
 
@@ -76,6 +92,7 @@ namespace OTEX.Packets
             if (!client.Connected)
                 throw new IOException("client was not connected");
             this.client = client;
+            connected = true;
 
             //get network stream
             NetworkStream stream = null;
@@ -96,6 +113,42 @@ namespace OTEX.Packets
         }
 
         /////////////////////////////////////////////////////////////////////
+        // DISCONNECTION DETECTION
+        /////////////////////////////////////////////////////////////////////
+
+        private bool DetectBrokenConnection(Action action)
+        {
+            try
+            {
+                action();
+            }
+            catch (IOException e)
+            {
+                if (e.InnerException == null)
+                    throw;
+
+                SocketException se = e.InnerException as SocketException;
+                if (se == null)
+                    throw;
+
+                if (se.SocketErrorCode == SocketError.OperationAborted
+                    || se.SocketErrorCode == SocketError.NetworkDown
+                    || se.SocketErrorCode == SocketError.NetworkUnreachable
+                    || se.SocketErrorCode == SocketError.NetworkReset
+                    || se.SocketErrorCode == SocketError.ConnectionAborted
+                    || se.SocketErrorCode == SocketError.ConnectionRefused
+                    || se.SocketErrorCode == SocketError.ConnectionReset
+                    || se.SocketErrorCode == SocketError.NotConnected
+                    || se.SocketErrorCode == SocketError.Shutdown
+                    || se.SocketErrorCode == SocketError.Disconnecting)
+                    return true;
+
+                throw;
+            }
+            return false;
+        }
+
+        /////////////////////////////////////////////////////////////////////
         // READING PACKETS
         /////////////////////////////////////////////////////////////////////
 
@@ -112,15 +165,20 @@ namespace OTEX.Packets
         {
             if (isDisposed)
                 throw new ObjectDisposedException("OTEX.PacketStream");
-            if (!client.Connected)
-                throw new IOException("client has been disconnected");
+            if (!Connected)
+                throw new IOException("client was not connected");
 
             //read size
             int offset = 0;
             int remaining = 4;
             while (remaining > 0)
             {
-                var readAmount = stream.Read(buffer, offset, remaining);
+                int readAmount = 0;
+                if (DetectBrokenConnection(() => { readAmount = stream.Read(buffer, offset, remaining); }))
+                {
+                    connected = false;
+                    throw new IOException("client has been disconnected");
+                }
                 remaining -= readAmount;
                 offset += readAmount;
             }
@@ -135,7 +193,12 @@ namespace OTEX.Packets
             remaining = size;
             while (remaining > 0)
             {
-                var readAmount = stream.Read(buffer, offset, remaining);
+                int readAmount = 0;
+                if (DetectBrokenConnection(() => { readAmount = stream.Read(buffer, offset, remaining); }))
+                {
+                    connected = false;
+                    throw new IOException("client has been disconnected");
+                }
                 remaining -= readAmount;
                 offset += readAmount;
             }
@@ -173,8 +236,8 @@ namespace OTEX.Packets
         {
             if (isDisposed)
                 throw new ObjectDisposedException("OTEX.PacketStream");
-            if (!client.Connected)
-                throw new IOException("client has been disconnected");
+            if (!Connected)
+                throw new IOException("client was not connected");
             if (data == null)
                 throw new ArgumentNullException("data");
             if (!typeof(T).IsSerializable)
@@ -191,7 +254,11 @@ namespace OTEX.Packets
             byte[] output = new byte[serializedLength.Length + serializedPacket.Length];
             serializedLength.CopyTo(output, 0);
             serializedPacket.CopyTo(output, serializedLength.Length);
-            stream.Write(output, 0, output.Length);
+            if (DetectBrokenConnection(() => { stream.Write(output, 0, output.Length); }))
+            {
+                connected = false;
+                throw new IOException("client has been disconnected");
+            }
         }
 
         /////////////////////////////////////////////////////////////////////
@@ -206,8 +273,10 @@ namespace OTEX.Packets
             if (isDisposed)
                 return;
             isDisposed = true;
+            connected = false;
             if (stream != null)
             {
+                stream.Flush();
                 stream.Dispose();
                 stream = null;
             }

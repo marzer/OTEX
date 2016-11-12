@@ -12,6 +12,13 @@ using OTEX.Packets;
 
 namespace OTEX
 {
+    /*
+     * COMP7722: The class implemented below is the Server side of the OTEX framework.
+     * It is responsible for maintaining the master document and periodically synchronizing it
+     * to disk, as well as listening for client operations and propagating them accordingly.
+     * The server-side of the SLOT algorithm from the NICE approach is applied within.
+     */
+
     /// <summary>
     /// Server class for the OTEX framework.
     /// </summary>
@@ -96,6 +103,13 @@ namespace OTEX
             public uint MaxClients = 10;
 
             /// <summary>
+            /// Replace tabs in loaded files with spaces?
+            /// Useful if paired with a client editor which does not support \t characters
+            /// (e.g. FastColoredTextBox).
+            /// </summary>
+            public uint ReplaceTabsWithSpaces = 0;
+
+            /// <summary>
             /// Default constructor.
             /// </summary>
             public StartParams()
@@ -115,6 +129,7 @@ namespace OTEX
                 Public = p.Public;
                 Name = p.Name;
                 MaxClients = p.MaxClients;
+                ReplaceTabsWithSpaces = p.ReplaceTabsWithSpaces.Clamp(0,8);
             }
         }
         private volatile StartParams startParams = null;
@@ -311,8 +326,12 @@ namespace OTEX
                             if (this.startParams.FilePath.Length > 0 && this.startParams.EditMode && File.Exists(FilePath))
                             {
                                 //read file
-                                fileContents = File.ReadAllText(FilePath, FilePath.DetectEncoding())
-                                    .Replace("\t", new string(' ', 4)); //otex editor normalizes tabs to spaces :(:(
+                                fileContents = File.ReadAllText(FilePath, FilePath.DetectEncoding());
+
+                                //replace tabs with spaces
+                                if (this.startParams.ReplaceTabsWithSpaces > 0)
+                                    fileContents = fileContents.Replace("\t",
+                                        new string(' ', (int)this.startParams.ReplaceTabsWithSpaces));
 
                                 //detect line ending type
                                 int crlfCount = Text.REGEX_CRLF.Split(fileContents).Length;
@@ -330,7 +349,8 @@ namespace OTEX
                                 fileContentsNoCRLF = null;
 
                                 //normalize line endings to crlf for otex editor
-                                fileContents = fileContents.Replace("\r\n", "\n").Replace("\r", "\n").Replace("\n", "\r\n");
+                                fileContents = fileContents.Replace("\r\n", "\n").Replace("\r", "\n")
+                                    .Replace("\n", "\r\n");
                                
                                 //add initial operation
                                 masterOperations.Add(new Operation(ID, 0, fileContents));
@@ -368,6 +388,7 @@ namespace OTEX
 
                         //create thread
                         thread = new Thread(ControlThread);
+                        thread.Name = "OTEX Server ControlThread";
                         thread.IsBackground = false;
                         thread.Start(new object[] { listener, announcer });
 
@@ -396,6 +417,9 @@ namespace OTEX
             {
                 Thread.Sleep(1);
 
+                /*
+                 * COMP7722: Incoming connection requests are dispatched to their own managing thread.
+                 */
                 //accept the connection
                 while (listener.Pending())
                 {
@@ -406,6 +430,7 @@ namespace OTEX
 
                     //create client thread
                     clientThreads.Add(new Thread(ClientThread));
+                    clientThreads.Last().Name = "OTEX Server ClientThread";
                     clientThreads.Last().IsBackground = false;
                     clientThreads.Last().Start(tcpClient);
                 }
@@ -430,6 +455,9 @@ namespace OTEX
                     announceTimer.Reset();
                 }
 
+                /*
+                 * COMP7722: File contents is synchronized to disk periodically (every 15 seconds)
+                 */
                 //flush file contents to disk periodically
                 if (startParams.FilePath.Length > 0 && flushTimer.Seconds >= 15.0)
                 {
@@ -548,8 +576,14 @@ namespace OTEX
                             break;
                         }
 
+                        /*
+                        * COMP7722: Master operation list is sent to new clients as part of the server's response
+                        * to their initial connection request, to bring them up to speed without further handshaking.
+                        */
+
                         //send response with initial sync list
-                        if (!CaptureException(() => { stream.Write(ID, new ConnectionResponse(startParams.FilePath, masterOperations)); }))
+                        if (!CaptureException(() => { stream.Write(ID, new ConnectionResponse(startParams.FilePath,
+                            startParams.Name, masterOperations)); }))
                         {
                             //create the list of staged operations for this client
                             outgoingOperations[packet.SenderID] = new List<Operation>();
@@ -582,6 +616,12 @@ namespace OTEX
                                 if (CaptureException(() => { incoming = packet.Payload.Deserialize<OperationList>(); }))
                                     break;
 
+                                /*
+                                 * COMP7722: step 3 of HOB: receive new operations from the client,
+                                 * transform them using SLOT, respond with new operations from other clients,
+                                 * and append the new operations to the outgoing lists of other connected clients.
+                                 */
+
                                 //lock operation lists (3a)
                                 lock (stateLock)
                                 {
@@ -591,7 +631,7 @@ namespace OTEX
                                     //if this oplist is not an empty request
                                     if (incoming.Operations != null && incoming.Operations.Count > 0)
                                     {
-                                        //transform incoming ops against outgoing ops (3b)
+                                        //perform SLOT(OB,SIB) (3b)
                                         if (outgoing.Count > 0)
                                             Operation.SymmetricLinearTransform(incoming.Operations, outgoing);
 
