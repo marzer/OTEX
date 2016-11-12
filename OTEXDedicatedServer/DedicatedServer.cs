@@ -225,7 +225,7 @@ namespace OTEX
                 Out("     Password: {0}", s.RequiresPassword);
                 Out("       Public: {0}", s.Public);
                 Out(" Line endings: {0}", s.FileLineEndings.Equals("\r\n") ? "CRLF" : (s.FileLineEndings.Equals("\r") ? "CR" : "LF"));
-                Out(" Max clients: {0}", s.MaxClients);
+                Out("  Max clients: {0}", s.MaxClients);
             };
             server.OnClientConnected += (s,id) =>
             {
