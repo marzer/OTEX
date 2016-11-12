@@ -54,19 +54,30 @@
             this.tbClientAddress = new System.Windows.Forms.TextBox();
             this.dlgServerOpenExisting = new System.Windows.Forms.OpenFileDialog();
             this.dlgServerCreateNew = new System.Windows.Forms.SaveFileDialog();
-            this.lblStatus = new System.Windows.Forms.Label();
+            this.lblConnectingStatus = new System.Windows.Forms.Label();
             this.panServerPassword = new System.Windows.Forms.Panel();
             this.labServerPassword = new System.Windows.Forms.Label();
             this.tbServerPassword = new System.Windows.Forms.TextBox();
             this.panMenuPage = new System.Windows.Forms.Panel();
             this.lblAbout = new System.Windows.Forms.Label();
             this.lblVersion = new System.Windows.Forms.Label();
+            this.panConnectingPage = new System.Windows.Forms.Panel();
+            this.panConnectingContent = new System.Windows.Forms.Panel();
+            this.btnConnectingReconnect = new Marzersoft.Themes.ThemedButton();
+            this.btnConnectingBack = new Marzersoft.Themes.ThemedButton();
+            this.panSettings = new System.Windows.Forms.Panel();
+            this.nudClientUpdateInterval = new System.Windows.Forms.NumericUpDown();
+            this.label3 = new System.Windows.Forms.Label();
             this.panMenu.SuspendLayout();
             this.panMenuButtons.SuspendLayout();
             this.panServerBrowserPage.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dgvServers)).BeginInit();
             this.panServerPassword.SuspendLayout();
             this.panMenuPage.SuspendLayout();
+            this.panConnectingPage.SuspendLayout();
+            this.panConnectingContent.SuspendLayout();
+            this.panSettings.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.nudClientUpdateInterval)).BeginInit();
             this.SuspendLayout();
             // 
             // btnServerExisting
@@ -121,7 +132,7 @@
             // 
             this.panMenu.Controls.Add(this.panMenuButtons);
             this.panMenu.Controls.Add(this.lblTitle);
-            this.panMenu.Location = new System.Drawing.Point(152, 14);
+            this.panMenu.Location = new System.Drawing.Point(21, 5);
             this.panMenu.Name = "panMenu";
             this.panMenu.Size = new System.Drawing.Size(279, 337);
             this.panMenu.TabIndex = 3;
@@ -165,9 +176,6 @@
             // 
             // panServerBrowserPage
             // 
-            this.panServerBrowserPage.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
             this.panServerBrowserPage.Controls.Add(this.label1);
             this.panServerBrowserPage.Controls.Add(this.lblManualEntry);
             this.panServerBrowserPage.Controls.Add(this.lblServerBrowser);
@@ -177,17 +185,17 @@
             this.panServerBrowserPage.Controls.Add(this.btnClientCancel);
             this.panServerBrowserPage.Controls.Add(this.btnClientConnect);
             this.panServerBrowserPage.Controls.Add(this.tbClientAddress);
-            this.panServerBrowserPage.Location = new System.Drawing.Point(15, 22);
+            this.panServerBrowserPage.Location = new System.Drawing.Point(9, 15);
             this.panServerBrowserPage.Margin = new System.Windows.Forms.Padding(0);
             this.panServerBrowserPage.Name = "panServerBrowserPage";
-            this.panServerBrowserPage.Size = new System.Drawing.Size(471, 391);
+            this.panServerBrowserPage.Size = new System.Drawing.Size(471, 188);
             this.panServerBrowserPage.TabIndex = 4;
             this.panServerBrowserPage.Visible = false;
             // 
             // label1
             // 
             this.label1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.label1.Location = new System.Drawing.Point(137, 329);
+            this.label1.Location = new System.Drawing.Point(137, 126);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(60, 20);
             this.label1.TabIndex = 108;
@@ -197,12 +205,12 @@
             // lblManualEntry
             // 
             this.lblManualEntry.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.lblManualEntry.Location = new System.Drawing.Point(131, 292);
+            this.lblManualEntry.Location = new System.Drawing.Point(131, 89);
             this.lblManualEntry.Margin = new System.Windows.Forms.Padding(0);
             this.lblManualEntry.Name = "lblManualEntry";
             this.lblManualEntry.Size = new System.Drawing.Size(327, 28);
             this.lblManualEntry.TabIndex = 107;
-            this.lblManualEntry.Text = "Enter server manually";
+            this.lblManualEntry.Text = "Enter document address manually";
             this.lblManualEntry.TextAlign = System.Drawing.ContentAlignment.BottomLeft;
             // 
             // lblServerBrowser
@@ -213,7 +221,7 @@
             this.lblServerBrowser.Name = "lblServerBrowser";
             this.lblServerBrowser.Size = new System.Drawing.Size(447, 28);
             this.lblServerBrowser.TabIndex = 106;
-            this.lblServerBrowser.Text = "Public servers";
+            this.lblServerBrowser.Text = "Public documents";
             this.lblServerBrowser.TextAlign = System.Drawing.ContentAlignment.BottomLeft;
             // 
             // dgvServers
@@ -251,7 +259,7 @@
             this.dgvServers.ShowCellToolTips = false;
             this.dgvServers.ShowEditingIcon = false;
             this.dgvServers.ShowRowErrors = false;
-            this.dgvServers.Size = new System.Drawing.Size(447, 252);
+            this.dgvServers.Size = new System.Drawing.Size(447, 49);
             this.dgvServers.TabIndex = 2000;
             this.dgvServers.CellDoubleClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.dgvServers_CellContentDoubleClick);
             // 
@@ -327,7 +335,7 @@
             // label2
             // 
             this.label2.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.label2.Location = new System.Drawing.Point(137, 357);
+            this.label2.Location = new System.Drawing.Point(137, 154);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(60, 20);
             this.label2.TabIndex = 104;
@@ -338,7 +346,7 @@
             // 
             this.tbClientPassword.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.tbClientPassword.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.tbClientPassword.Location = new System.Drawing.Point(203, 357);
+            this.tbClientPassword.Location = new System.Drawing.Point(203, 154);
             this.tbClientPassword.MaxLength = 32;
             this.tbClientPassword.Name = "tbClientPassword";
             this.tbClientPassword.Size = new System.Drawing.Size(166, 20);
@@ -351,7 +359,7 @@
             this.btnClientCancel.FlatAppearance.BorderSize = 0;
             this.btnClientCancel.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnClientCancel.ImageAlign = System.Drawing.ContentAlignment.MiddleRight;
-            this.btnClientCancel.Location = new System.Drawing.Point(11, 331);
+            this.btnClientCancel.Location = new System.Drawing.Point(11, 128);
             this.btnClientCancel.Margin = new System.Windows.Forms.Padding(0);
             this.btnClientCancel.Name = "btnClientCancel";
             this.btnClientCancel.Size = new System.Drawing.Size(80, 48);
@@ -367,15 +375,15 @@
             this.btnClientConnect.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.btnClientConnect.FlatAppearance.BorderSize = 0;
             this.btnClientConnect.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.btnClientConnect.ImageAlign = System.Drawing.ContentAlignment.MiddleRight;
-            this.btnClientConnect.Location = new System.Drawing.Point(378, 331);
+            this.btnClientConnect.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.btnClientConnect.Location = new System.Drawing.Point(378, 128);
             this.btnClientConnect.Margin = new System.Windows.Forms.Padding(0);
             this.btnClientConnect.Name = "btnClientConnect";
             this.btnClientConnect.Size = new System.Drawing.Size(80, 48);
             this.btnClientConnect.TabIndex = 2003;
             this.btnClientConnect.Text = "Connect";
-            this.btnClientConnect.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            this.btnClientConnect.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
+            this.btnClientConnect.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
+            this.btnClientConnect.TextImageRelation = System.Windows.Forms.TextImageRelation.TextBeforeImage;
             this.btnClientConnect.UseVisualStyleBackColor = true;
             this.btnClientConnect.Click += new System.EventHandler(this.btnClientConnect_Click);
             // 
@@ -383,7 +391,7 @@
             // 
             this.tbClientAddress.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.tbClientAddress.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.tbClientAddress.Location = new System.Drawing.Point(203, 329);
+            this.tbClientAddress.Location = new System.Drawing.Point(203, 126);
             this.tbClientAddress.MaxLength = 256;
             this.tbClientAddress.Name = "tbClientAddress";
             this.tbClientAddress.Size = new System.Drawing.Size(166, 20);
@@ -400,20 +408,22 @@
             // 
             this.dlgServerCreateNew.Title = "Select a new file to create collaboratively";
             // 
-            // lblStatus
+            // lblConnectingStatus
             // 
-            this.lblStatus.Location = new System.Drawing.Point(176, 357);
-            this.lblStatus.Name = "lblStatus";
-            this.lblStatus.Size = new System.Drawing.Size(267, 28);
-            this.lblStatus.TabIndex = 2;
-            this.lblStatus.Text = "Connecting...";
-            this.lblStatus.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            this.lblConnectingStatus.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.lblConnectingStatus.Location = new System.Drawing.Point(14, -39);
+            this.lblConnectingStatus.Name = "lblConnectingStatus";
+            this.lblConnectingStatus.Size = new System.Drawing.Size(587, 137);
+            this.lblConnectingStatus.TabIndex = 2;
+            this.lblConnectingStatus.Text = "Connecting...";
+            this.lblConnectingStatus.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
             // panServerPassword
             // 
             this.panServerPassword.Controls.Add(this.labServerPassword);
             this.panServerPassword.Controls.Add(this.tbServerPassword);
-            this.panServerPassword.Location = new System.Drawing.Point(642, 22);
+            this.panServerPassword.Location = new System.Drawing.Point(494, 15);
             this.panServerPassword.Name = "panServerPassword";
             this.panServerPassword.Size = new System.Drawing.Size(204, 56);
             this.panServerPassword.TabIndex = 6;
@@ -448,12 +458,12 @@
             // 
             this.panMenuPage.Controls.Add(this.panMenu);
             this.panMenuPage.Controls.Add(this.lblAbout);
-            this.panMenuPage.Controls.Add(this.lblStatus);
             this.panMenuPage.Controls.Add(this.lblVersion);
-            this.panMenuPage.Location = new System.Drawing.Point(628, 121);
+            this.panMenuPage.Location = new System.Drawing.Point(873, 15);
             this.panMenuPage.Name = "panMenuPage";
-            this.panMenuPage.Size = new System.Drawing.Size(512, 345);
+            this.panMenuPage.Size = new System.Drawing.Size(345, 345);
             this.panMenuPage.TabIndex = 5;
+            this.panMenuPage.Resize += new System.EventHandler(this.panMenuPage_Resize);
             // 
             // lblAbout
             // 
@@ -470,7 +480,7 @@
             // lblVersion
             // 
             this.lblVersion.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.lblVersion.Location = new System.Drawing.Point(410, 313);
+            this.lblVersion.Location = new System.Drawing.Point(243, 313);
             this.lblVersion.Margin = new System.Windows.Forms.Padding(0);
             this.lblVersion.Name = "lblVersion";
             this.lblVersion.Size = new System.Drawing.Size(100, 30);
@@ -478,11 +488,118 @@
             this.lblVersion.Text = "label2";
             this.lblVersion.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
+            // panConnectingPage
+            // 
+            this.panConnectingPage.Controls.Add(this.panConnectingContent);
+            this.panConnectingPage.Controls.Add(this.lblConnectingStatus);
+            this.panConnectingPage.Location = new System.Drawing.Point(63, 219);
+            this.panConnectingPage.Name = "panConnectingPage";
+            this.panConnectingPage.Size = new System.Drawing.Size(613, 179);
+            this.panConnectingPage.TabIndex = 7;
+            this.panConnectingPage.Resize += new System.EventHandler(this.panConnectingPage_Resize);
+            // 
+            // panConnectingContent
+            // 
+            this.panConnectingContent.Controls.Add(this.btnConnectingReconnect);
+            this.panConnectingContent.Controls.Add(this.btnConnectingBack);
+            this.panConnectingContent.Location = new System.Drawing.Point(165, 103);
+            this.panConnectingContent.Name = "panConnectingContent";
+            this.panConnectingContent.Size = new System.Drawing.Size(239, 49);
+            this.panConnectingContent.TabIndex = 2006;
+            // 
+            // btnConnectingReconnect
+            // 
+            this.btnConnectingReconnect.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnConnectingReconnect.FlatAppearance.BorderSize = 0;
+            this.btnConnectingReconnect.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnConnectingReconnect.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.btnConnectingReconnect.Location = new System.Drawing.Point(159, 1);
+            this.btnConnectingReconnect.Margin = new System.Windows.Forms.Padding(0);
+            this.btnConnectingReconnect.Name = "btnConnectingReconnect";
+            this.btnConnectingReconnect.Size = new System.Drawing.Size(80, 48);
+            this.btnConnectingReconnect.TabIndex = 2006;
+            this.btnConnectingReconnect.Text = "Retry";
+            this.btnConnectingReconnect.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
+            this.btnConnectingReconnect.TextImageRelation = System.Windows.Forms.TextImageRelation.TextBeforeImage;
+            this.btnConnectingReconnect.UseVisualStyleBackColor = true;
+            this.btnConnectingReconnect.Visible = false;
+            this.btnConnectingReconnect.Click += new System.EventHandler(this.btnConnectingReconnect_Click);
+            // 
+            // btnConnectingBack
+            // 
+            this.btnConnectingBack.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.btnConnectingBack.FlatAppearance.BorderSize = 0;
+            this.btnConnectingBack.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnConnectingBack.ImageAlign = System.Drawing.ContentAlignment.MiddleRight;
+            this.btnConnectingBack.Location = new System.Drawing.Point(0, 1);
+            this.btnConnectingBack.Margin = new System.Windows.Forms.Padding(0);
+            this.btnConnectingBack.Name = "btnConnectingBack";
+            this.btnConnectingBack.Size = new System.Drawing.Size(80, 48);
+            this.btnConnectingBack.TabIndex = 2005;
+            this.btnConnectingBack.Text = "Back";
+            this.btnConnectingBack.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.btnConnectingBack.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
+            this.btnConnectingBack.UseVisualStyleBackColor = true;
+            this.btnConnectingBack.Visible = false;
+            this.btnConnectingBack.Click += new System.EventHandler(this.btnConnectingBack_Click);
+            // 
+            // panSettings
+            // 
+            this.panSettings.Controls.Add(this.nudClientUpdateInterval);
+            this.panSettings.Controls.Add(this.label3);
+            this.panSettings.Location = new System.Drawing.Point(548, 114);
+            this.panSettings.Name = "panSettings";
+            this.panSettings.Size = new System.Drawing.Size(215, 33);
+            this.panSettings.TabIndex = 8;
+            // 
+            // nudClientUpdateInterval
+            // 
+            this.nudClientUpdateInterval.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.nudClientUpdateInterval.DecimalPlaces = 1;
+            this.nudClientUpdateInterval.Increment = new decimal(new int[] {
+            5,
+            0,
+            0,
+            65536});
+            this.nudClientUpdateInterval.Location = new System.Drawing.Point(152, 6);
+            this.nudClientUpdateInterval.Maximum = new decimal(new int[] {
+            50,
+            0,
+            0,
+            65536});
+            this.nudClientUpdateInterval.Minimum = new decimal(new int[] {
+            5,
+            0,
+            0,
+            65536});
+            this.nudClientUpdateInterval.Name = "nudClientUpdateInterval";
+            this.nudClientUpdateInterval.Size = new System.Drawing.Size(54, 20);
+            this.nudClientUpdateInterval.TabIndex = 110;
+            this.nudClientUpdateInterval.Value = new decimal(new int[] {
+            5,
+            0,
+            0,
+            65536});
+            this.nudClientUpdateInterval.ValueChanged += new System.EventHandler(this.nudClientUpdateInterval_ValueChanged);
+            // 
+            // label3
+            // 
+            this.label3.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.label3.Location = new System.Drawing.Point(5, 6);
+            this.label3.Name = "label3";
+            this.label3.Size = new System.Drawing.Size(145, 20);
+            this.label3.TabIndex = 109;
+            this.label3.Text = "Update interval (seconds):";
+            this.label3.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
+            // 
             // EditorForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1074, 478);
+            this.Controls.Add(this.panSettings);
+            this.Controls.Add(this.panConnectingPage);
             this.Controls.Add(this.panMenuPage);
             this.Controls.Add(this.panServerPassword);
             this.Controls.Add(this.panServerBrowserPage);
@@ -500,6 +617,10 @@
             this.panServerPassword.ResumeLayout(false);
             this.panServerPassword.PerformLayout();
             this.panMenuPage.ResumeLayout(false);
+            this.panConnectingPage.ResumeLayout(false);
+            this.panConnectingContent.ResumeLayout(false);
+            this.panSettings.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.nudClientUpdateInterval)).EndInit();
             this.ResumeLayout(false);
 
         }
@@ -516,7 +637,7 @@
         private Marzersoft.Themes.ThemedButton btnClientConnect;
         private System.Windows.Forms.OpenFileDialog dlgServerOpenExisting;
         private System.Windows.Forms.SaveFileDialog dlgServerCreateNew;
-        private System.Windows.Forms.Label lblStatus;
+        private System.Windows.Forms.Label lblConnectingStatus;
         private System.Windows.Forms.Panel panMenuButtons;
         private System.Windows.Forms.Panel panMenuPage;
         private System.Windows.Forms.Label lblAbout;
@@ -538,6 +659,13 @@
         private System.Windows.Forms.Panel panServerPassword;
         private System.Windows.Forms.Label labServerPassword;
         private System.Windows.Forms.TextBox tbServerPassword;
+        private System.Windows.Forms.Panel panConnectingPage;
+        private System.Windows.Forms.Panel panConnectingContent;
+        private Marzersoft.Themes.ThemedButton btnConnectingReconnect;
+        private Marzersoft.Themes.ThemedButton btnConnectingBack;
+        private System.Windows.Forms.Panel panSettings;
+        private System.Windows.Forms.NumericUpDown nudClientUpdateInterval;
+        private System.Windows.Forms.Label label3;
     }
 }
 
