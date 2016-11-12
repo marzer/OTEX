@@ -12,6 +12,7 @@ using System.IO;
 using System.Linq;
 using DiffPlex;
 using OTEX.Packets;
+using System.Collections.Generic;
 
 namespace OTEX
 {
@@ -29,53 +30,112 @@ namespace OTEX
         private volatile bool closing = false;
         private volatile string previousText = null;
         private static readonly Differ differ = new Differ();
-        private volatile bool processingRemoteChanges = false;
-        private FlyoutForm passwordForm = null;
+        private volatile bool disableOperationGeneration = false;
+        private FlyoutForm passwordForm = null, settingsForm = null;
+        private volatile IPEndPoint lastConnectionEndpoint = null;
+        private volatile Password lastConnectionPassword = null;
+        private volatile string lastConnectionFailedReason = null;
+        private volatile bool lastConnectionReturnToServerBrowser = false;
+        private CustomTitleBarButton logoutButton = null;
+        private readonly Dictionary<Guid, ulong> clientSelections
+            = new Dictionary<Guid, ulong>();
 
-        private bool MainMenuMode
+        private bool MainMenuPage
         {
-            get { return panMenuPage.Visible; }
             set
             {
                 panMenuPage.Visible = value;
                 panServerBrowserPage.Visible = !value;
+                panConnectingPage.Visible = !value;
                 tbEditor.Visible = !value;
                 if (value)
-                    PositionMenuPanel();
+                    panMenu.CenterInParent();
             }
         }
 
-        private bool ServerBrowserMode
+        private bool ServerBrowserPage
         {
-            get { return panServerBrowserPage.Visible; }
             set
             {
-                panServerBrowserPage.Visible = value;
                 panMenuPage.Visible = !value;
+                panServerBrowserPage.Visible = value;
+                panConnectingPage.Visible = !value;
                 tbEditor.Visible = !value;
             }
         }
 
-        private bool PendingConnectionMode
+        private bool ConnectingPageShared
         {
-            get { return lblStatus.Visible; }
             set
             {
-                lblStatus.Visible = value;
-                panMenuButtons.Visible = lblAbout.Visible = !value;
+                panMenuPage.Visible = !value;
+                panServerBrowserPage.Visible = !value;
+                panConnectingPage.Visible = value;
+                tbEditor.Visible = !value;
+                if (value)
+                {
+                    lblConnectingStatus.CenterInParent();
+                    panConnectingContent.CenterInParent();
+                    panConnectingContent.Top = lblConnectingStatus.Bottom + 8;
+                }
             }
         }
 
-        private bool EditorMode
+        private bool ConnectingPage
+        {
+            set
+            {
+                ConnectingPageShared = value;
+                if (value)
+                {
+                    lblConnectingStatus.Text = string.Format("Connecting to {0}...", lastConnectionEndpoint);
+                    btnConnectingBack.Visible = false;
+                    btnConnectingReconnect.Visible = false;
+                    ulong kek = 0;
+                    BitConverter.
+                }
+            }
+        }
+
+        private bool ConnectingFailedPage
+        {
+            set
+            {
+                ConnectingPageShared = value;
+                if (value)
+                {
+                    lblConnectingStatus.Text = string.Format("Could not connect to {0}.\r\n\r\n{1}",
+                        lastConnectionEndpoint, lastConnectionFailedReason);
+                    btnConnectingBack.Visible = true;
+                    btnConnectingReconnect.Visible = true;
+                }
+            }
+        }
+
+        private bool ConnectionLostPage
+        {
+            set
+            {
+                ConnectingPageShared = value;
+                if (value)
+                {
+                    lblConnectingStatus.Text = string.Format("Connection to {0} was lost.",
+                        lastConnectionEndpoint);
+                    btnConnectingBack.Visible = true;
+                    btnConnectingReconnect.Visible = true;
+                }
+            }
+        }
+
+        private bool EditorPage
         {
             get { return tbEditor.Visible; }
             set
             {
-                tbEditor.Visible = value;
                 panMenuPage.Visible = !value;
                 panServerBrowserPage.Visible = !value;
-                
-                
+                panConnectingPage.Visible = !value;
+                tbEditor.Visible = value;
             }
         }
 
@@ -115,23 +175,26 @@ namespace OTEX
             //client connection/server browser panel
             btnClient.TextAlign = btnServerNew.TextAlign = btnServerExisting.TextAlign
                 = btnServerTemporary.TextAlign = ContentAlignment.MiddleCenter;
-            btnClientConnect.Image = App.Images.Resource("tick");
+            btnClientConnect.Image = App.Images.Resource("next");
             btnClientCancel.Image = App.Images.Resource("previous");
             btnClientConnect.ImageAlign = btnClientCancel.ImageAlign = ContentAlignment.MiddleCenter;
             tbClientAddress.Font = tbClientPassword.Font = tbServerPassword.Font
-                = App.Theme.Monospaced.Normal.Regular;
+                = nudClientUpdateInterval.Font = App.Theme.Monospaced.Normal.Regular;
             tbClientAddress.BackColor = tbClientPassword.BackColor = tbServerPassword.BackColor
-                = App.Theme.Background.Light.Colour;
+                = nudClientUpdateInterval.BackColor = App.Theme.Background.Light.Colour;
             tbClientAddress.ForeColor = tbClientPassword.ForeColor = tbServerPassword.ForeColor
-                = App.Theme.Foreground.BaseColour;
+                = nudClientUpdateInterval.ForeColor = App.Theme.Foreground.BaseColour;
             lblManualEntry.Font = lblServerBrowser.Font = App.Theme.Controls.Large.Regular;
             panServerBrowserPage.Dock = DockStyle.Fill;
             dgvServers.ColumnHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleLeft;
             dgvServers.Columns[1].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleLeft;
             dgvServers.ShowCellToolTips = true;
 
-            //'connecting' status label
-            lblStatus.Parent = panMenu;
+            //'connecting' page
+            panConnectingPage.Dock = DockStyle.Fill;
+            lblConnectingStatus.Width = panConnectingPage.ClientSize.Width - 10;
+            btnConnectingReconnect.Image = App.Images.Resource("refresh");
+            btnConnectingBack.Image = App.Images.Resource("previous");
 
             //file dialog filters
             FileFilterFactory filterFactory = new FileFilterFactory();
@@ -162,11 +225,30 @@ namespace OTEX
             ResizeHandleOverride = true;
 
             //settings menu
+            settingsForm = new FlyoutForm(panSettings);
+            settingsForm.Accent = 3;
             var button = AddCustomTitleBarButton();
             button.Colour = App.Theme.Accent3.Light.Colour;
-            button.Image = App.Images.Resource("settings");
+            button.Image = App.Images.Resource("cog");
+            button.OnClick += (b) => { settingsForm.Flyout(PointToScreen(b.Bounds.BottomMiddle())); };
 
-            // CREATE TEXT EDITOR (handles diff calculation) ////////////////////
+            //logout button
+            logoutButton = AddCustomTitleBarButton();
+            logoutButton.Colour = Color.Red;
+            logoutButton.Image = App.Images.Resource("logout");
+            logoutButton.Visible = false;
+            logoutButton.OnClick += (b) =>
+            {
+                if (otexServer.Running && otexServer.ClientCount > 1 &&
+                    !Logger.WarningQuestion("You are currently running in server mode. "
+                    + "Leaving the session will disconnect the other {0} connected users.\n\nLeave session?", otexServer.ClientCount - 1))
+                    return;
+
+                otexClient.Disconnect();
+                otexServer.Stop();
+            };
+
+            // CREATE TEXT EDITOR ////////////////////////////////////////////////
             tbEditor = new FastColoredTextBox();
             tbEditor.Parent = this;
             tbEditor.Dock = DockStyle.Fill;
@@ -183,23 +265,36 @@ namespace OTEX
             tbEditor.TabLength = 4;
             tbEditor.LineInterval = 2;
             tbEditor.CaretColor = App.Theme.Accent1.LightLight.Colour;
+            /*
+             * COMP7722: In this editor example, Operations are not generated by directly
+             * intercepting key press events and the like, since they do not take special
+             * circumstances like Undo, Redo, and text dragging with the mouse into account. Instead,
+             * I've used a Least-Common-Substring-based diff generator (in this case, a package
+             * called DiffPlex: https://www.nuget.org/packages/DiffPlex/) to compare text pre-
+             * and post-change, and create the operations based on the calculated diffs.
+             * 
+             * This does of course cause a slight overhead; in testing with large documents
+             * (3.5mb of plain text, which is a lot!), diff calculation took ~100ms. Documents that
+             * were more realistically-sized took ~3ms (on the same machine), which is imperceptible.
+             */
             tbEditor.TextChanging += (sender, args) =>
             {
-                if (processingRemoteChanges)
+                if (disableOperationGeneration)
                     return;
 
+                //cache previous version of the text
                 previousText = tbEditor.Text;
             };
             tbEditor.TextChanged += (sender, args) =>
             {
-                if (processingRemoteChanges)
+                if (disableOperationGeneration)
                     return;
 
                 //do diff on two versions of text
                 var currentText = tbEditor.Text;
                 var diffs = differ.CreateCharacterDiffs(previousText, currentText, false, false);
 
-                //report changes
+                //convert changes into operations
                 int position = 0;
                 foreach (var diff in diffs.DiffBlocks)
                 {
@@ -217,6 +312,12 @@ namespace OTEX
             };
 
             // CREATE OTEX SERVER ///////////////////////////////////////////////
+            /*
+             * COMP7722: The OTEX Server is a self-contained class. "Host-mode" (i.e.
+             * allowing a user to edit a load and edit a document using OTEX Editor without
+             * first launching a dedicated server) simply launches a server and a client and
+             * directly connects them together internally.
+             */
             otexServer = new Server();
             otexServer.OnThreadException += (s, e) =>
             {
@@ -244,19 +345,29 @@ namespace OTEX
             };
 
             // CREATE OTEX CLIENT ///////////////////////////////////////////////
+            /*
+             * COMP7722: Like the server, the OTEX Client is a self-contained class.
+             * All of the editor and OT functionality is handled via callbacks.
+             */
             otexClient = new Client();
+            otexClient.UpdateInterval = (float)nudClientUpdateInterval.Value;
             otexClient.OnThreadException += (c, e) =>
             {
-                Logger.W("Client: {0}: {1}", e.InnerException.GetType().FullName, e.InnerException.Message);
+                Logger.W("Client: {0}: {1}", e.InnerException.GetType().Name, e.InnerException.Message);
             };
             otexClient.OnConnected += (c) =>
             {
                 Logger.I("Client: connected to {0}:{1}.", c.ServerAddress, c.ServerPort);
                 this.Execute(() =>
                 {
-                    processingRemoteChanges = true;
+                    /*
+                     * COMP7722: when the client first connects, initial textbox contents is set to "",
+                     * but must be done so while operation generation is disabled so
+                     * TextChanging/TextChanged don't do diffs and push operations.
+                     */
+                    disableOperationGeneration = true;
                     tbEditor.Text = "";
-                    processingRemoteChanges = false;
+                    disableOperationGeneration = false;
 
                     string ext = Path.GetExtension(c.ServerFilePath).ToLower();
                     if (ext.Length > 0 && (ext = ext.Substring(1)).Length > 0)
@@ -278,21 +389,28 @@ namespace OTEX
                     }
                     else
                         tbEditor.Language = Language.Custom;
+
+                    logoutButton.Visible = true;
+                    EditorPage = true;
+                    tbEditor.Focus();
                 }, false);
             };
             otexClient.OnRemoteOperations += (c,operations) =>
             {
-                this.Execute(() => //using Execute() ensures this happens on the main thread (editing is blocked)
+                /*
+                 * COMP7722: this event handler is fired when an OTEX Client receives remote
+                 * operations from the server (they're already transformed internally, and just need
+                 * to be applied).
+                 * 
+                 * The "Execute" function is an extension method that ensures whatever delegate function
+                 * is passed in will always be run on the main UI thread of a windows forms application,
+                 * so this ensures the user is prevented from typing while the remote operations are
+                 * being applied (virtually instantaneous).
+                 */
+                this.Execute(() =>
                 {
-                    processingRemoteChanges = true;
+                    disableOperationGeneration = true;
                     
-                    //set up autoscroll prevention
-                    var selection = tbEditor.Selection;
-                    var selectionStart = Math.Min(tbEditor.PlaceToPosition(selection.Start),
-                        tbEditor.PlaceToPosition(selection.End));
-                    var selectionEnd = Math.Max(tbEditor.PlaceToPosition(selection.Start),
-                        tbEditor.PlaceToPosition(selection.End));
-
                     foreach (var operation in operations)
                     {
                         if (operation.IsInsertion)
@@ -311,25 +429,40 @@ namespace OTEX
                         }
                     }
 
-                    processingRemoteChanges = false;
+                    disableOperationGeneration = false;
                 }, false);
             };
             otexClient.OnDisconnected += (c, serverSide) =>
             {
-                Logger.I("Client: disconnected {0}.", serverSide ? "(connection closed by server)" : "");
+                Logger.I("Client: disconnected{0}.", serverSide ? " (connection closed by server)" : "");
 
                 if (!closing)
                 {
                     this.Execute(() =>
                     {
-                        PendingConnectionMode = false;
-                        MainMenuMode = true;
+                        //non-host
+                        if (serverSide)
+                        {
+                            if (lastConnectionEndpoint != null)
+                                ConnectionLostPage = true;
+                            else
+                                MainMenuPage = true;
+                        }
+                        else
+                            MainMenuPage = true;
+
                         Text = App.Name;
+                        logoutButton.Visible = false;
                     });
                 }
             };
 
             // CREATE OTEX SERVER LISTENER //////////////////////////////////////
+            /*
+             * COMP7722: I've given OTEX Servers the ability to advertise their existence to the
+             * local network over UDP, so the ServerListener is a simple UDP listener. When new servers
+             * are identified, or known servers change in some way, events are fired.
+             */
             try
             {
                 otexServerListener = new ServerListener();
@@ -373,7 +506,8 @@ namespace OTEX
             }
             catch (Exception exc)
             {
-                Logger.ErrorMessage("An error occurred while creating the server listener:\n\n{0}",
+                Logger.ErrorMessage("An error occurred while creating the server listener:\n\n{0}"
+                    + "\n\nYou can still use OTEX Editor, but the \"Public Documents\" list will be empty.",
                     exc.Message);
                 return;
             }
@@ -388,6 +522,7 @@ namespace OTEX
             //start server
             try
             {
+                startParams.ReplaceTabsWithSpaces = 4;
                 otexServer.Start(startParams);
             }
             catch (Exception exc)
@@ -409,8 +544,13 @@ namespace OTEX
                 return;
             }
 
-            //started ok, toggle ui to Editor
-            EditorMode = true;
+            //set last connection data to null
+            lastConnectionEndpoint = null;
+            lastConnectionPassword = null;
+            lastConnectionFailedReason = null;
+            lastConnectionReturnToServerBrowser = false;
+
+            //started ok, set title text
             Text = string.Format("Hosting {0} - {1}",
                 otexClient.ServerFilePath.Length == 0 ? "a temporary document" : Path.GetFileName(otexClient.ServerFilePath),
                 App.Name);
@@ -569,41 +709,50 @@ namespace OTEX
                 }
             }
 
-            //connect to server
-            lblStatus.Text = string.Format("Connecting to {0}...", endPoint);
-            PendingConnectionMode = true;
-            clientConnectingThread = new Thread((o) =>
+            return StartClientMode(endPoint, password);
+        }
+
+        private bool StartClientMode(IPEndPoint endPoint, Password password)
+        {
+            //show "connecting" page
+            lastConnectionEndpoint = endPoint;
+            lastConnectionPassword = password;
+            lastConnectionFailedReason = null;
+            ConnectingPage = true;
+
+            //start connection thread
+            clientConnectingThread = new Thread(() =>
             {
-                object[] objs = o as object[];
-                var ep = objs[0] as IPEndPoint;
-                var pwd = objs[1] as Password;
                 try
                 {
-                    otexClient.Connect(ep, pwd);
+                    otexClient.Connect(lastConnectionEndpoint, lastConnectionPassword);
                 }
                 catch (Exception exc)
                 {
-                    Logger.ErrorMessage("An error occurred while connecting to {0}:\n\n{1}",
-                    ep, exc.Message);
-                    this.Execute(() => { PendingConnectionMode = false; });
+                    this.Execute(() =>
+                    {
+                        lastConnectionFailedReason = exc.Message;
+                        ConnectingFailedPage = true;
+                    });
                     clientConnectingThread = null;
                     return;
                 }
 
-                //started ok, toggle ui to Editor
+                //started ok
+                lastConnectionReturnToServerBrowser = false;
                 this.Execute(() =>
                 {
-                    PendingConnectionMode = false;
-                    EditorMode = true;
                     Text = string.Format("Editing {0} ({1}) - {2}",
                         otexClient.ServerFilePath.Length == 0 ? "a temporary document" : Path.GetFileName(otexClient.ServerFilePath),
-                        ep, App.Name);
+                        otexClient.ServerName.Length == 0 ? lastConnectionEndpoint.ToString() : string.Format("{0}, {1}",
+                            otexClient.ServerName, lastConnectionEndpoint),
+                        App.Name);
                 });
 
                 clientConnectingThread = null;
             });
             clientConnectingThread.IsBackground = false;
-            clientConnectingThread.Start(new object[] { endPoint, password  });
+            clientConnectingThread.Start();
             return true;
         }
 
@@ -611,43 +760,23 @@ namespace OTEX
         // UI EVENTS
         /////////////////////////////////////////////////////////////////////
 
-        private void PositionMenuPanel()
-        {
-            if (panMenu.Visible)
-            {
-                panMenu.Location = new Point(
-                    (panMenu.Parent.ClientRectangle.Size.Width / 2) - (panMenu.Size.Width / 2),
-                    (panMenu.Parent.ClientRectangle.Size.Height / 2) - (panMenu.Size.Height / 2));
-                lblStatus.Bounds = lblStatus.Bounds.AlignCenter(panMenuButtons.Bounds.Center());
-            }
-        }
-
         protected override void OnFirstShown(EventArgs e)
         {
             base.OnFirstShown(e);
             if (IsDesignMode)
                 return;
-            PendingConnectionMode = false;
-            MainMenuMode = true;
+            MainMenuPage = true;
             Refresh();
-        }
-
-        protected override void OnResize(EventArgs e)
-        {
-            base.OnResize(e);
-            if (IsDesignMode)
-                return;
-            PositionMenuPanel();
         }
 
         private void btnClient_Click(object sender, EventArgs e)
         {
-            ServerBrowserMode = true;
+            ServerBrowserPage = true;
         }
 
         private void btnClientCancel_Click(object sender, EventArgs e)
         {
-            MainMenuMode = true;
+            MainMenuPage = true;
         }
 
         private void btnServerNew_Click(object sender, EventArgs e)
@@ -675,6 +804,7 @@ namespace OTEX
 
         private void btnClientConnect_Click(object sender, EventArgs e)
         {
+            lastConnectionReturnToServerBrowser = true;
             StartClientMode(tbClientAddress.Text.Trim(), tbClientPassword.Text.Trim());
         }
 
@@ -746,7 +876,10 @@ namespace OTEX
                     passwordForm.Flyout();
                 }
                 else
+                {
+                    lastConnectionReturnToServerBrowser = true;
                     StartClientMode(sd.EndPoint, "");
+                }
             }
         }
 
@@ -761,6 +894,7 @@ namespace OTEX
                 {
                     var pw = tbServerPassword.Text;
                     tbServerPassword.Text = "";
+                    lastConnectionReturnToServerBrowser = true;
                     if (StartClientMode((passwordForm.Tag as ServerDescription).EndPoint, pw))
                         this.Activate();
                 }
@@ -768,12 +902,34 @@ namespace OTEX
             }
         }
 
-        /////////////////////////////////////////////////////////////////////
-        // IMPORTS
-        /////////////////////////////////////////////////////////////////////
+        private void panConnectingPage_Resize(object sender, EventArgs e)
+        {
+            lblConnectingStatus.CenterInParent();
+            panConnectingContent.CenterInParent();
+            panConnectingContent.Top = lblConnectingStatus.Bottom + 8;
+        }
 
-        [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        private static extern bool ReleaseCapture();
+        private void panMenuPage_Resize(object sender, EventArgs e)
+        {
+            panMenu.CenterInParent();
+        }
+
+        private void btnConnectingBack_Click(object sender, EventArgs e)
+        {
+            if (lastConnectionReturnToServerBrowser)
+                ServerBrowserPage = true;
+            else
+                MainMenuPage = true;
+        }
+
+        private void btnConnectingReconnect_Click(object sender, EventArgs e)
+        {
+            StartClientMode(lastConnectionEndpoint, lastConnectionPassword);
+        }
+
+        private void nudClientUpdateInterval_ValueChanged(object sender, EventArgs e)
+        {
+            otexClient.UpdateInterval = (float)nudClientUpdateInterval.Value;
+        }
     }
 }
