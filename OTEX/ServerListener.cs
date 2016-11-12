@@ -60,6 +60,21 @@ namespace OTEX
         private readonly Dictionary<IPEndPoint, ServerDescription> activeServers
             = new Dictionary<IPEndPoint, ServerDescription>();
 
+        /// <summary>
+        /// Get a list of all active servers. Do not keep this list; it is a snapshot of the internal
+        /// collection at the moment of the call. If you want regular updates, subscribe to OnServerAdded.
+        /// </summary>
+        public List<ServerDescription> Servers
+        {
+            get
+            {
+                lock (activeServers)
+                {
+                    return activeServers.Values.ToList();
+                }
+            }
+        }
+
         /////////////////////////////////////////////////////////////////////
         // CONSTRUCTOR
         /////////////////////////////////////////////////////////////////////
@@ -91,6 +106,7 @@ namespace OTEX
 
             //create thread
             thread = new Thread(ControlThread);
+            thread.Name = "OTEX ServerListener ControlThread";
             thread.IsBackground = false;
             thread.Start(udpClient);
         }

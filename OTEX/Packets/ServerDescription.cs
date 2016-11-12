@@ -305,6 +305,7 @@ namespace OTEX.Packets
                 lastPingTimer.Reset();
                 pingThread = null;
             });
+            pingThread.Name = "OTEX ServerDescription Ping";
             pingThread.Start();
         }
     }
