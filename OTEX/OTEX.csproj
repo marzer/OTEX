@@ -70,6 +70,7 @@
     <Compile Include="Operation.cs" />
     <Compile Include="Packets\OperationList.cs" />
     <Compile Include="Packets\PacketStream.cs" />
+    <Compile Include="PortRange.cs" />
     <Compile Include="Packets\ServerDescription.cs" />
     <Compile Include="Password.cs" />
     <Compile Include="Server.cs" />
