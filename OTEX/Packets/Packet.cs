@@ -55,7 +55,7 @@ namespace OTEX
         /// <param name="sender">ID of the node sending this packet.</param>
         /// <param name="payloadType">Unique type ID for this packet's payload.</param>
         /// <param name="payload">Serialized payload object.</param>
-        internal Packet(Guid sender, uint payloadType, byte[] payload = null)
+        public Packet(Guid sender, uint payloadType, byte[] payload = null)
         {
             this.sender = sender;
             this.payloadType = payloadType;

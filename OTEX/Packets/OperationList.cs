@@ -53,7 +53,7 @@ namespace OTEX.Packets
         /// <summary>
         /// Create a text insertion operation.
         /// </summary>
-        internal OperationList(List<Operation> ops)
+        public OperationList(List<Operation> ops)
         {
             operations = ops;
         }
