@@ -1,4 +1,5 @@
 ﻿using Marzersoft;
+using Marzersoft.Extensions;
 using Marzersoft.Forms;
 using System;
 using System.Drawing;
@@ -135,6 +136,17 @@ namespace OTEX
             }
         }
 
+        [Serializable]
+        private class RemoteClient
+        {
+            public int SelectionStart;
+            public int SelectionEnd;
+            public int Colour;
+        }
+        private readonly Dictionary<Guid, RemoteClient> remoteClients
+            = new Dictionary<Guid, RemoteClient>();
+        private Color clientColour;
+
         /////////////////////////////////////////////////////////////////////
         // CONSTRUCTOR
         /////////////////////////////////////////////////////////////////////
@@ -253,7 +265,7 @@ namespace OTEX
             tbEditor.ServiceLinesColor = App.Theme.Background.Light.Colour;
             tbEditor.LineNumberColor = App.Theme.Accent1.Mid.Colour;
             tbEditor.CurrentLineColor = App.Theme.Background.LightLight.Colour;
-            tbEditor.SelectionColor = App.Theme.Accent1.Mid.Colour;
+            //tbEditor.SelectionColor = App.Theme.Accent1.Mid.Colour;
             tbEditor.Font = new Font(App.Theme.Monospaced.Normal.Regular.FontFamily, 11.0f);
             tbEditor.WordWrap = true;
             tbEditor.WordWrapAutoIndent = true;
@@ -272,10 +284,13 @@ namespace OTEX
              * This does of course cause a slight overhead; in testing with large documents
              * (3.5mb of plain text, which is a lot!), diff calculation took ~100ms. Documents that
              * were more realistically-sized took ~3ms (on the same machine), which is imperceptible.
+             * 
+             * I've also implemented some basic awareness painting, so the current position, line
+             * and selection of other editors will be rendered (see PaintLine).
              */
             tbEditor.TextChanging += (sender, args) =>
             {
-                if (disableOperationGeneration)
+                if (disableOperationGeneration || !otexClient.Connected)
                     return;
 
                 //cache previous version of the text
@@ -283,7 +298,7 @@ namespace OTEX
             };
             tbEditor.TextChanged += (sender, args) =>
             {
-                if (disableOperationGeneration)
+                if (disableOperationGeneration || !otexClient.Connected)
                     return;
 
                 //do diff on two versions of text
@@ -305,6 +320,74 @@ namespace OTEX
                     if (position < (diff.InsertStartB + diff.InsertCountB))
                         otexClient.Insert((uint)position, currentText.Substring(position, diff.InsertCountB));
                 }
+            };
+            tbEditor.SelectionChanged += (s, e) =>
+            {
+                if (!otexClient.Connected)
+                    return;
+                var sel = tbEditor.Selection;
+                otexClient.Metadata(
+                    (new RemoteClient()
+                    {
+                        SelectionStart = tbEditor.PlaceToPosition(sel.Start),
+                        SelectionEnd = tbEditor.PlaceToPosition(sel.End),
+                        Colour = clientColour.ToArgb()
+                    }
+                    ).Serialize()
+                );
+            };
+            tbEditor.PaintLine += (s, e) =>
+            {
+                if (!otexClient.Connected || remoteClients.Count == 0)
+                    return;
+
+                Range lineRange = new Range(tbEditor, e.LineIndex);
+                lock (remoteClients)
+                {
+                    var len = tbEditor.TextLength;
+                    foreach (var kvp in remoteClients)
+                    {
+                        //check range
+                        var selStart = tbEditor.PositionToPlace(kvp.Value.SelectionStart.Clamp(0, len));
+                        var selEnd = tbEditor.PositionToPlace(kvp.Value.SelectionEnd.Clamp(0, len));
+                        var selRange = new Range(tbEditor, selStart, selEnd);
+                        var range = lineRange.GetIntersectionWith(selRange);
+                        if (range.Length == 0 && !lineRange.Contains(selStart))
+                            continue;
+
+                        var ptStart = tbEditor.PlaceToPoint(range.Start);
+                        var ptEnd = tbEditor.PlaceToPoint(range.End);
+                        var caret = lineRange.Contains(selStart);
+
+                        //draw "current line" fill
+                        if (caret && selRange.Length == 0)
+                        {
+                            using (SolidBrush b = new SolidBrush(
+                                Color.FromArgb(((kvp.Value.Colour & 0x00FFFFFF) | 0x10000000))))
+                                    e.Graphics.FillRectangle(b, e.LineRect);
+                        }
+                        //draw highlight
+                        if (range.Length > 0)
+                        {
+                            using (SolidBrush b = new SolidBrush(
+                                Color.FromArgb(((kvp.Value.Colour & 0x00FFFFFF) | 0x20000000))))
+                                e.Graphics.FillRectangle(b, new Rectangle(ptStart.X, e.LineRect.Y,
+                                    ptEnd.X - ptStart.X, e.LineRect.Height));
+                        }
+                        //draw caret
+                        if (caret)
+                        {
+                            ptStart = tbEditor.PlaceToPoint(selStart);
+                            using (Pen p = new Pen(Color.FromArgb((int)((kvp.Value.Colour & 0x00FFFFFF) | 0x90000000))))
+                            {
+                                p.Width = 2;
+                                e.Graphics.DrawLine(p, ptEnd.X, e.LineRect.Top,
+                                    ptEnd.X, e.LineRect.Bottom);
+                            }
+                        }
+                    }
+                }
+                
             };
 
             // CREATE OTEX SERVER ///////////////////////////////////////////////
@@ -428,10 +511,36 @@ namespace OTEX
                     disableOperationGeneration = false;
                 }, false);
             };
+            otexClient.OnMetadataUpdated += (c, id, md) =>
+            {
+                lock (remoteClients)
+                {
+                    RemoteClient rc = null;
+                    if (!remoteClients.TryGetValue(id, out rc))
+                        remoteClients[id] = rc = (md != null ? md.Deserialize<RemoteClient>() : new RemoteClient());
+                    else if (md != null)
+                    {
+                        RemoteClient newrc = md.Deserialize<RemoteClient>();
+                        rc.Colour = newrc.Colour;
+                        rc.SelectionEnd = newrc.SelectionEnd;
+                        rc.SelectionStart = newrc.SelectionStart;
+                    }
+                    else
+                    {
+                        rc.Colour = Color.White.ToArgb();
+                        rc.SelectionEnd = 0;
+                        rc.SelectionStart = 0;
+                    }
+                }
+                this.Execute(() => { tbEditor.Refresh(); });
+            };
             otexClient.OnDisconnected += (c, serverSide) =>
             {
                 Logger.I("Client: disconnected{0}.", serverSide ? " (connection closed by server)" : "");
-
+                lock (remoteClients)
+                {
+                    remoteClients.Clear();
+                }
                 if (!closing)
                 {
                     this.Execute(() =>
@@ -452,6 +561,7 @@ namespace OTEX
                     });
                 }
             };
+            tbEditor.SelectionColor = clientColour = otexClient.ID.ToColour().Lighten(0.3f);
 
             // CREATE OTEX SERVER LISTENER //////////////////////////////////////
             /*
@@ -471,7 +581,7 @@ namespace OTEX
                     Logger.I("ServerListener: new server {0}: {1}", s.ID, s.EndPoint);
                     this.Execute(() =>
                     {
-                        var row = dgvServers.AddRow(s.Name, s.TemporaryDocument ? "Yes" : "", s.EndPoint.Address,
+                        var row = dgvServers.AddRow(s.Name.Length > 0 ? s.Name : "OTEX Server", s.TemporaryDocument ? "Yes" : "", s.EndPoint.Address,
                             s.EndPoint.Port, s.RequiresPassword ? "Yes" : "", string.Format("{0} / {1}",s.ClientCount, s.MaxClients), 0);
                         row.Tag = s;
                         s.Tag = row;
@@ -482,7 +592,7 @@ namespace OTEX
                         Logger.I("ServerDescription: {0} updated.", sd.ID);
                         this.Execute(() =>
                         {
-                            (s.Tag as DataGridViewRow).Update(s.Name, s.TemporaryDocument ? "Yes" : "", s.EndPoint.Address,
+                            (s.Tag as DataGridViewRow).Update(s.Name.Length > 0 ? s.Name : "OTEX Server", s.TemporaryDocument ? "Yes" : "", s.EndPoint.Address,
                                 s.EndPoint.Port, s.RequiresPassword ? "Yes" : "", string.Format("{0} / {1}", s.ClientCount, s.MaxClients), 0);
                         });
                     };
@@ -724,7 +834,8 @@ namespace OTEX
             {
                 try
                 {
-                    otexClient.Connect(lastConnectionEndpoint, lastConnectionPassword);
+                    otexClient.Connect(lastConnectionEndpoint, lastConnectionPassword,
+                        (new RemoteClient() { Colour = clientColour.ToArgb() }).Serialize());
                 }
                 catch (Exception exc)
                 {
