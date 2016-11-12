@@ -6,6 +6,14 @@ using System.Threading.Tasks;
 
 namespace OTEX.Packets
 {
+    /*
+     * COMP7722: OTEX uses the NICE approach, and keeps the request-response
+     * flow intact. The class implemented below is the server's initial response
+     * to the client's request to connect; in the event the client is connecting to a 
+     * session that is already in progress, this response contains the server's "master"
+     * set of operations, so they may synchronize without any further handshaking.
+     */
+
     /// <summary>
     /// Connection response packet sent from an OTEX server to client.
     /// </summary>
@@ -87,6 +95,15 @@ namespace OTEX.Packets
         private string filePath;
 
         /// <summary>
+        /// The friendly name of the server.
+        /// </summary>
+        public string Name
+        {
+            get { return name; }
+        }
+        private string name;
+
+        /// <summary>
         /// List of initial operations.
         /// </summary>
         public List<Operation> Operations
@@ -103,10 +120,12 @@ namespace OTEX.Packets
         /// Constructs an "approved" connection request response.
         /// </summary>
         /// <param name="filePath">Path (on the server) of the file being edited by the session.</param>
+        /// <param name="name">The friendly name of the server.</param>
         /// <param name="operations">List of initial operations to send back to the client.</param>
-        public ConnectionResponse(string filePath, List<Operation> operations)
+        public ConnectionResponse(string filePath, string name, List<Operation> operations)
         {
             this.filePath = (filePath ?? "").Trim();
+            this.name = (name ?? "").Trim();
             this.operations = operations;
             result = ResponseCode.Approved;
         }
@@ -121,6 +140,8 @@ namespace OTEX.Packets
             if (failReason == ResponseCode.Approved || failReason > ResponseCode.Other)
                 throw new ArgumentOutOfRangeException("failReason", "failReason must be one of the negative ResponseCode values.");
             result = failReason;
+            filePath = null;
+            name = null;
         }
     }
 }
