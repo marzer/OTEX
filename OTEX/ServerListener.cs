@@ -14,7 +14,7 @@ namespace OTEX
     /// <summary>
     /// Class responsible for listening for the availability of public OTEX servers.
     /// </summary>
-    public class ServerListener : ThreadController, IDisposable
+    public sealed class ServerListener : ThreadController, IDisposable
     {
         /////////////////////////////////////////////////////////////////////
         // EVENTS

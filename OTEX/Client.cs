@@ -25,7 +25,7 @@ namespace OTEX
     /// <summary>
     /// Client class for the OTEX framework.
     /// </summary>
-    public class Client : Node, IDisposable
+    public sealed class Client : Node, IDisposable
     {
         /////////////////////////////////////////////////////////////////////
         // EVENTS

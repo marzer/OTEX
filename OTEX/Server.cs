@@ -22,7 +22,7 @@ namespace OTEX
     /// <summary>
     /// Server class for the OTEX framework.
     /// </summary>
-    public class Server : Node, IDisposable
+    public sealed class Server : Node, IDisposable
     {
         /////////////////////////////////////////////////////////////////////
         // EVENTS
