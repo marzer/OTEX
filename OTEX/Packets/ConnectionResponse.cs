@@ -18,7 +18,7 @@ namespace OTEX.Packets
     /// Connection response packet sent from an OTEX server to client.
     /// </summary>
     [Serializable]
-    internal sealed class ConnectionResponse : IPacketPayload, IOperationList
+    internal sealed class ConnectionResponse : IPacketPayload, IOperationList, IClientMetadata
     {
         /////////////////////////////////////////////////////////////////////
         // PROPERTIES/VARIABLES
@@ -112,6 +112,15 @@ namespace OTEX.Packets
         }
         private List<Operation> operations;
 
+        /// <summary>
+        /// Set of metadata for other connected clients.
+        /// </summary>
+        public Dictionary<Guid, byte[]> Metadata
+        {
+            get { return metadata; }
+        }
+        private Dictionary<Guid, byte[]> metadata;
+
         /////////////////////////////////////////////////////////////////////
         // CONSTRUCTORS
         /////////////////////////////////////////////////////////////////////
@@ -122,11 +131,13 @@ namespace OTEX.Packets
         /// <param name="filePath">Path (on the server) of the file being edited by the session.</param>
         /// <param name="name">The friendly name of the server.</param>
         /// <param name="operations">List of initial operations to send back to the client.</param>
-        public ConnectionResponse(string filePath, string name, List<Operation> operations)
+        /// <param name="metadata">Set of metadata for other connected clients.</param>
+        public ConnectionResponse(string filePath, string name, List<Operation> operations, Dictionary<Guid, byte[]> metadata)
         {
             this.filePath = (filePath ?? "").Trim();
             this.name = (name ?? "").Trim();
             this.operations = operations;
+            this.metadata = metadata;
             result = ResponseCode.Approved;
         }
 

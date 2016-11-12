@@ -39,6 +39,15 @@ namespace OTEX.Packets
         }
         private Password password;
 
+        /// <summary>
+        /// Initial metadata for the client.
+        /// </summary>
+        public byte[] Metadata
+        {
+            get { return metadata; }
+        }
+        private byte[] metadata;
+
         /////////////////////////////////////////////////////////////////////
         // CONSTRUCTOR
         /////////////////////////////////////////////////////////////////////
@@ -47,9 +56,15 @@ namespace OTEX.Packets
         /// Construct a connection request packet.
         /// </summary>
         /// <param name="password">Password for the server, if requred.</param>
-        public ConnectionRequest(Password password = null)
+        /// <param name="metadata">Initial metadata for the client.</param>
+        /// <exception cref="ArgumentOutOfRangeException" />
+        public ConnectionRequest(Password password = null, byte[] metadata = null)
         {
+            if (metadata != null && metadata.Length > ClientMetadata.MaxSize)
+                throw new ArgumentOutOfRangeException("metadata",
+                    string.Format("metadata.Length may not be greater than {0}.", ClientMetadata.MaxSize));
             this.password = password;
+            this.metadata = metadata;
         }
     }
 }

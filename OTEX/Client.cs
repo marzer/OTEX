@@ -43,6 +43,12 @@ namespace OTEX
         public event Action<Client, IEnumerable<Operation>> OnRemoteOperations;
 
         /// <summary>
+        /// Triggered when a remote client updates it's metadata.
+        /// Do not call any of this object's methods from this callback or you may deadlock!
+        /// </summary>
+        public event Action<Client, Guid, byte[]> OnMetadataUpdated;
+
+        /// <summary>
         /// Triggered when the client is disconnected from an OTEX server.
         /// Boolean parameter is true if the disconnection was forced by the server.
         /// </summary>
@@ -142,9 +148,9 @@ namespace OTEX
         private readonly List<Operation> incomingOperations = new List<Operation>();
 
         /// <summary>
-        /// Lock object for operations and clients state;
+        /// Lock object for operations;
         /// </summary>
-        private readonly object stateLock = new object();
+        private readonly object operationsLock = new object();
 
         /// <summary>
         /// Time, in seconds, between each request for updates sent to the server
@@ -156,6 +162,16 @@ namespace OTEX
             set { updateInterval = value.Clamp(0.5f,5.0f); }
         }
         private volatile float updateInterval = 0.5f;
+
+        /// <summary>
+        /// Pending metadata.
+        /// </summary>
+        private volatile byte[] pendingMetadata = null;
+
+        /// <summary>
+        /// Lock object for pending metadata.
+        /// </summary>
+        private readonly object pendingMetadataLock = new object();
 
         /////////////////////////////////////////////////////////////////////
         // CONSTRUCTION
@@ -181,6 +197,7 @@ namespace OTEX
         /// <param name="address">IP Address of the OTEX server.</param>
         /// <param name="port">Listen port of the OTEX server.</param>
         /// <param name="password">Password required to connect to the server, if any. Leave as null for none.</param>
+        /// <param name="metadata">Client-specific application data to send to the server.</param>
         /// <exception cref="ArgumentException" />
         /// <exception cref="ArgumentNullException" />
         /// <exception cref="ArgumentOutOfRangeException" />
@@ -191,7 +208,7 @@ namespace OTEX
         /// <exception cref="System.Security.SecurityException" />
         /// <exception cref="IOException" />
         /// <exception cref="InvalidOperationException" />
-        public void Connect(IPAddress address, ushort port = Server.DefaultPort, Password password = null)
+        public void Connect(IPAddress address, ushort port = Server.DefaultPort, Password password = null, byte[] metadata = null)
         {
             if (address == null)
                 throw new ArgumentNullException("address");
@@ -204,6 +221,7 @@ namespace OTEX
         /// <param name="address">IP Address of the OTEX server.</param>
         /// <param name="port">Listen port of the OTEX server.</param>
         /// <param name="password">Password required to connect to the server, if any. Leave as null for none.</param>
+        /// <param name="metadata">Client-specific application data to send to the server.</param>
         /// <exception cref="ArgumentException" />
         /// <exception cref="ArgumentNullException" />
         /// <exception cref="ArgumentOutOfRangeException" />
@@ -214,7 +232,7 @@ namespace OTEX
         /// <exception cref="System.Security.SecurityException" />
         /// <exception cref="IOException" />
         /// <exception cref="InvalidOperationException" />
-        public void Connect(ServerDescription serverDescription, Password password = null)
+        public void Connect(ServerDescription serverDescription, Password password = null, byte[] metadata = null)
         {
             if (serverDescription == null)
                 throw new ArgumentNullException("serverDescription");
@@ -226,6 +244,7 @@ namespace OTEX
         /// </summary>
         /// <param name="endpoint">IP Endpoint (address and port) of the OTEX server.</param>
         /// <param name="password">Password required to connect to the server, if any. Leave as null for none.</param>
+        /// <param name="metadata">Client-specific application data to send to the server.</param>
         /// <exception cref="ArgumentException" />
         /// <exception cref="ArgumentNullException" />
         /// <exception cref="ArgumentOutOfRangeException" />
@@ -236,7 +255,7 @@ namespace OTEX
         /// <exception cref="System.Security.SecurityException" />
         /// <exception cref="IOException" />
         /// <exception cref="InvalidOperationException" />
-        public void Connect(IPEndPoint endpoint, Password password = null)
+        public void Connect(IPEndPoint endpoint, Password password = null, byte[] metadata = null)
         {
             if (isDisposed)
                 throw new ObjectDisposedException("OTEX.Client");
@@ -252,18 +271,22 @@ namespace OTEX
 
                     if (!connected)
                     {
-                        //session state
+                        //check endpoint
                         if (endpoint == null)
                             throw new ArgumentNullException("endpoint");
                         if (endpoint.Port < 1024 || Server.AnnouncePorts.Contains(endpoint.Port))
                             throw new ArgumentOutOfRangeException("endpoint.Port",
                                 string.Format("Port must be between 1024-{0} or {1}-65535.",
                                     Server.AnnouncePorts.First - 1, Server.AnnouncePorts.Last + 1));
-
                         if (endpoint.Address.Equals(IPAddress.Any) || endpoint.Address.Equals(IPAddress.Broadcast)
                             || endpoint.Address.Equals(IPAddress.None) || endpoint.Address.Equals(IPAddress.IPv6Any)
                             || endpoint.Address.Equals(IPAddress.IPv6None))
                             throw new ArgumentOutOfRangeException("endpoint.Address", "Address cannot be Any, None or Broadcast.");
+
+                        //check metadata
+                        if (metadata != null && metadata.Length > ClientMetadata.MaxSize)
+                            throw new ArgumentOutOfRangeException("metadata",
+                                string.Format("metadata.Length may not be greater than {0}.", ClientMetadata.MaxSize));
 
                         //session connection
                         TcpClient tcpClient = null;
@@ -279,7 +302,7 @@ namespace OTEX
                             packetStream = new PacketStream(tcpClient);
 
                             //send connection request packet
-                            packetStream.Write(ID, new ConnectionRequest(password));
+                            packetStream.Write(ID, new ConnectionRequest(password, metadata));
 
                             //get response
                             responsePacket = packetStream.Read();
@@ -313,6 +336,11 @@ namespace OTEX
                         //fire events
                         OnConnected?.Invoke(this);
                         InvokeRemoteOperations(response.Operations);
+                        if (response.Metadata != null && OnMetadataUpdated != null)
+                        {
+                            foreach (var md in response.Metadata)
+                                OnMetadataUpdated?.Invoke(this, md.Key, md.Value);
+                        }
 
                         //create management thread
                         thread = new Thread(ControlThread);
@@ -353,7 +381,7 @@ namespace OTEX
                 //send periodic requests for new operations
                 if (!awaitingOperationList && lastOpsRequestTimer.Seconds >= updateInterval)
                 {
-                    lock (stateLock)
+                    lock (operationsLock)
                     {
                         /*
                          * COMP7722: step 1 & 2 of HOB: all outgoing operations sent to the server,
@@ -379,6 +407,20 @@ namespace OTEX
                     }
                     lastOpsRequestTimer.Reset();
                 }
+
+                //send off any pending metadata updates
+                if (pendingMetadata != null)
+                {
+                    lock (pendingMetadataLock)
+                    {
+                        if (pendingMetadata != null)
+                        {
+                            if (CaptureException(() => { stream.Write(ID, new ClientMetadata(ID, pendingMetadata));  }))
+                                break;
+                            pendingMetadata = null;
+                        }
+                    }
+                }
             }
 
             //disconnect
@@ -389,6 +431,7 @@ namespace OTEX
             client.Close();
             outgoingOperations.Clear();
             incomingOperations.Clear();
+            pendingMetadata = null;
 
             //fire event
             OnDisconnected?.Invoke(this, !clientSideDisconnection);
@@ -431,6 +474,22 @@ namespace OTEX
                             if (operationList.Operations != null && operationList.Operations.Count > 0)
                                 incomingOperations.AddRange(operationList.Operations);
                             awaitingOperationList = false;
+                        }
+                        break;
+
+                    case ClientMetadata.PayloadType:
+                        {
+                            //deserialize metadata packet
+                            ClientMetadata metadataPacket = null;
+                            if (CaptureException(() => { metadataPacket = packet.Payload.Deserialize<ClientMetadata>(); })
+                                || metadataPacket.Metadata == null || metadataPacket.Metadata.Count == 0)
+                                break;
+
+                            if (metadataPacket.Metadata != null && OnMetadataUpdated != null)
+                            {
+                                foreach (var md in metadataPacket.Metadata)
+                                    OnMetadataUpdated?.Invoke(this, md.Key, md.Value);
+                            }
                         }
                         break;
                 }
@@ -487,7 +546,7 @@ namespace OTEX
             if (!connected)
                 throw new InvalidOperationException("cannot send an operation without being connected");
 
-            lock (stateLock)
+            lock (operationsLock)
             {
                 outgoingOperations.Add(new Operation(ID, (int)offset, text));
             }
@@ -510,9 +569,38 @@ namespace OTEX
             if (!connected)
                 throw new InvalidOperationException("cannot send an operation without being connected");
 
-            lock (stateLock)
+            lock (operationsLock)
             {
                 outgoingOperations.Add(new Operation(ID, (int)offset, (int)length));
+            }
+        }
+
+        /////////////////////////////////////////////////////////////////////
+        // SEND CLIENT-SPECIFIC APPLICATION DATA (METADATA)
+        /////////////////////////////////////////////////////////////////////
+
+        /// <summary>
+        /// Updates this client's application-specific metadata, sending it to the server
+        /// which then ensures the new version is receieved by all other clients.
+        /// </summary>
+        /// <param name="metadata">This client's metadata. Can be null ("I don't have any metadata").</param>
+        public void Metadata(byte[] metadata)
+        {
+            if (isDisposed)
+                throw new ObjectDisposedException("OTEX.Client");
+            if (!connected)
+                throw new InvalidOperationException("cannot send a metadata update without being connected");
+            if (metadata != null && metadata.Length > ClientMetadata.MaxSize)
+                throw new ArgumentOutOfRangeException("metadata",
+                    string.Format("metadata.Length may not be greater than {0}.", ClientMetadata.MaxSize));
+
+            if (metadata != pendingMetadata)
+            {
+                lock (pendingMetadataLock)
+                {
+                    if (metadata != pendingMetadata)
+                        pendingMetadata = metadata;
+                }
             }
         }
 

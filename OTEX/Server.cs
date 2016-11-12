@@ -190,11 +190,6 @@ namespace OTEX
         private readonly List<Operation> masterOperations = new List<Operation>();
 
         /// <summary>
-        /// Staging lists for storing outgoing operations.
-        /// </summary>
-        private readonly HashSet<Guid> connectedClients = new HashSet<Guid>();
-
-        /// <summary>
         /// How many clients are currently connected?
         /// </summary>
         public uint ClientCount
@@ -209,11 +204,6 @@ namespace OTEX
         {
             get { return startParams == null ? 10u : startParams.MaxClients; }
         }
-
-        /// <summary>
-        /// Staging lists for storing outgoing operations.
-        /// </summary>
-        private readonly Dictionary<Guid, List<Operation>> outgoingOperations = new Dictionary<Guid,List<Operation>>();
 
         /// <summary>
         /// Lock object for operations and clients state;
@@ -266,6 +256,43 @@ namespace OTEX
             get { return fileLineEnding; }
         }
         private volatile string fileLineEnding = Environment.NewLine;
+
+        /// <summary>
+        /// Data for each client connected to the server.
+        /// </summary>
+        private class ClientData
+        {
+            /// <summary>
+            /// Client's ID.
+            /// </summary>
+            public readonly Guid ID;
+
+            /// <summary>
+            /// Staging list for storing outgoing operations.
+            /// </summary>
+            public readonly List<Operation> OutgoingOperations = new List<Operation>();
+
+            /// <summary>
+            /// Metadata attached to this client, if any.
+            /// </summary>
+            public byte[] Metadata = null;
+
+            /// <summary>
+            /// Staging list for storing outgoing metadata updates.
+            /// </summary>
+            public readonly Dictionary<Guid, byte[]> OutgoingMetadata
+                = new Dictionary<Guid, byte[]>();
+
+            public ClientData(Guid id)
+            {
+                ID = id;
+            }
+        };
+
+        /// <summary>
+        /// All currently connected clients.
+        /// </summary>
+        private readonly Dictionary<Guid, ClientData> connectedClients = new Dictionary<Guid, ClientData>();
 
         /////////////////////////////////////////////////////////////////////
         // CONSTRUCTION
@@ -330,7 +357,7 @@ namespace OTEX
                         this.startParams = tempParams;
 
                         //session initialization
-                        TcpListener listener = null;
+                        TcpListener tcpListener = null;
                         UdpClient announcer = null;
                         try
                         {
@@ -370,10 +397,10 @@ namespace OTEX
                             }
 
                             //create tcp listener
-                            listener = new TcpListener(IPAddress.IPv6Any, Port);
-                            listener.Server.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, false);
-                            listener.AllowNatTraversal(true);
-                            listener.Start();
+                            tcpListener = new TcpListener(IPAddress.IPv6Any, Port);
+                            tcpListener.Server.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, false);
+                            tcpListener.AllowNatTraversal(true);
+                            tcpListener.Start();
 
                             if (this.startParams.Public)
                             {
@@ -385,9 +412,9 @@ namespace OTEX
                         }
                         catch (Exception)
                         {
-                            if (listener != null)
+                            if (tcpListener != null)
                             {
-                                try { listener.Stop(); } catch (Exception) { };
+                                try { tcpListener.Stop(); } catch (Exception) { };
                             }
                             if (announcer != null)
                             {
@@ -402,7 +429,7 @@ namespace OTEX
                         thread = new Thread(ControlThread);
                         thread.Name = "OTEX Server ControlThread";
                         thread.IsBackground = false;
-                        thread.Start(new object[] { listener, announcer });
+                        thread.Start(new object[] { tcpListener, announcer });
 
                         //fire event
                         OnStarted?.Invoke(this);
@@ -418,7 +445,7 @@ namespace OTEX
         private void ControlThread(object nobjs)
         {
             var networkObjects = nobjs as object[];
-            var listener = networkObjects[0] as TcpListener;
+            var tcpListener = networkObjects[0] as TcpListener;
             var announcer = networkObjects[1] as UdpClient;
             var clientThreads = new List<Thread>();
             var flushTimer = new Marzersoft.Timer();
@@ -433,11 +460,11 @@ namespace OTEX
                  * COMP7722: Incoming connection requests are dispatched to their own managing thread.
                  */
                 //accept the connection
-                while (listener.Pending())
+                while (tcpListener.Pending())
                 {
                     //get client
                     TcpClient tcpClient = null;
-                    if (CaptureException(() => { tcpClient = listener.AcceptTcpClient(); }))
+                    if (CaptureException(() => { tcpClient = tcpListener.AcceptTcpClient(); }))
                         continue;
 
                     //create client thread
@@ -481,8 +508,8 @@ namespace OTEX
                 }
             }
 
-            //stop tcp listener and announcer
-            CaptureException(() => { listener.Stop(); });
+            //stop listeners and announcer
+            CaptureException(() => { tcpListener.Stop(); });
             if (announcer != null)
                 CaptureException(() => { announcer.Close(); });
 
@@ -509,10 +536,25 @@ namespace OTEX
                 return;
 
             //read from stream
-            Guid clientGUID = Guid.Empty;
             bool clientSideDisconnect = false;
+            ClientData clientData = null;
             while (running && stream.Connected)
             {
+                //if we're connected already, send any pending metadata
+                if (clientData != null && clientData.OutgoingMetadata.Count > 0)
+                {
+                    lock (stateLock)
+                    {
+                        if (clientData.OutgoingMetadata.Count > 0)
+                        {
+                            if (CaptureException(() => { stream.Write(ID,
+                                new ClientMetadata(clientData.OutgoingMetadata)); }))
+                                break;
+                            clientData.OutgoingMetadata.Clear();
+                        }
+                    }
+                }
+                
                 //check if client has sent data
                 if (!stream.DataAvailable)
                 {
@@ -527,10 +569,10 @@ namespace OTEX
 
                 //check if guid matches server's (shouldn't happen?)
                 if (packet.SenderID.Equals(ID))
-                    continue; //ignore 
+                    break;
 
                 //is this the first packet from a new client?
-                if (clientGUID.Equals(Guid.Empty))
+                if (clientData == null)
                 {
                     //check packet type
                     //if it's not a connection or disconnection request, abort since the client
@@ -566,8 +608,9 @@ namespace OTEX
 
                     lock (stateLock)
                     {
-                        //duplicate id (already connected)
-                        if (connectedClients.Contains(packet.SenderID))
+                        //duplicate id (already connected... shouldn't happen?)
+                        ClientData cl = null;
+                        if (connectedClients.TryGetValue(packet.SenderID, out cl))
                         {
                             CaptureException(() =>
                             {
@@ -593,26 +636,38 @@ namespace OTEX
                         * to their initial connection request, to bring them up to speed without further handshaking.
                         */
 
-                        //send response with initial sync list
-                        if (!CaptureException(() => { stream.Write(ID, new ConnectionResponse(startParams.FilePath,
-                            startParams.Name, masterOperations)); }))
-                        {
-                            //create the list of staged operations for this client
-                            outgoingOperations[packet.SenderID] = new List<Operation>();
+                        //get outgoing set of metadata for other clients for initial sync
+                        //(doubles as client list)
+                        Dictionary<Guid, byte[]> metadata = new Dictionary<Guid, byte[]>();
+                        foreach (var kvp in connectedClients)
+                            metadata[kvp.Key] = kvp.Value.Metadata;
 
-                            //add to list of connected clients
-                            connectedClients.Add(clientGUID = packet.SenderID);
+                        //send response with initial sync list and metadata for other clients
+                        if (!CaptureException(() => { stream.Write(ID,
+                            new ConnectionResponse(startParams.FilePath, startParams.Name,
+                                masterOperations.Count == 0 ? null : masterOperations, metadata)); }))
+                        {
+                            //add metadata to outgoing list of other clients
+                            //(doubles as connection notification)
+                            foreach (var kvp in connectedClients)
+                                kvp.Value.OutgoingMetadata[packet.SenderID] = request.Metadata;
+
+                            //create the internal data for this client (includes list of staged operations)
+                            connectedClients[packet.SenderID] = clientData = new ClientData(packet.SenderID);
+
+
                         }
-                        else break;
+                        else
+                            break; //sending ConnectionResponse failed (connection broken)
                     }
 
                     //notify
-                    OnClientConnected?.Invoke(this, clientGUID);
+                    OnClientConnected?.Invoke(this, clientData.ID);
                 }
                 else //initial handshake sync has been performed, handle normal requests
                 {
                     //check guid
-                    if (!packet.SenderID.Equals(clientGUID))
+                    if (!packet.SenderID.Equals(clientData.ID))
                         continue; //ignore (shouldn't happen?)
 
                     switch (packet.PayloadType)
@@ -637,28 +692,58 @@ namespace OTEX
                                 //lock operation lists (3a)
                                 lock (stateLock)
                                 {
-                                    //get the list of staged operations for the sender
-                                    List<Operation> outgoing = outgoingOperations[clientGUID];
-
                                     //if this oplist is not an empty request
                                     if (incoming.Operations != null && incoming.Operations.Count > 0)
                                     {
                                         //perform SLOT(OB,SIB) (3b)
-                                        if (outgoing.Count > 0)
-                                            Operation.SymmetricLinearTransform(incoming.Operations, outgoing);
+                                        if (clientData.OutgoingOperations.Count > 0)
+                                            Operation.SymmetricLinearTransform(incoming.Operations, clientData.OutgoingOperations);
 
                                         //append incoming ops to master and to all other outgoing (3c)
                                         masterOperations.AddRange(incoming.Operations);
-                                        foreach (var kvp in outgoingOperations)
-                                            if (!kvp.Key.Equals(clientGUID))
-                                                kvp.Value.AddRange(incoming.Operations);
+                                        foreach (var kvp in connectedClients)
+                                            if (!kvp.Key.Equals(clientData.ID))
+                                                kvp.Value.OutgoingOperations.AddRange(incoming.Operations);
                                     }
 
                                     //send response
-                                    CaptureException(() => { stream.Write(ID, new OperationList(outgoing.Count > 0 ? outgoing : null)); });
+                                    CaptureException(() => { stream.Write(ID,
+                                        new OperationList(clientData.OutgoingOperations.Count > 0 ? clientData.OutgoingOperations : null)); });
 
                                     //clear outgoing packet list (3d)
-                                    outgoing.Clear();
+                                    clientData.OutgoingOperations.Clear();
+                                }
+                            }
+                            break;
+
+                        case ClientMetadata.PayloadType: //client is updating it's metadata
+                            {
+                                //deserialize metadata packet
+                                ClientMetadata metadataPacket = null;
+                                if (CaptureException(() => { metadataPacket = packet.Payload.Deserialize<ClientMetadata>(); })
+                                    || metadataPacket.Metadata == null || metadataPacket.Metadata.Count == 0)
+                                    break;
+
+                                //get metadata array
+                                byte[] metadata;
+                                if (!metadataPacket.Metadata.TryGetValue(clientData.ID, out metadata))
+                                    break; //shouldn't happen; clients only send their own
+
+                                //compare it to existing metadata
+                                if ((metadata == null && clientData.Metadata != null)
+                                    || (metadata != null && (clientData.Metadata == null
+                                        || !metadata.MemoryEquals(clientData.Metadata))))
+                                {
+                                    //update client metadata
+                                    clientData.Metadata = metadata;
+
+                                    //add to staging lists for other clients
+                                    lock (stateLock)
+                                    {
+                                        foreach (var kvp in connectedClients)
+                                            if (!kvp.Key.Equals(clientData.ID))
+                                                kvp.Value.OutgoingMetadata[clientData.ID] = clientData.Metadata;
+                                    }
                                 }
                             }
                             break;
@@ -669,21 +754,20 @@ namespace OTEX
                 }
             }
 
-            //remove this client's outgoing operation set and connected clients set
-            if (!clientGUID.Equals(Guid.Empty))
+            //remove the internal data for this client
+            if (clientData != null)
             {
                 bool disconnected = false;
                 lock (stateLock)
                 {
-                    outgoingOperations.Remove(clientGUID);
-                    disconnected = connectedClients.Remove(clientGUID);
+                    disconnected = connectedClients.Remove(clientData.ID);
                 }
                 if (disconnected)
                 {
                     //if the client has not requested a disconnection themselves, send them one
                     if (!clientSideDisconnect)
                         CaptureException(() => { stream.Write(ID, new DisconnectionRequest()); });
-                    OnClientDisconnected?.Invoke(this, clientGUID);
+                    OnClientDisconnected?.Invoke(this, clientData.ID);
                 }
             }
 
@@ -739,7 +823,7 @@ namespace OTEX
             }
 
             //clear session state
-            outgoingOperations.Clear();
+            connectedClients.Clear();
             masterOperations.Clear();
             fileContents = "";
             fileSyncIndex = 0;
