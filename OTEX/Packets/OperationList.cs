@@ -6,6 +6,13 @@ using System.Threading.Tasks;
 
 namespace OTEX.Packets
 {
+    /*
+     * COMP7722: OTEX uses the NICE approach, and keeps the request-response
+     * flow intact. The class implemented below is used both as the client's request for new updates
+     * (containing it's own outgoing local changes), and the server's response with changes from
+     * other clients.
+     */
+
     /// <summary>
     /// A list of operations.
     /// </summary>

@@ -6,6 +6,11 @@ using System.Threading.Tasks;
 
 namespace OTEX
 {
+    /*
+     * COMP7722: This is the Operation class. The static methods from the java sample
+     * have been translated into member methods of this class.
+     */
+
     /// <summary>
     /// A single operation.
     /// </summary>
@@ -127,6 +132,11 @@ namespace OTEX
 
         /////////////////////////////////////////////////////////////////////
         // TRANSFORMATIONS
+        /*
+         * COMP7722: OTEX uses the NICE approach, so the SLOT algorithm
+         * is defined below (the SIT part does not get it's own function since it
+         * was essentially a one-liner; i've folded it up into the SLOT function).
+         */
         /////////////////////////////////////////////////////////////////////
 
         /// <summary>
@@ -232,8 +242,21 @@ namespace OTEX
 
         /////////////////////////////////////////////////////////////////////
         // EXECUTION
+        /*
+         * COMP7722: This is a "replay" function, allowing an operation to be
+         * executed against some text. It is not used in the Editor demo since
+         * it's text synchronization is handled differently, but the Server
+         * uses it to periodically synchronize the internal document buffer
+         * with the file on disk.
+         */
         /////////////////////////////////////////////////////////////////////
 
+        /// <summary>
+        /// Execute an operation on some text, returning the text with the operation applied.
+        /// </summary>
+        /// <param name="document">The "document" text to execute the operation on.</param>
+        /// <exception cref="ArgumentNullException" />
+        /// <exception cref="ArgumentOutOfRangeException" />
         public string Execute(string document)
         {
             if (IsNoop)
