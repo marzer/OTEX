@@ -131,7 +131,10 @@ namespace OTEX
         static int Main(string[] args)
         {
             //handle command line arguments
-            var startParams = new Server.StartParams();
+            var startParams = new Server.StartParams()
+            {
+                ReplaceTabsWithSpaces = 4
+            };
             try
             {
                 var arguments = App.ProcessArguments(args);
@@ -215,7 +218,7 @@ namespace OTEX
             };
             server.OnStarted += (s) =>
             {
-                Out("Server started.");
+                Out("OTEX Server started.");
                 Out("         Name: {0}", s.Name);
                 Out("         File: {0}", s.FilePath);
                 Out("         Port: {0}", s.Port);
