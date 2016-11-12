@@ -66,9 +66,10 @@ namespace OTEX
                 sb.AppendLine("           /EDIT: If a file already exists at the given path, edit it");
                 sb.AppendLine("                  (do not overwrite with a new file). This is default.");
                 sb.AppendLine("            /NEW: Opposite of /EDIT.");
-                sb.AppendLine("     /PORT port: Port on which to listen for new OTEX TCP client connections,");
-                sb.AppendLine("                  between 1024 and 65535. Defaults to 55555.");
-                sb.AppendLine("                  Does not change announce port, which is always 55555.");
+                sb.AppendLine("      /PORT port: Port on which to listen for new OTEX TCP client connections.");
+  sb.AppendLine(string.Format("                  Can be any value between 1024-{0} or {1}-65535.",
+      Server.AnnouncePorts.First - 1, Server.AnnouncePorts.Last + 1));
+  sb.AppendLine(string.Format("                  Default is {0}.", Server.DefaultPort));
                 sb.AppendLine("      /NAME name: A friendly name for the server.");
                 sb.AppendLine("                  Limit of 32 characters (overflow is truncated).");
                 sb.AppendLine("                  Omit to allow clients to connect without a password.");
@@ -97,8 +98,8 @@ namespace OTEX
             if (args != null && args.Length > 0)
                 text = string.Format(text, args);
 
-            if (System.Diagnostics.Debugger.IsAttached)
-                System.Diagnostics.Debugger.Log(0, "", text + "\n");
+            if (Debugger.IsAttached)
+                Debugger.Log(0, "", text + "\n");
             lock (consoleLock)
             {
                 if (colour.HasValue)

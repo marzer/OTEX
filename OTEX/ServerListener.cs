@@ -81,14 +81,13 @@ namespace OTEX
 
         /// <summary>
         /// Creates an OTEX server listener.
-        /// Listens for OTEX server announce packets on ports 55555 - 55560.
         /// </summary>
         /// <exception cref="Exception" />
         public ServerListener()
         {
             //create udp client
             UdpClient udpClient = null;
-            for (int i = 55555; i <= 55560 && udpClient == null; ++i)
+            for (int i = Server.AnnouncePorts.First; i <= Server.AnnouncePorts.Last && udpClient == null; ++i)
             {
                 try
                 {
@@ -98,7 +97,8 @@ namespace OTEX
             }
 
             if (udpClient == null)
-                throw new Exception("Could not acquire a socket on any port in the range 55555-55560. (Are there many instances of ServerListener running?)");
+                throw new Exception(string.Format("Could not acquire a socket on any port in the range {0}."
+                    + " (Are there many instances of ServerListener running?)", Server.AnnouncePorts));
 
             //configure client
             udpClient.EnableBroadcast = true;

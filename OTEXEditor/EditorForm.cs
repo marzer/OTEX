@@ -519,6 +519,7 @@ namespace OTEX
             try
             {
                 startParams.ReplaceTabsWithSpaces = 4;
+                startParams.Port = Server.DefaultPort + 1;
                 otexServer.Start(startParams);
             }
             catch (Exception exc)
@@ -531,7 +532,7 @@ namespace OTEX
             //start client
             try
             {
-                otexClient.Connect(IPAddress.Loopback);
+                otexClient.Connect(IPAddress.Loopback, startParams.Port);
             }
             catch (Exception exc)
             {
@@ -608,7 +609,7 @@ namespace OTEX
             }
 
             string originalAddressString = addressString;
-            long port = 55555;
+            long port = Server.DefaultPort;
             IPAddress address = null;
             IPHostEntry hostEntry = null;
 
@@ -665,9 +666,10 @@ namespace OTEX
             }
 
             //validate port
-            if (port < 1024 || port > 65535)
+            if (port < 1024 || port > 65535 || Server.AnnouncePorts.Contains(port))
             {
-                Logger.ErrorMessage("Port must be between 1024 and 65535 (inclusive).");
+                Logger.ErrorMessage("Port must be between 1024-{0} or {1}-65535.",
+                                    Server.AnnouncePorts.First - 1, Server.AnnouncePorts.Last + 1);
                 return false;
             }
 
@@ -677,9 +679,10 @@ namespace OTEX
         private bool StartClientMode(IPEndPoint endPoint, string passwordString)
         {
             //validate port
-            if (endPoint.Port < 1024 || endPoint.Port > 65535)
+            if (endPoint.Port < 1024 || endPoint.Port > 65535 || Server.AnnouncePorts.Contains(endPoint.Port))
             {
-                Logger.ErrorMessage("Port must be between 1024 and 65535 (inclusive).");
+                Logger.ErrorMessage("Port must be between 1024-{0} or {1}-65535.",
+                                    Server.AnnouncePorts.First - 1, Server.AnnouncePorts.Last + 1);
                 return false;
             }
 

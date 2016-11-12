@@ -59,6 +59,16 @@ namespace OTEX
         /////////////////////////////////////////////////////////////////////
 
         /// <summary>
+        /// The default port used by the OTEX system for connections between client and server.
+        /// </summary>
+        public const ushort DefaultPort = 55550;
+
+        /// <summary>
+        /// The port range used to annouce the presence of public servers.
+        /// </summary>
+        public static readonly PortRange AnnouncePorts = new PortRange(55561, 55564);
+
+        /// <summary>
         /// Bundle of parameters for Server.Start (so the parameter list isn't enormous).
         /// </summary>
         [Serializable]
@@ -79,7 +89,7 @@ namespace OTEX
             /// <summary>
             /// Listening for new client connections will bind to this port (supports IPv4 and IPv6).
             /// </summary>
-            public ushort Port = 55555;
+            public ushort Port = DefaultPort;
 
             /// <summary>
             /// A password required for clients to connect to this session (null == no password required).
@@ -147,7 +157,7 @@ namespace OTEX
         /// </summary>
         public ushort Port
         {
-            get { return startParams == null ? (ushort)55555 : startParams.Port; }
+            get { return startParams == null ? (ushort)DefaultPort : startParams.Port; }
         }
 
         /// <summary>
@@ -309,8 +319,10 @@ namespace OTEX
 
                         //validate params
                         tempParams.FilePath = (tempParams.FilePath ?? "").Trim();
-                        if (tempParams.Port < 1024)
-                            throw new ArgumentOutOfRangeException("startParams.Port", "Port must be between 1024 and 65535");
+                        if (tempParams.Port < 1024 || AnnouncePorts.Contains(tempParams.Port))
+                            throw new ArgumentOutOfRangeException("startParams.Port",
+                                string.Format("Port must be between 1024-{0} and {1}-65535.",
+                                    AnnouncePorts.First-1, AnnouncePorts.Last+1));
                         if ((tempParams.Name = (tempParams.Name ?? "").Trim()).Length > 32)
                             tempParams.Name = tempParams.Name.Substring(0, 32);
                         if (tempParams.MaxClients == 0 || tempParams.MaxClients > 100u)
@@ -442,7 +454,7 @@ namespace OTEX
                     {
                         //create endpoints if they don't exist
                         if (announceEndpoints.Count == 0)
-                            for (int i = 55555; i <= 55560; ++i)
+                            for (int i = AnnouncePorts.First; i <= AnnouncePorts.Last; ++i)
                                 announceEndpoints.Add(new IPEndPoint(IPAddress.Broadcast, i));
 
                         //serialize a server description of the current state

@@ -191,7 +191,7 @@ namespace OTEX
         /// <exception cref="System.Security.SecurityException" />
         /// <exception cref="IOException" />
         /// <exception cref="InvalidOperationException" />
-        public void Connect(IPAddress address, ushort port = 55555, Password password = null)
+        public void Connect(IPAddress address, ushort port = Server.DefaultPort, Password password = null)
         {
             if (address == null)
                 throw new ArgumentNullException("address");
@@ -255,8 +255,10 @@ namespace OTEX
                         //session state
                         if (endpoint == null)
                             throw new ArgumentNullException("endpoint");
-                        if (endpoint.Port < 1024)
-                            throw new ArgumentOutOfRangeException("endpoint.Port", "Port must be between 1024 and 65535");
+                        if (endpoint.Port < 1024 || Server.AnnouncePorts.Contains(endpoint.Port))
+                            throw new ArgumentOutOfRangeException("endpoint.Port",
+                                string.Format("Port must be between 1024-{0} or {1}-65535.",
+                                    Server.AnnouncePorts.First - 1, Server.AnnouncePorts.Last + 1));
 
                         if (endpoint.Address.Equals(IPAddress.Any) || endpoint.Address.Equals(IPAddress.Broadcast)
                             || endpoint.Address.Equals(IPAddress.None) || endpoint.Address.Equals(IPAddress.IPv6Any)
