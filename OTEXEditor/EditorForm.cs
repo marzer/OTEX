@@ -37,8 +37,6 @@ namespace OTEX
         private volatile string lastConnectionFailedReason = null;
         private volatile bool lastConnectionReturnToServerBrowser = false;
         private CustomTitleBarButton logoutButton = null;
-        private readonly Dictionary<Guid, ulong> clientSelections
-            = new Dictionary<Guid, ulong>();
 
         private bool MainMenuPage
         {
@@ -91,8 +89,6 @@ namespace OTEX
                     lblConnectingStatus.Text = string.Format("Connecting to {0}...", lastConnectionEndpoint);
                     btnConnectingBack.Visible = false;
                     btnConnectingReconnect.Visible = false;
-                    ulong kek = 0;
-                    BitConverter.
                 }
             }
         }
