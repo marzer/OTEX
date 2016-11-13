@@ -8,6 +8,7 @@ SET "OUTPUT_NAME=OTEX"
 SET "SOLUTION_PATH=%~dp0.."
 SET "README_PATH=%SOLUTION_PATH%\OTEX Readme.pdf"
 SET "BUILD_PATH=%SOLUTION_PATH%\bin"
+SET "LEGAL_PATH=%SOLUTION_PATH%\licenses"
 SET "STAGING_PATH=%SOLUTION_PATH%\staging"
 SET "OUTPUT_PATH=%STAGING_PATH%\%OUTPUT_NAME%"
 SET "ZIP_PATH=%SOLUTION_PATH%\%OUTPUT_NAME%.zip"
@@ -28,6 +29,7 @@ IF EXIST "%STAGING_PATH%" (
 MKDIR "%OUTPUT_PATH%"
 xcopy "%BUILD_PATH%\x64\Release\*" "%OUTPUT_PATH%\x64" /S /I /Y /J
 xcopy "%BUILD_PATH%\x86\Release\*" "%OUTPUT_PATH%\x86" /S /I /Y /J
+xcopy "%LEGAL_PATH%\*" "%OUTPUT_PATH%\licenses" /S /I /Y /J
 xcopy "%README_PATH%" "%OUTPUT_PATH%" /Y /J /F
 
 REM  --------------------------------------------------------------------------------------
