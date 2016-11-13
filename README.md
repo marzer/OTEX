@@ -32,4 +32,4 @@ OTEX Editor uses a very powerful RichTextBox alternative called `FastColoredText
 All three of the projects contained in the solution share a dependency on `Marzersoft.dll`, which is a personal library of useful classes, extensions and wrappers I’ve built over my years working with C#. It’s not open-source, but OTEX can be compiled by linking against the Marzersoft.dll files included with the [OTEX distribution](https://drive.google.com/open?id=0B6cTOEVTlAMJSng0djZaREZFRmM). 
 
 ## Samples
-The Editor and Dedicated Server are short, self-contained uses of the OTEX functionality. They are all the sample code necessary to tease apart a working implementation.
+The [Editor](https://github.com/marzer/OTEX/blob/master/OTEXEditor/EditorForm.cs) and [Dedicated Server](https://github.com/marzer/OTEX/blob/master/OTEXDedicatedServer/DedicatedServer.cs) are short, self-contained uses of the OTEX functionality. They are all the sample code necessary to tease apart a working implementation.
