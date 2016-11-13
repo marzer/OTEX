@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace OTEX.Packets
+﻿namespace OTEX.Packets
 {
     /// <summary>
     /// Interface to help with the serialization of objects into node packet sequences.
