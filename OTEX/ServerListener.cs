@@ -192,6 +192,9 @@ namespace OTEX
         // DISPOSE
         /////////////////////////////////////////////////////////////////////
 
+        /// <summary>
+        /// Disposes the ServerListener, terminating internal threads and releasing resources.
+        /// </summary>
         public void Dispose()
         {
             if (isDisposed)

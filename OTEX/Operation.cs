@@ -255,6 +255,7 @@ namespace OTEX
         /// <param name="document">The "document" text to execute the operation on.</param>
         /// <exception cref="ArgumentNullException" />
         /// <exception cref="ArgumentOutOfRangeException" />
+        /// <returns>The string resulting from applying the operation to the input string.</returns>
         public string Execute(string document)
         {
             if (IsNoop)

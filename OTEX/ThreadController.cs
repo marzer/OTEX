@@ -36,8 +36,9 @@ namespace OTEX
 
         /// <summary>
         /// Capture thrown exceptions and trigger the OnInternalException event.
-        /// Returns true if an exception was caught.
         /// </summary>
+        /// <param name="func">The action to execute. Exceptions raised within will be caught and redirected to the OnThreadException event.</param>
+        /// <returns>True if an exception was caught.</returns>
         protected bool CaptureException(Action func)
         {
             if (func == null)

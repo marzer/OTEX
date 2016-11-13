@@ -63,6 +63,8 @@ namespace OTEX
         /// <summary>
         /// Check if a port number is contained within this range.
         /// </summary>
+        /// <param name="port">The port to check.</param>
+        /// <returns>True if the given port is contained by this PortRange.</returns>
         public bool Contains(ushort port)
         {
             return port >= first && port <= last;
@@ -71,6 +73,8 @@ namespace OTEX
         /// <summary>
         /// Check if a port number is contained within this range.
         /// </summary>
+        /// <param name="port">The port to check.</param>
+        /// <returns>True if the given port is contained by this PortRange.</returns>
         public bool Contains(uint port)
         {
             return port >= first && port <= last;
@@ -79,6 +83,8 @@ namespace OTEX
         /// <summary>
         /// Check if a port number is contained within this range.
         /// </summary>
+        /// <param name="port">The port to check.</param>
+        /// <returns>True if the given port is contained by this PortRange.</returns>
         public bool Contains(int port)
         {
             return port >= first && port <= last;
@@ -87,6 +93,8 @@ namespace OTEX
         /// <summary>
         /// Check if a port number is contained within this range.
         /// </summary>
+        /// <param name="port">The port to check.</param>
+        /// <returns>True if the given port is contained by this PortRange.</returns>
         public bool Contains(long port)
         {
             return port >= first && port <= last;
@@ -95,6 +103,7 @@ namespace OTEX
         /// <summary>
         /// Print this port range as a string.
         /// </summary>
+        /// <returns>A string representation of this PortRange.</returns>
         public override string ToString()
         {
             return string.Format("{0}-{1}",first,last);

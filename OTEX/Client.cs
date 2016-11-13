@@ -217,8 +217,7 @@ namespace OTEX
         /// <summary>
         /// Connect to an OTEX server.
         /// </summary>
-        /// <param name="address">IP Address of the OTEX server.</param>
-        /// <param name="port">Listen port of the OTEX server.</param>
+        /// <param name="serverDescription">ServerDescription for an OTEX server.</param>
         /// <param name="password">Password required to connect to the server, if any. Leave as null for none.</param>
         /// <param name="metadata">Client-specific application data to send to the server.</param>
         /// <exception cref="ArgumentException" />
@@ -555,7 +554,7 @@ namespace OTEX
         /// Send a notification to the server that some text was deleted at the client end.
         /// </summary>
         /// <param name="offset">The index of the deletion.</param>
-        /// <param name="text">The length of the deleted range.</param>
+        /// <param name="length">The length of the deleted range.</param>
         /// <exception cref="ArgumentOutOfRangeException" />
         /// <exception cref="ObjectDisposedException" />
         /// <exception cref="InvalidOperationException" />
