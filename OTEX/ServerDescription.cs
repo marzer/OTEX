@@ -3,7 +3,7 @@ using System.Net;
 using System.Net.NetworkInformation;
 using System.Threading;
 
-namespace OTEX.Packets
+namespace OTEX
 {
     /// <summary>
     /// Packet of information describing a public OTEX server.
