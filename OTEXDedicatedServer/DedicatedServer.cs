@@ -61,7 +61,7 @@ namespace OTEX
                 StringBuilder sb = new StringBuilder();
                 sb.AppendLine(Usage).AppendLine();
                 sb.AppendLine("            file: Path to the plain text file to collaboratively edit.");
-                sb.AppendLine("                  Omitting file path will create a transient session");
+                sb.AppendLine("                  Omitting file path will create a temporary session");
                 sb.AppendLine("                  (client edits will be lost when the server is shut down).");
                 sb.AppendLine("           /EDIT: If a file already exists at the given path, edit it");
                 sb.AppendLine("                  (do not overwrite with a new file). This is default.");
@@ -72,7 +72,6 @@ namespace OTEX
   sb.AppendLine(string.Format("                  Default is {0}.", Server.DefaultPort));
                 sb.AppendLine("      /NAME name: A friendly name for the server.");
                 sb.AppendLine("                  Limit of 32 characters (overflow is truncated).");
-                sb.AppendLine("                  Omit to allow clients to connect without a password.");
                 sb.AppendLine("  /PASSWORD pass: Password required to connect to this server.");
                 sb.AppendLine("                  Must be between 6 and 32 characters.");
                 sb.AppendLine("                  Omit to allow clients to connect without a password.");
