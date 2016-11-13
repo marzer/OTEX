@@ -11,6 +11,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OTEXDedicatedServer", "OTEX
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Marzersoft", "..\marzersoft-lib\Marzersoft\Marzersoft.csproj", "{73858149-A09B-41B4-A64C-C6A78CBFAF2D}"
 EndProject
+Project("{7CF6DF6D-3B04-46F8-A40B-537D21BCA0B4}") = "Sandcastle", "sandcastle\Sandcastle.shfbproj", "{E3F436E8-9D07-4881-AB13-D09D0168FD94}"
+	ProjectSection(ProjectDependencies) = postProject
+		{732A23BD-FADA-4D41-B61D-E786C1100ED8} = {732A23BD-FADA-4D41-B61D-E786C1100ED8}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -51,6 +56,12 @@ Global
 		{73858149-A09B-41B4-A64C-C6A78CBFAF2D}.Release|x64.Build.0 = Release|x64
 		{73858149-A09B-41B4-A64C-C6A78CBFAF2D}.Release|x86.ActiveCfg = Release|x86
 		{73858149-A09B-41B4-A64C-C6A78CBFAF2D}.Release|x86.Build.0 = Release|x86
+		{E3F436E8-9D07-4881-AB13-D09D0168FD94}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{E3F436E8-9D07-4881-AB13-D09D0168FD94}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{E3F436E8-9D07-4881-AB13-D09D0168FD94}.Release|x64.ActiveCfg = Release|Any CPU
+		{E3F436E8-9D07-4881-AB13-D09D0168FD94}.Release|x64.Build.0 = Release|Any CPU
+		{E3F436E8-9D07-4881-AB13-D09D0168FD94}.Release|x86.ActiveCfg = Release|Any CPU
+		{E3F436E8-9D07-4881-AB13-D09D0168FD94}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
