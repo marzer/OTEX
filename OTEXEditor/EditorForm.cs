@@ -655,6 +655,7 @@ namespace OTEX
             {
                 startParams.ReplaceTabsWithSpaces = 4;
                 startParams.Port = Server.DefaultPort + 1;
+                startParams.Public = true;
                 otexServer.Start(startParams);
             }
             catch (Exception exc)
@@ -917,23 +918,19 @@ namespace OTEX
         {
             if (dlgServerCreateNew.ShowDialog() == DialogResult.OK)
                 StartServerMode(new Server.StartParams()
-                    { FilePath = dlgServerCreateNew.FileName, EditMode = false,
-                    Public = true });
+                    { FilePath = dlgServerCreateNew.FileName, EditMode = false });
         }
 
         private void btnServerExisting_Click(object sender, EventArgs e)
         {
             if (dlgServerOpenExisting.ShowDialog() == DialogResult.OK)
                 StartServerMode(new Server.StartParams()
-                    { FilePath = dlgServerOpenExisting.FileName, EditMode = true,
-                    Public = true
-                });
+                    { FilePath = dlgServerOpenExisting.FileName, EditMode = true });
         }
 
         private void btnServerTemporary_Click(object sender, EventArgs e)
         {
-            StartServerMode(new Server.StartParams()
-                { FilePath = "", Public = true });
+            StartServerMode(new Server.StartParams() { FilePath = "" });
         }
 
         private void btnClientConnect_Click(object sender, EventArgs e)
@@ -977,6 +974,11 @@ namespace OTEX
             {
                 passwordForm.Dispose();
                 passwordForm = null;
+            }
+            if (settingsForm != null)
+            {
+                settingsForm.Dispose();
+                settingsForm = null;
             }
             if (flatIconImage != null)
             {
