@@ -1,0 +1,193 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1">
+  <Comment CommentText="this group contains of the different types of packets exchanged between the Client and Server over the normal TCP connection (via the PacketStream class).">
+    <Position X="7.25" Y="11" Height="0.478" Width="7.038" />
+  </Comment>
+  <Comment CommentText="OT Operation, with implementations of methods for NICE's SLOT algorithm.">
+    <Position X="9.25" Y="2.5" Height="0.692" Width="2.224" />
+  </Comment>
+  <Comment CommentText="Password encryption class, so passwords are not transmitted in plaintext.">
+    <Position X="12.032" Y="2.569" Height="0.692" Width="1.7" />
+  </Comment>
+  <Comment CommentText="Port range helper class. Used for sanity checks and input validation.">
+    <Position X="12.032" Y="5.779" Height="0.68" Width="1.933" />
+  </Comment>
+  <Comment CommentText="PacketStream manages the state of a TcpClient connection and handles the serialization and deserialization of Serializable objects implementing the IPacketPayload interface.">
+    <Position X="19.332" Y="11.237" Height="0.948" Width="3.168" />
+  </Comment>
+  <Comment CommentText="ServerDescriptions are sent out over UDP by Public servers, and captured by ServerListeners. At the server end these are treated as plain-old-data, but at the ServerListener end they are merged with new data and events are triggered notifying subscribers of updates to the server's state (e.g. the server administrator has changed the server's name).">
+    <Position X="18.625" Y="4.484" Height="1.787" Width="3.879" />
+  </Comment>
+  <Comment CommentText="Class heirarchy of the public OTEX classes. Using OTEX requires instantiation of a Client and a Server, and optionally a ServerListener to support listening for public servers).">
+    <Position X="0.853" Y="1.468" Height="0.553" Width="5.852" />
+  </Comment>
+  <Class Name="OTEX.Client">
+    <Position X="0.5" Y="7" Width="2" />
+    <TypeIdentifier>
+      <HashCode>AEwgAEJAkKAAQEGFELBAEJAQAgEBAAIAAIAACABEIAg=</HashCode>
+      <FileName>Client.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="OTEX.Node">
+    <Position X="1.5" Y="4.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Node.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="OTEX.Operation">
+    <Position X="9.25" Y="3.25" Width="2.25" />
+    <TypeIdentifier>
+      <HashCode>AQCAABkAAAAAgAQAAEAAAMBAACAAAAAIAQAACAAAkAA=</HashCode>
+      <FileName>Operation.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="OTEX.Packet">
+    <Position X="7.25" Y="11.75" Width="1.75" />
+    <TypeIdentifier>
+      <HashCode>AAgAAAAAAAAAABAAAAASAAAAAgAAAAAAAQAAAAAAAAA=</HashCode>
+      <FileName>Packets\Packet.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="OTEX.Password">
+    <Position X="12" Y="3.25" Width="1.75" />
+    <TypeIdentifier>
+      <HashCode>ABAAAAAAAIAAAAAAAAAAAAAAAAAIAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Password.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="OTEX.PortRange">
+    <Position X="12" Y="6.5" Width="2" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAQAEAAEAAAQAAAAAAAAAAAACAAAQAgA=</HashCode>
+      <FileName>PortRange.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="OTEX.Server">
+    <Position X="2.75" Y="7" Width="2" />
+    <NestedTypes>
+      <Class Name="OTEX.Server.StartParams" Collapsed="true">
+        <TypeIdentifier>
+          <NewMemberFileName>Server.cs</NewMemberFileName>
+        </TypeIdentifier>
+      </Class>
+      <Class Name="OTEX.Server.ClientData" Collapsed="true">
+        <TypeIdentifier>
+          <NewMemberFileName>Server.cs</NewMemberFileName>
+        </TypeIdentifier>
+      </Class>
+    </NestedTypes>
+    <TypeIdentifier>
+      <HashCode>ACgAgAAAAmABBAEAEAACBBQCCAwgZCAIIAFIAAAEQAw=</HashCode>
+      <FileName>Server.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="OTEX.ServerListener">
+    <Position X="5" Y="4.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAgAAAAAACAAAAEAEAAAABAAAAAAACAAABAAAQAIAAE=</HashCode>
+      <FileName>ServerListener.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="OTEX.ThreadController">
+    <Position X="2.75" Y="2.25" Width="1.75" />
+    <NestedTypes>
+      <Class Name="OTEX.ThreadController.ThreadException" Collapsed="true">
+        <TypeIdentifier>
+          <NewMemberFileName>ThreadController.cs</NewMemberFileName>
+        </TypeIdentifier>
+      </Class>
+    </NestedTypes>
+    <TypeIdentifier>
+      <HashCode>QAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>ThreadController.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="OTEX.Packets.ClientMetadata" BaseTypeListCollapsed="true">
+    <Position X="11.5" Y="16.25" Width="2.75" />
+    <TypeIdentifier>
+      <HashCode>AAQAAAAAAAAAEAAAAAAAAAAAAgAAAAAAAgAAAAAEAAA=</HashCode>
+      <FileName>Packets\ClientMetadata.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="OTEX.Packets.ConnectionRequest" BaseTypeListCollapsed="true">
+    <Position X="9.25" Y="11.75" Width="2" />
+    <TypeIdentifier>
+      <HashCode>AAQAAAAAAAAAEAAAAAAAAAAAAgAAAAACAAAAAgAEAAA=</HashCode>
+      <FileName>Packets\ConnectionRequest.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="OTEX.Packets.ConnectionResponse" BaseTypeListCollapsed="true">
+    <Position X="11.5" Y="11.75" Width="2.75" />
+    <NestedTypes>
+      <Enum Name="OTEX.Packets.ConnectionResponse.ResponseCode" Collapsed="true">
+        <TypeIdentifier>
+          <NewMemberFileName>Packets\ConnectionResponse.cs</NewMemberFileName>
+        </TypeIdentifier>
+      </Enum>
+    </NestedTypes>
+    <TypeIdentifier>
+      <HashCode>AAQAAAACAAAAEgAABAAAAAQAAgAEAEAAAABAAAAEAAA=</HashCode>
+      <FileName>Packets\ConnectionResponse.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="OTEX.Packets.DisconnectionRequest" BaseTypeListCollapsed="true">
+    <Position X="9.25" Y="14.75" Width="2" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAEAAAAAAAAAAAAgAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Packets\DisconnectionRequest.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="OTEX.Packets.OperationList" BaseTypeListCollapsed="true">
+    <Position X="9.25" Y="17" Width="2" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAACAAAAEgAAAAAAAAAAAgAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Packets\OperationList.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="OTEX.Packets.PacketStream" BaseTypeListCollapsed="true">
+    <Position X="20.5" Y="6.75" Width="2" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAFAACAAQAAAEAAIABAgAAAAACAACABABAEAAAA=</HashCode>
+      <FileName>Packets\PacketStream.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="OTEX.Packets.ServerDescription">
+    <Position X="16" Y="4.5" Width="2.5" />
+    <TypeIdentifier>
+      <HashCode>ACQAAAAAAAAgxAAEAEQAAAVAaBAEAEggAEAIaAEAAgw=</HashCode>
+      <FileName>Packets\ServerDescription.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Interface Name="OTEX.Packets.IClientMetadata">
+    <Position X="7.25" Y="15" Width="1.75" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAA=</HashCode>
+      <FileName>Packets\IClientMetadata.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="OTEX.Packets.IOperationList">
+    <Position X="7.25" Y="17.5" Width="1.75" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Packets\IOperationList.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="OTEX.Packets.IPacketPayload">
+    <Position X="7.25" Y="16.25" Width="1.75" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Packets\IPacketPayload.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Font Name="Segoe UI" Size="9" />
+</ClassDiagram>
