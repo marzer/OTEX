@@ -19,10 +19,10 @@
     <Position X="18.625" Y="4.484" Height="1.787" Width="3.879" />
   </Comment>
   <Comment CommentText="Class heirarchy of the public OTEX classes. Using OTEX requires instantiation of a Client and a Server, and optionally a ServerListener to support listening for public servers).">
-    <Position X="0.853" Y="1.468" Height="0.553" Width="5.852" />
+    <Position X="0.518" Y="2.233" Height="1.737" Width="1.735" />
   </Comment>
   <Class Name="OTEX.Client">
-    <Position X="0.5" Y="7" Width="2" />
+    <Position X="0.5" Y="5" Width="2" />
     <TypeIdentifier>
       <HashCode>AEwgAEJAkKAAQEGFELBAEJAQAgEBAAIAAIAACABEIAg=</HashCode>
       <FileName>Client.cs</FileName>
@@ -30,7 +30,7 @@
     <Lollipop Position="0.2" />
   </Class>
   <Class Name="OTEX.Node">
-    <Position X="1.5" Y="4.75" Width="1.5" />
+    <Position X="2.75" Y="2.25" Width="1.5" />
     <TypeIdentifier>
       <HashCode>AAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
       <FileName>Node.cs</FileName>
@@ -65,7 +65,7 @@
     </TypeIdentifier>
   </Class>
   <Class Name="OTEX.Server">
-    <Position X="2.75" Y="7" Width="2" />
+    <Position X="2.75" Y="5" Width="2" />
     <NestedTypes>
       <Class Name="OTEX.Server.StartParams" Collapsed="true">
         <TypeIdentifier>
@@ -85,7 +85,13 @@
     <Lollipop Position="0.2" />
   </Class>
   <Class Name="OTEX.ServerListener">
-    <Position X="5" Y="4.75" Width="1.5" />
+    <Position X="5.25" Y="5" Width="1.5" />
+    <InheritanceLine Type="OTEX.ThreadController" FixedFromPoint="true">
+      <Path>
+        <Point X="6" Y="4.065" />
+        <Point X="6" Y="5" />
+      </Path>
+    </InheritanceLine>
     <TypeIdentifier>
       <HashCode>AAgAAAAAACAAAAEAEAAAABAAAAAAACAAABAAAQAIAAE=</HashCode>
       <FileName>ServerListener.cs</FileName>
@@ -93,7 +99,7 @@
     <Lollipop Position="0.2" />
   </Class>
   <Class Name="OTEX.ThreadController">
-    <Position X="2.75" Y="2.25" Width="1.75" />
+    <Position X="5" Y="2.25" Width="1.75" />
     <NestedTypes>
       <Class Name="OTEX.ThreadController.ThreadException" Collapsed="true">
         <TypeIdentifier>
