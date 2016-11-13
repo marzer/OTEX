@@ -6,10 +6,11 @@ REM ----------------------------------------------------------------------------
 
 SET "OUTPUT_NAME=OTEX"
 SET "SOLUTION_PATH=%~dp0.."
-SET "BUILD_PATH=%~dp0..\bin"
-SET "STAGING_PATH=%~dp0..\staging"
+SET "README_PATH=%SOLUTION_PATH%\OTEX Readme.pdf"
+SET "BUILD_PATH=%SOLUTION_PATH%\bin"
+SET "STAGING_PATH=%SOLUTION_PATH%\staging"
 SET "OUTPUT_PATH=%STAGING_PATH%\%OUTPUT_NAME%"
-SET "ZIP_PATH=%~dp0..\%OUTPUT_NAME%.zip"
+SET "ZIP_PATH=%SOLUTION_PATH%\%OUTPUT_NAME%.zip"
 
 REM  --------------------------------------------------------------------------------------
 echo --- STAGING --------------------------------------------------------------------------
@@ -27,6 +28,7 @@ IF EXIST "%STAGING_PATH%" (
 MKDIR "%OUTPUT_PATH%"
 xcopy "%BUILD_PATH%\x64\Release\*" "%OUTPUT_PATH%\x64" /S /I /Y /J
 xcopy "%BUILD_PATH%\x86\Release\*" "%OUTPUT_PATH%\x86" /S /I /Y /J
+xcopy "%README_PATH%" "%OUTPUT_PATH%" /Y /J /F
 
 REM  --------------------------------------------------------------------------------------
 echo --- CLEANING -------------------------------------------------------------------------
@@ -41,7 +43,7 @@ IF NOT EXIST "%CURRENT_DIR%" (
 	EXIT /B 1
 )
 
-DEL /F /Q "%CURRENT_DIR%\*.xml" "%CURRENT_DIR%\*.pdb" "%CURRENT_DIR%\*.log" "%CURRENT_DIR%\*.vshost*" "%CURRENT_DIR%\*.config"
+DEL /F /Q "%CURRENT_DIR%\*.xml" "%CURRENT_DIR%\*.pdb" "%CURRENT_DIR%\*.log" "%CURRENT_DIR%\*.vshost*" "%CURRENT_DIR%\*.config" "%CURRENT_DIR%\*.txt"
 IF %ERRORLEVEL% NEQ 0 (
 	ECHO DISTRIBUTE: Deleting files failed ^(error %ERRORLEVEL%^)
 	pause
