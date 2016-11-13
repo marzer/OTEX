@@ -37,7 +37,8 @@ namespace OTEX
         private volatile Password lastConnectionPassword = null;
         private volatile string lastConnectionFailedReason = null;
         private volatile bool lastConnectionReturnToServerBrowser = false;
-        private CustomTitleBarButton logoutButton = null;
+        private CustomTitleBarButton logoutButton = null, settingsButton;
+        private Image flatIconImage = null;
 
         private bool MainMenuPage
         {
@@ -137,15 +138,44 @@ namespace OTEX
         }
 
         [Serializable]
-        private class RemoteClient
+        private class EditorClient
         {
-            public int SelectionStart;
-            public int SelectionEnd;
-            public int Colour;
+            public int SelectionStart = 0;
+            public int SelectionEnd = 0;
+            public int Colour = unchecked((int)0xFFFFFFFF);
         }
-        private readonly Dictionary<Guid, RemoteClient> remoteClients
-            = new Dictionary<Guid, RemoteClient>();
-        private Color clientColour;
+        private readonly Dictionary<Guid, EditorClient> remoteClients
+            = new Dictionary<Guid, EditorClient>();
+        private readonly EditorClient localClient = new EditorClient();
+
+        private Color ClientColour
+        {
+            get { return localClient.Colour.ToColour(); }
+            set
+            {
+                //check value
+                int newVal = value.ToArgb();
+                if (localClient.Colour == newVal)
+                    return;
+                localClient.Colour = newVal; 
+
+                //push to server
+                PushUpdatedMetadata();
+
+                //update locally
+                this.Execute(() =>
+                {
+                    tbEditor.SelectionColor
+                        = tbEditor.CurrentLineColor
+                        = tbEditor.LineNumberColor
+                        = localClient.Colour.ToColour();
+                    tbEditor.CaretColor = localClient.Colour.ToColour().Lighten(0.3f);
+                    if (tbEditor.Visible)
+                        tbEditor.Refresh();
+                });
+            }
+        }
+
 
         /////////////////////////////////////////////////////////////////////
         // CONSTRUCTOR
@@ -231,19 +261,22 @@ namespace OTEX
             Text = App.Name;
             CustomTitleBar = true;
             ResizeHandleOverride = true;
+            IconOverride = (b) => { return null; };
+            flatIconImage = App.Images.Resource("otex_icon_flat", App.Assembly, "OTEX");
+            ImageOverride = (b) => { return flatIconImage; };
 
             //settings menu
             settingsForm = new FlyoutForm(panSettings);
             settingsForm.Accent = 3;
-            var button = AddCustomTitleBarButton();
-            button.Colour = App.Theme.Accent3.Light.Colour;
-            button.Image = App.Images.Resource("cog");
-            button.OnClick += (b) => { settingsForm.Flyout(PointToScreen(b.Bounds.BottomMiddle())); };
+            settingsButton = AddCustomTitleBarButton();
+            settingsButton.Colour = App.Theme.GetAccent(3).DarkDark.Colour;
+            settingsButton.Image = App.Images.Resource("cog", App.Assembly, "OTEX");
+            settingsButton.OnClick += (b) => { settingsForm.Flyout(PointToScreen(b.Bounds.BottomMiddle())); };
 
             //logout button
             logoutButton = AddCustomTitleBarButton();
             logoutButton.Colour = Color.Red;
-            logoutButton.Image = App.Images.Resource("logout");
+            logoutButton.Image = App.Images.Resource("logout", App.Assembly, "OTEX");
             logoutButton.Visible = false;
             logoutButton.OnClick += (b) =>
             {
@@ -254,140 +287,6 @@ namespace OTEX
 
                 otexClient.Disconnect();
                 otexServer.Stop();
-            };
-
-            // CREATE TEXT EDITOR ////////////////////////////////////////////////
-            tbEditor = new FastColoredTextBox();
-            tbEditor.Parent = this;
-            tbEditor.Dock = DockStyle.Fill;
-            tbEditor.BackBrush = App.Theme.Background.Mid.Brush;
-            tbEditor.IndentBackColor = App.Theme.Background.Dark.Colour;
-            tbEditor.ServiceLinesColor = App.Theme.Background.Light.Colour;
-            tbEditor.LineNumberColor = App.Theme.Accent1.Mid.Colour;
-            tbEditor.CurrentLineColor = App.Theme.Background.LightLight.Colour;
-            //tbEditor.SelectionColor = App.Theme.Accent1.Mid.Colour;
-            tbEditor.Font = new Font(App.Theme.Monospaced.Normal.Regular.FontFamily, 11.0f);
-            tbEditor.WordWrap = true;
-            tbEditor.WordWrapAutoIndent = true;
-            tbEditor.WordWrapMode = WordWrapMode.WordWrapControlWidth;
-            tbEditor.TabLength = 4;
-            tbEditor.LineInterval = 2;
-            tbEditor.CaretColor = App.Theme.Accent1.LightLight.Colour;
-            /*
-             * COMP7722: In this editor example, Operations are not generated by directly
-             * intercepting key press events and the like, since they do not take special
-             * circumstances like Undo, Redo, and text dragging with the mouse into account. Instead,
-             * I've used a Least-Common-Substring-based diff generator (in this case, a package
-             * called DiffPlex: https://www.nuget.org/packages/DiffPlex/) to compare text pre-
-             * and post-change, and create the operations based on the calculated diffs.
-             * 
-             * This does of course cause a slight overhead; in testing with large documents
-             * (3.5mb of plain text, which is a lot!), diff calculation took ~100ms. Documents that
-             * were more realistically-sized took ~3ms (on the same machine), which is imperceptible.
-             * 
-             * I've also implemented some basic awareness painting, so the current position, line
-             * and selection of other editors will be rendered (see PaintLine).
-             */
-            tbEditor.TextChanging += (sender, args) =>
-            {
-                if (disableOperationGeneration || !otexClient.Connected)
-                    return;
-
-                //cache previous version of the text
-                previousText = tbEditor.Text;
-            };
-            tbEditor.TextChanged += (sender, args) =>
-            {
-                if (disableOperationGeneration || !otexClient.Connected)
-                    return;
-
-                //do diff on two versions of text
-                var currentText = tbEditor.Text;
-                var diffs = differ.CreateCharacterDiffs(previousText, currentText, false, false);
-
-                //convert changes into operations
-                int position = 0;
-                foreach (var diff in diffs.DiffBlocks)
-                {
-                    //skip unchanged characters
-                    position = Math.Min(diff.InsertStartB, currentText.Length);
-
-                    //process a deletion
-                    if (diff.DeleteCountA > 0)
-                        otexClient.Delete((uint)position, (uint)diff.DeleteCountA);
-
-                    //process an insertion
-                    if (position < (diff.InsertStartB + diff.InsertCountB))
-                        otexClient.Insert((uint)position, currentText.Substring(position, diff.InsertCountB));
-                }
-            };
-            tbEditor.SelectionChanged += (s, e) =>
-            {
-                if (!otexClient.Connected)
-                    return;
-                var sel = tbEditor.Selection;
-                otexClient.Metadata(
-                    (new RemoteClient()
-                    {
-                        SelectionStart = tbEditor.PlaceToPosition(sel.Start),
-                        SelectionEnd = tbEditor.PlaceToPosition(sel.End),
-                        Colour = clientColour.ToArgb()
-                    }
-                    ).Serialize()
-                );
-            };
-            tbEditor.PaintLine += (s, e) =>
-            {
-                if (!otexClient.Connected || remoteClients.Count == 0)
-                    return;
-
-                Range lineRange = new Range(tbEditor, e.LineIndex);
-                lock (remoteClients)
-                {
-                    var len = tbEditor.TextLength;
-                    foreach (var kvp in remoteClients)
-                    {
-                        //check range
-                        var selStart = tbEditor.PositionToPlace(kvp.Value.SelectionStart.Clamp(0, len));
-                        var selEnd = tbEditor.PositionToPlace(kvp.Value.SelectionEnd.Clamp(0, len));
-                        var selRange = new Range(tbEditor, selStart, selEnd);
-                        var range = lineRange.GetIntersectionWith(selRange);
-                        if (range.Length == 0 && !lineRange.Contains(selStart))
-                            continue;
-
-                        var ptStart = tbEditor.PlaceToPoint(range.Start);
-                        var ptEnd = tbEditor.PlaceToPoint(range.End);
-                        var caret = lineRange.Contains(selStart);
-
-                        //draw "current line" fill
-                        if (caret && selRange.Length == 0)
-                        {
-                            using (SolidBrush b = new SolidBrush(
-                                Color.FromArgb(((kvp.Value.Colour & 0x00FFFFFF) | 0x10000000))))
-                                    e.Graphics.FillRectangle(b, e.LineRect);
-                        }
-                        //draw highlight
-                        if (range.Length > 0)
-                        {
-                            using (SolidBrush b = new SolidBrush(
-                                Color.FromArgb(((kvp.Value.Colour & 0x00FFFFFF) | 0x20000000))))
-                                e.Graphics.FillRectangle(b, new Rectangle(ptStart.X, e.LineRect.Y,
-                                    ptEnd.X - ptStart.X, e.LineRect.Height));
-                        }
-                        //draw caret
-                        if (caret)
-                        {
-                            ptStart = tbEditor.PlaceToPoint(selStart);
-                            using (Pen p = new Pen(Color.FromArgb((int)((kvp.Value.Colour & 0x00FFFFFF) | 0x90000000))))
-                            {
-                                p.Width = 2;
-                                e.Graphics.DrawLine(p, ptEnd.X, e.LineRect.Top,
-                                    ptEnd.X, e.LineRect.Bottom);
-                            }
-                        }
-                    }
-                }
-                
             };
 
             // CREATE OTEX SERVER ///////////////////////////////////////////////
@@ -515,22 +414,7 @@ namespace OTEX
             {
                 lock (remoteClients)
                 {
-                    RemoteClient rc = null;
-                    if (!remoteClients.TryGetValue(id, out rc))
-                        remoteClients[id] = rc = (md != null ? md.Deserialize<RemoteClient>() : new RemoteClient());
-                    else if (md != null)
-                    {
-                        RemoteClient newrc = md.Deserialize<RemoteClient>();
-                        rc.Colour = newrc.Colour;
-                        rc.SelectionEnd = newrc.SelectionEnd;
-                        rc.SelectionStart = newrc.SelectionStart;
-                    }
-                    else
-                    {
-                        rc.Colour = Color.White.ToArgb();
-                        rc.SelectionEnd = 0;
-                        rc.SelectionStart = 0;
-                    }
+                    remoteClients[id] = md.Deserialize<EditorClient>();
                 }
                 this.Execute(() => { tbEditor.Refresh(); });
             };
@@ -541,6 +425,8 @@ namespace OTEX
                 {
                     remoteClients.Clear();
                 }
+                localClient.SelectionStart = 0;
+                localClient.SelectionEnd = 0;
                 if (!closing)
                 {
                     this.Execute(() =>
@@ -561,7 +447,6 @@ namespace OTEX
                     });
                 }
             };
-            tbEditor.SelectionColor = clientColour = otexClient.ID.ToColour().Lighten(0.3f);
 
             // CREATE OTEX SERVER LISTENER //////////////////////////////////////
             /*
@@ -617,6 +502,146 @@ namespace OTEX
                     exc.Message);
                 return;
             }
+
+            // CREATE TEXT EDITOR ////////////////////////////////////////////////
+            tbEditor = new FastColoredTextBox();
+            tbEditor.Parent = this;
+            tbEditor.Dock = DockStyle.Fill;
+            tbEditor.BackBrush = App.Theme.Background.Mid.Brush;
+            tbEditor.IndentBackColor = App.Theme.Background.Dark.Colour;
+            tbEditor.ServiceLinesColor = App.Theme.Background.Light.Colour;
+            tbEditor.Font = new Font(App.Theme.Monospaced.Normal.Regular.FontFamily, 11.0f);
+            tbEditor.WordWrap = true;
+            tbEditor.WordWrapAutoIndent = true;
+            tbEditor.WordWrapMode = WordWrapMode.WordWrapControlWidth;
+            tbEditor.TabLength = 4;
+            tbEditor.LineInterval = 2;
+            /*
+            
+            */
+            /*
+             * COMP7722: In this editor example, Operations are not generated by directly
+             * intercepting key press events and the like, since they do not take special
+             * circumstances like Undo, Redo, and text dragging with the mouse into account. Instead,
+             * I've used a Least-Common-Substring-based diff generator (in this case, a package
+             * called DiffPlex: https://www.nuget.org/packages/DiffPlex/) to compare text pre-
+             * and post-change, and create the operations based on the calculated diffs.
+             * 
+             * This does of course cause a slight overhead; in testing with large documents
+             * (3.5mb of plain text, which is a lot!), diff calculation took ~100ms. Documents that
+             * were more realistically-sized took ~3ms (on the same machine), which is imperceptible.
+             * 
+             * I've also implemented some basic awareness painting, so the current position, line
+             * and selection of other editors will be rendered (see PaintLine).
+             */
+            tbEditor.TextChanging += (sender, args) =>
+            {
+                if (disableOperationGeneration || !otexClient.Connected)
+                    return;
+
+                //cache previous version of the text
+                previousText = tbEditor.Text;
+            };
+            tbEditor.TextChanged += (sender, args) =>
+            {
+                if (disableOperationGeneration || !otexClient.Connected)
+                    return;
+
+                //do diff on two versions of text
+                var currentText = tbEditor.Text;
+                var diffs = differ.CreateCharacterDiffs(previousText, currentText, false, false);
+
+                //convert changes into operations
+                int position = 0;
+                foreach (var diff in diffs.DiffBlocks)
+                {
+                    //skip unchanged characters
+                    position = Math.Min(diff.InsertStartB, currentText.Length);
+
+                    //process a deletion
+                    if (diff.DeleteCountA > 0)
+                        otexClient.Delete((uint)position, (uint)diff.DeleteCountA);
+
+                    //process an insertion
+                    if (position < (diff.InsertStartB + diff.InsertCountB))
+                        otexClient.Insert((uint)position, currentText.Substring(position, diff.InsertCountB));
+                }
+            };
+            tbEditor.SelectionChanged += (s, e) =>
+            {
+                if (!otexClient.Connected)
+                    return;
+                var sel = tbEditor.Selection;
+                localClient.SelectionStart = tbEditor.PlaceToPosition(sel.Start);
+                localClient.SelectionEnd = tbEditor.PlaceToPosition(sel.End);
+                PushUpdatedMetadata();
+            };
+            tbEditor.PaintLine += (s, e) =>
+            {
+                if (!otexClient.Connected || remoteClients.Count == 0)
+                    return;
+
+                Range lineRange = new Range(tbEditor, e.LineIndex);
+                lock (remoteClients)
+                {
+                    var len = tbEditor.TextLength;
+                    foreach (var kvp in remoteClients)
+                    {
+                        //check range
+                        var selStart = tbEditor.PositionToPlace(kvp.Value.SelectionStart.Clamp(0, len));
+                        var selEnd = tbEditor.PositionToPlace(kvp.Value.SelectionEnd.Clamp(0, len));
+                        var selRange = new Range(tbEditor, selStart, selEnd);
+                        var range = lineRange.GetIntersectionWith(selRange);
+                        if (range.Length == 0 && !lineRange.Contains(selStart))
+                            continue;
+
+                        var ptStart = tbEditor.PlaceToPoint(range.Start);
+                        var ptEnd = tbEditor.PlaceToPoint(range.End);
+                        var caret = lineRange.Contains(selStart);
+                        int colour = kvp.Value.Colour & 0x00FFFFFF;
+
+                        //draw "current line" fill
+                        if (caret && selRange.Length == 0)
+                        {
+                            using (SolidBrush b = new SolidBrush((colour | 0x06000000).ToColour()))
+                                e.Graphics.FillRectangle(b, e.LineRect);
+                        }
+                        //draw highlight
+                        if (range.Length > 0)
+                        {
+                            using (SolidBrush b = new SolidBrush((colour | 0x20000000).ToColour()))
+                                e.Graphics.FillRectangle(b, new Rectangle(ptStart.X, e.LineRect.Y,
+                                    ptEnd.X - ptStart.X, e.LineRect.Height));
+                        }
+                        //draw caret
+                        if (caret)
+                        {
+                            ptStart = tbEditor.PlaceToPoint(selStart);
+                            using (Pen p = new Pen((colour | 0xBB000000).ToColour()))
+                            {
+                                p.Width = 2;
+                                e.Graphics.DrawLine(p, ptEnd.X, e.LineRect.Top,
+                                    ptEnd.X, e.LineRect.Bottom);
+                            }
+                        }
+                    }
+                }
+            };
+
+            // CLIENT COLOURS ////////////////////////////////////////////////////
+            cbClientColour.RegenerateItems(
+                false, //darks
+                true, //mids
+                false, //lights
+                false, //transparents
+                false, //monochromatics
+                0.15f, //similarity threshold
+                new Color[] { Color.Blue, Color.MediumBlue, Color.Red, Color.Fuchsia, Color.Magenta } //exlude (colours that contrast poorly with the app theme)
+            );
+            var cols = cbClientColour.Items.OfType<Color>().ToList();
+            var col = otexClient.ID.ToColour(cols.ToArray());
+            ClientColour = col;
+            cbClientColour.SelectedIndex = cols.IndexOf(col);
         }
 
         /////////////////////////////////////////////////////////////////////
@@ -642,7 +667,7 @@ namespace OTEX
             //start client
             try
             {
-                otexClient.Connect(IPAddress.Loopback, startParams.Port);
+                otexClient.Connect(IPAddress.Loopback, startParams.Port, null, localClient.Serialize());
             }
             catch (Exception exc)
             {
@@ -834,8 +859,7 @@ namespace OTEX
             {
                 try
                 {
-                    otexClient.Connect(lastConnectionEndpoint, lastConnectionPassword,
-                        (new RemoteClient() { Colour = clientColour.ToArgb() }).Serialize());
+                    otexClient.Connect(lastConnectionEndpoint, lastConnectionPassword, localClient.Serialize());
                 }
                 catch (Exception exc)
                 {
@@ -954,6 +978,11 @@ namespace OTEX
                 passwordForm.Dispose();
                 passwordForm = null;
             }
+            if (flatIconImage != null)
+            {
+                flatIconImage.Dispose();
+                flatIconImage = null;
+            }
             base.OnClosed(e);
         }
 
@@ -1037,9 +1066,23 @@ namespace OTEX
             StartClientMode(lastConnectionEndpoint, lastConnectionPassword);
         }
 
+        private void cbClientColour_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            ClientColour = (Color)cbClientColour.Items[cbClientColour.SelectedIndex];
+        }
+
         private void nudClientUpdateInterval_ValueChanged(object sender, EventArgs e)
         {
             otexClient.UpdateInterval = (float)nudClientUpdateInterval.Value;
+        }
+
+        private void PushUpdatedMetadata()
+        {
+            try
+            {
+                otexClient.Metadata(localClient.Serialize());
+            }
+            catch (Exception) { }
         }
     }
 }

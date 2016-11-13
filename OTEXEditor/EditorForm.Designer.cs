@@ -66,6 +66,8 @@
             this.btnConnectingReconnect = new Marzersoft.Themes.ThemedButton();
             this.btnConnectingBack = new Marzersoft.Themes.ThemedButton();
             this.panSettings = new System.Windows.Forms.Panel();
+            this.label4 = new System.Windows.Forms.Label();
+            this.cbClientColour = new Marzersoft.Controls.ColourComboBox();
             this.nudClientUpdateInterval = new System.Windows.Forms.NumericUpDown();
             this.label3 = new System.Windows.Forms.Label();
             this.panMenu.SuspendLayout();
@@ -545,12 +547,37 @@
             // 
             // panSettings
             // 
+            this.panSettings.Controls.Add(this.label4);
+            this.panSettings.Controls.Add(this.cbClientColour);
             this.panSettings.Controls.Add(this.nudClientUpdateInterval);
             this.panSettings.Controls.Add(this.label3);
             this.panSettings.Location = new System.Drawing.Point(548, 114);
             this.panSettings.Name = "panSettings";
-            this.panSettings.Size = new System.Drawing.Size(215, 33);
+            this.panSettings.Size = new System.Drawing.Size(221, 97);
             this.panSettings.TabIndex = 8;
+            // 
+            // label4
+            // 
+            this.label4.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.label4.Location = new System.Drawing.Point(5, 41);
+            this.label4.Name = "label4";
+            this.label4.Size = new System.Drawing.Size(147, 20);
+            this.label4.TabIndex = 112;
+            this.label4.Text = "User colour:";
+            this.label4.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            // 
+            // cbClientColour
+            // 
+            this.cbClientColour.DrawMode = System.Windows.Forms.DrawMode.OwnerDrawFixed;
+            this.cbClientColour.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cbClientColour.FormattingEnabled = true;
+            this.cbClientColour.Location = new System.Drawing.Point(8, 63);
+            this.cbClientColour.Margin = new System.Windows.Forms.Padding(0);
+            this.cbClientColour.Name = "cbClientColour";
+            this.cbClientColour.Size = new System.Drawing.Size(204, 21);
+            this.cbClientColour.TabIndex = 111;
+            this.cbClientColour.SelectedIndexChanged += new System.EventHandler(this.cbClientColour_SelectedIndexChanged);
             // 
             // nudClientUpdateInterval
             // 
@@ -561,7 +588,7 @@
             0,
             0,
             65536});
-            this.nudClientUpdateInterval.Location = new System.Drawing.Point(152, 6);
+            this.nudClientUpdateInterval.Location = new System.Drawing.Point(158, 12);
             this.nudClientUpdateInterval.Maximum = new decimal(new int[] {
             50,
             0,
@@ -586,12 +613,12 @@
             // 
             this.label3.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.label3.Location = new System.Drawing.Point(5, 6);
+            this.label3.Location = new System.Drawing.Point(5, 12);
             this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(145, 20);
+            this.label3.Size = new System.Drawing.Size(151, 20);
             this.label3.TabIndex = 109;
             this.label3.Text = "Update interval (seconds):";
-            this.label3.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
+            this.label3.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
             // EditorForm
             // 
@@ -666,6 +693,8 @@
         private System.Windows.Forms.Panel panSettings;
         private System.Windows.Forms.NumericUpDown nudClientUpdateInterval;
         private System.Windows.Forms.Label label3;
+        private Marzersoft.Controls.ColourComboBox cbClientColour;
+        private System.Windows.Forms.Label label4;
     }
 }
 
