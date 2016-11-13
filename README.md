@@ -19,16 +19,16 @@ Otherwise, you'll need:
 - Visual studio 2013 or higher ([link](https://www.visualstudio.com/downloads/))
 - .NET Framework 4.5.2 or higher (included with Windows 8.1, [link](https://www.microsoft.com/en-au/download/details.aspx?id=42642))
 
-## Attributions/Dependencies
-### DiffPlex
+### Dependencies
+#### DiffPlex
 OTEX Editor uses a diff generation package called `DiffPlex` to create the client-side OT operations when the text is edited by the user. DiffPlex can found on [GitHub](https://github.com/mmanela/diffplex) and [Nuget](https://www.nuget.org/packages/DiffPlex/). DiffPlex is used under the [Apache License, Version 2.0](https://github.com/mmanela/diffplex/blob/master/License.txt).  
 - **Note:** If you are using Visual Studio you will not need to manually install DiffPlex; it is configured as a Nuget package in the `OTEXEditor` C# project.
 
-### FastColoredTextBox
+#### FastColoredTextBox
 OTEX Editor uses a very powerful RichTextBox alternative called `FastColoredTextBox`, which helps provides a lot of the more advanced features of the editor interface. FastColoredTextBox can found on [GitHub](https://github.com/PavelTorgashov/FastColoredTextBox), [Nuget](https://www.nuget.org/packages/FCTB/) and [CodeProject](http://www.codeproject.com/Articles/161871/Fast-Colored-TextBox-for-syntax-highlighting). FastColoredTextBox is used under [LGPLv3](https://github.com/PavelTorgashov/FastColoredTextBox/blob/master/license.txt).
 - **Note:** If you are using Visual Studio you will not need to manually install DiffPlex; it is configured as a Nuget package in the `OTEXEditor` C# project.
 
-### Marzersoft.dll
+#### Marzersoft.dll
 All three of the projects contained in the solution share a dependency on `Marzersoft.dll`, which is a personal library of useful classes, extensions and wrappers I’ve built over my years working with C#. It’s not open-source, but OTEX can be compiled by linking against the Marzersoft.dll files included with the [OTEX distribution](https://drive.google.com/open?id=0B6cTOEVTlAMJSng0djZaREZFRmM). 
 
 ## Samples
