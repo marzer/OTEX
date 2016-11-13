@@ -14,7 +14,7 @@ namespace OTEX.Packets
     /// <summary>
     /// Reads and writes OTEX packets using a TCPClient.
     /// </summary>
-    internal class PacketStream : IDisposable
+    internal sealed class PacketStream : IDisposable
     {
         /////////////////////////////////////////////////////////////////////
         // PROPERTIES/VARIABLES
@@ -101,7 +101,7 @@ namespace OTEX.Packets
                 stream = client.GetStream();
                 if (!stream.CanRead)
                     throw new IOException("client stream does not support reading");
-                
+
             }
             catch (Exception)
             {
