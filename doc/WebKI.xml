@@ -3,6 +3,32 @@
   <HelpKINode Title="Active property" Url="html/2c11ecc0-2ef7-1c71-6846-e017edea692d.htm" />
   <HelpKINode Title="AnnouncePorts field" Url="html/3ed64c4b-48c4-6a9b-b011-f7a12c8c3cbf.htm" />
   <HelpKINode Title="AutoPing property" Url="html/9e6f3303-c8aa-a597-f740-2830ef2dc944.htm" />
+  <HelpKINode Title="BufferedClient class">
+    <HelpKINode Title="BufferedClient Class" Url="html/47036802-3dc0-da95-1b3c-9b65444f37de.htm" />
+    <HelpKINode Title="about BufferedClient class" Url="html/47036802-3dc0-da95-1b3c-9b65444f37de.htm" />
+    <HelpKINode Title="constructor" Url="html/6eff74f7-1044-b4dd-87b6-f629e060d9af.htm" />
+    <HelpKINode Title="events" Url="html/43e49860-8b1b-9a6f-b3ab-3cbd1a03e3df.htm" />
+    <HelpKINode Title="methods" Url="html/48585643-c5fd-58b9-7216-c510cb4f581a.htm" />
+    <HelpKINode Title="properties" Url="html/90bd79ba-df93-37b7-9319-eab443334768.htm" />
+  </HelpKINode>
+  <HelpKINode Title="BufferedClient.BufferedClient constructor" Url="html/6eff74f7-1044-b4dd-87b6-f629e060d9af.htm" />
+  <HelpKINode Title="BufferedClient.Connect method" Url="html/2ed289ea-9267-591d-a3dc-cec5bd4d7ce6.htm" />
+  <HelpKINode Title="BufferedClient.Connected property" Url="html/3f97a43a-8483-e2ad-1ae0-2e8d327c87be.htm" />
+  <HelpKINode Title="BufferedClient.Disconnect method" Url="html/207b8740-29f0-01f2-9153-f25baaf458f6.htm" />
+  <HelpKINode Title="BufferedClient.Dispose method" Url="html/35e46624-1c7d-a713-1f47-1ecb806464ae.htm" />
+  <HelpKINode Title="BufferedClient.Document property" Url="html/4f6d340d-c4a0-fbc0-e0ac-d4c1dfec46dc.htm" />
+  <HelpKINode Title="BufferedClient.IsDisposed property" Url="html/dd464dd4-3455-df04-a4c5-d8356d04b32b.htm" />
+  <HelpKINode Title="BufferedClient.Metadata method" Url="html/e5401fe5-bddf-c71e-d01f-76b820a60c63.htm" />
+  <HelpKINode Title="BufferedClient.OnConnected event" Url="html/035fcd57-7f1c-5ad5-353f-c80c54dca932.htm" />
+  <HelpKINode Title="BufferedClient.OnDisconnected event" Url="html/a6c07d99-afe7-595c-d63b-2c48578160da.htm" />
+  <HelpKINode Title="BufferedClient.OnDocumentChanged event" Url="html/ff777107-b32c-7b68-3c50-9555f9f162e2.htm" />
+  <HelpKINode Title="BufferedClient.OnMetadataUpdated event" Url="html/29fdd0f6-d689-d29e-abd3-b809355b75d5.htm" />
+  <HelpKINode Title="BufferedClient.ServerAddress property" Url="html/0cfa5f13-0ebc-9302-2864-512493d9acd4.htm" />
+  <HelpKINode Title="BufferedClient.ServerFilePath property" Url="html/4a4581e1-0a57-e213-3f67-42a09b1124e5.htm" />
+  <HelpKINode Title="BufferedClient.ServerID property" Url="html/04576870-a491-a1e9-a756-6522518f4d10.htm" />
+  <HelpKINode Title="BufferedClient.ServerName property" Url="html/e50146c8-be79-748c-79e4-fec9f637a3e8.htm" />
+  <HelpKINode Title="BufferedClient.ServerPort property" Url="html/8c02ec06-69cc-38bf-5ce6-8ebe0b2e2521.htm" />
+  <HelpKINode Title="BufferedClient.UpdateInterval property" Url="html/6c9dedf6-3545-465d-e932-3341e707e19c.htm" />
   <HelpKINode Title="CaptureException method" Url="html/829b6e5f-0995-eb25-dcd5-3373fc3446bb.htm" />
   <HelpKINode Title="Client class">
     <HelpKINode Title="Client Class" Url="html/5f70d4b0-7475-f876-cc92-90c2f357aa6a.htm" />
@@ -36,18 +62,32 @@
     <HelpKINode Title="Server.ClientCount Property " Url="html/5bbf5597-c0ea-fcbf-3898-447d7113db84.htm" />
     <HelpKINode Title="ServerDescription.ClientCount Property " Url="html/99cc7722-b06a-ac7d-d0ea-ef682ee6642a.htm" />
   </HelpKINode>
-  <HelpKINode Title="Connect method" Url="html/a87d03d9-1f05-9289-b13e-da70e739b805.htm" />
-  <HelpKINode Title="Connected property" Url="html/790c71a3-a6b7-fb4d-cfcb-9cb747c675d2.htm" />
+  <HelpKINode Title="Connect method">
+    <HelpKINode Title="BufferedClient.Connect Method " Url="html/2ed289ea-9267-591d-a3dc-cec5bd4d7ce6.htm" />
+    <HelpKINode Title="Client.Connect Method " Url="html/a87d03d9-1f05-9289-b13e-da70e739b805.htm" />
+    <HelpKINode Title="IClient.Connect Method " Url="html/9063e117-cb0d-65ba-c018-3c9be4ed2d59.htm" />
+  </HelpKINode>
+  <HelpKINode Title="Connected property">
+    <HelpKINode Title="BufferedClient.Connected Property " Url="html/3f97a43a-8483-e2ad-1ae0-2e8d327c87be.htm" />
+    <HelpKINode Title="Client.Connected Property " Url="html/790c71a3-a6b7-fb4d-cfcb-9cb747c675d2.htm" />
+    <HelpKINode Title="IClient.Connected Property " Url="html/a3671627-ae9c-a2cd-751f-6ff89c802653.htm" />
+  </HelpKINode>
   <HelpKINode Title="Contains method" Url="html/9b5bdb4f-52b6-785d-4e16-11627bb32dae.htm" />
   <HelpKINode Title="Count property" Url="html/b14e4b7c-c7b4-ee91-e98c-a91c8e519922.htm" />
   <HelpKINode Title="DefaultPort field" Url="html/bb982708-57a7-b1bf-c91c-2c5689189e1b.htm" />
   <HelpKINode Title="Delete method" Url="html/b1514b46-aac8-1180-d515-92ca8e790c27.htm" />
-  <HelpKINode Title="Disconnect method" Url="html/181cc882-021b-29e4-fb52-152b246d7ba0.htm" />
+  <HelpKINode Title="Disconnect method">
+    <HelpKINode Title="BufferedClient.Disconnect Method " Url="html/207b8740-29f0-01f2-9153-f25baaf458f6.htm" />
+    <HelpKINode Title="Client.Disconnect Method " Url="html/181cc882-021b-29e4-fb52-152b246d7ba0.htm" />
+    <HelpKINode Title="IClient.Disconnect Method " Url="html/356dde9a-e8bd-a8e2-5f1d-ca9d94ebb73b.htm" />
+  </HelpKINode>
   <HelpKINode Title="Dispose method">
+    <HelpKINode Title="BufferedClient.Dispose Method " Url="html/35e46624-1c7d-a713-1f47-1ecb806464ae.htm" />
     <HelpKINode Title="Client.Dispose Method " Url="html/3b8a02e5-1a49-b55e-f0b4-fd1f3f762d92.htm" />
     <HelpKINode Title="Server.Dispose Method " Url="html/afae5c1e-08cb-658e-6839-0009c3a8a785.htm" />
     <HelpKINode Title="ServerListener.Dispose Method " Url="html/bd81261e-a026-c76e-a985-dbb030ef5a13.htm" />
   </HelpKINode>
+  <HelpKINode Title="Document property" Url="html/4f6d340d-c4a0-fbc0-e0ac-d4c1dfec46dc.htm" />
   <HelpKINode Title="EditMode field" Url="html/532cd922-9aaa-d577-3d26-a260916e0b95.htm" />
   <HelpKINode Title="EndPoint property" Url="html/9325ef8a-368a-e8a6-23a1-4977c1cf73dd.htm" />
   <HelpKINode Title="Execute method" Url="html/d3c82730-d860-9934-2270-28a006a2808f.htm" />
@@ -55,11 +95,32 @@
   <HelpKINode Title="FilePath field" Url="html/7db471d3-ade5-a0a3-713a-1ffdd865cf39.htm" />
   <HelpKINode Title="FilePath property" Url="html/4908f98f-bbde-b8ee-6b97-ab04345a3e4b.htm" />
   <HelpKINode Title="First property" Url="html/5742a83f-d6e4-f691-8967-14d713320ae2.htm" />
+  <HelpKINode Title="IClient interface">
+    <HelpKINode Title="IClient Interface" Url="html/dc014f4c-0a8c-7658-60a6-bc5e26662622.htm" />
+    <HelpKINode Title="about IClient interface" Url="html/dc014f4c-0a8c-7658-60a6-bc5e26662622.htm" />
+    <HelpKINode Title="events" Url="html/796b142e-42bb-9ff7-de2b-1df7b91ca73a.htm" />
+    <HelpKINode Title="methods" Url="html/6aba5538-050a-2422-3e98-3800760a4348.htm" />
+    <HelpKINode Title="properties" Url="html/760da942-3d08-a35e-4c86-a18d4ae09ac0.htm" />
+  </HelpKINode>
+  <HelpKINode Title="IClient.Connect method" Url="html/9063e117-cb0d-65ba-c018-3c9be4ed2d59.htm" />
+  <HelpKINode Title="IClient.Connected property" Url="html/a3671627-ae9c-a2cd-751f-6ff89c802653.htm" />
+  <HelpKINode Title="IClient.Disconnect method" Url="html/356dde9a-e8bd-a8e2-5f1d-ca9d94ebb73b.htm" />
+  <HelpKINode Title="IClient.Metadata method" Url="html/9ad5f025-ff67-a28d-3886-a23193690d23.htm" />
+  <HelpKINode Title="IClient.OnConnected event" Url="html/93073231-cea4-693a-bed0-a1ec2f688e74.htm" />
+  <HelpKINode Title="IClient.OnDisconnected event" Url="html/01aed22b-e152-3fa3-0c9e-13de1861038e.htm" />
+  <HelpKINode Title="IClient.OnMetadataUpdated event" Url="html/095aa3fb-f42f-8513-ed86-5f2e97426603.htm" />
+  <HelpKINode Title="IClient.ServerAddress property" Url="html/287ccea9-931b-832b-c8c7-36526344c633.htm" />
+  <HelpKINode Title="IClient.ServerFilePath property" Url="html/5ba9c02a-c4dc-e08d-da55-ebcaa33b8cf2.htm" />
+  <HelpKINode Title="IClient.ServerID property" Url="html/f09cc043-984b-316c-e4fc-bf2e7b3c8304.htm" />
+  <HelpKINode Title="IClient.ServerName property" Url="html/9da492a0-a416-d358-13f0-f5af06655110.htm" />
+  <HelpKINode Title="IClient.ServerPort property" Url="html/d365326a-fb0f-6af3-50fb-fa29ae0bb424.htm" />
+  <HelpKINode Title="IClient.UpdateInterval property" Url="html/abcc84bc-cb97-fc84-de24-3c09725e75a1.htm" />
   <HelpKINode Title="ID field" Url="html/845501e4-f809-04fc-b03f-81945b6ebd0a.htm" />
   <HelpKINode Title="ID property" Url="html/19439f42-2d39-f69d-42e0-754e4de6de8d.htm" />
   <HelpKINode Title="Insert method" Url="html/b4376504-082c-5788-9c95-8895c48971ce.htm" />
   <HelpKINode Title="IsDeletion property" Url="html/040b6bb3-05fe-2018-ef08-b961777046b9.htm" />
   <HelpKINode Title="IsDisposed property">
+    <HelpKINode Title="BufferedClient.IsDisposed Property " Url="html/dd464dd4-3455-df04-a4c5-d8356d04b32b.htm" />
     <HelpKINode Title="Client.IsDisposed Property " Url="html/b7ede259-4f65-ebb7-6d8a-663d56af49e0.htm" />
     <HelpKINode Title="Server.IsDisposed Property " Url="html/654e7686-ffd8-afeb-3e43-e5c9737a28d2.htm" />
     <HelpKINode Title="ServerListener.IsDisposed Property " Url="html/8ab377b3-399a-b545-1732-3bf0b932792e.htm" />
@@ -74,7 +135,11 @@
     <HelpKINode Title="Server.MaxClients Property " Url="html/dafe5307-ffd0-f1e6-d58e-398ad773ece4.htm" />
     <HelpKINode Title="ServerDescription.MaxClients Property " Url="html/e304df85-36fb-5122-4e7e-fd031d32397b.htm" />
   </HelpKINode>
-  <HelpKINode Title="Metadata method" Url="html/8df55fa7-1f3e-d491-0800-43c2d7b8c6ee.htm" />
+  <HelpKINode Title="Metadata method">
+    <HelpKINode Title="BufferedClient.Metadata Method " Url="html/e5401fe5-bddf-c71e-d01f-76b820a60c63.htm" />
+    <HelpKINode Title="Client.Metadata Method " Url="html/8df55fa7-1f3e-d491-0800-43c2d7b8c6ee.htm" />
+    <HelpKINode Title="IClient.Metadata Method " Url="html/9ad5f025-ff67-a28d-3886-a23193690d23.htm" />
+  </HelpKINode>
   <HelpKINode Title="Name field" Url="html/8b25e478-d6eb-b495-ce8a-92dbe9ed901e.htm" />
   <HelpKINode Title="Name property">
     <HelpKINode Title="Server.Name Property " Url="html/6e1e248e-e743-4c3c-8997-62c90e99f31f.htm" />
@@ -91,14 +156,28 @@
   <HelpKINode Title="Node.ID field" Url="html/845501e4-f809-04fc-b03f-81945b6ebd0a.htm" />
   <HelpKINode Title="Node.Node constructor" Url="html/aa596c10-3981-e2c1-b82b-c0f2f9036170.htm" />
   <HelpKINode Title="NodeID property" Url="html/ccafc206-921b-28b7-e9cc-745d1ec85f79.htm" />
+  <HelpKINode Title="NotifyException method" Url="html/e8577bd1-fb81-449f-f843-f57195f383ad.htm" />
   <HelpKINode Title="Offset property" Url="html/4afecef8-7314-6bb9-de5c-e7be9dcac065.htm" />
   <HelpKINode Title="OnClientConnected event" Url="html/7b92141f-aa75-237f-4ab7-6640555fc74d.htm" />
   <HelpKINode Title="OnClientDisconnected event" Url="html/9912d311-1931-8e71-d28f-4604b39be1ec.htm" />
-  <HelpKINode Title="OnConnected event" Url="html/4f1c0928-882b-9a3f-f006-3ea185f49d29.htm" />
-  <HelpKINode Title="OnDisconnected event" Url="html/dd6f0978-c4fe-fca0-e85e-21a1b37df3be.htm" />
+  <HelpKINode Title="OnConnected event">
+    <HelpKINode Title="BufferedClient.OnConnected Event" Url="html/035fcd57-7f1c-5ad5-353f-c80c54dca932.htm" />
+    <HelpKINode Title="Client.OnConnected Event" Url="html/4f1c0928-882b-9a3f-f006-3ea185f49d29.htm" />
+    <HelpKINode Title="IClient.OnConnected Event" Url="html/93073231-cea4-693a-bed0-a1ec2f688e74.htm" />
+  </HelpKINode>
+  <HelpKINode Title="OnDisconnected event">
+    <HelpKINode Title="BufferedClient.OnDisconnected Event" Url="html/a6c07d99-afe7-595c-d63b-2c48578160da.htm" />
+    <HelpKINode Title="Client.OnDisconnected Event" Url="html/dd6f0978-c4fe-fca0-e85e-21a1b37df3be.htm" />
+    <HelpKINode Title="IClient.OnDisconnected Event" Url="html/01aed22b-e152-3fa3-0c9e-13de1861038e.htm" />
+  </HelpKINode>
+  <HelpKINode Title="OnDocumentChanged event" Url="html/ff777107-b32c-7b68-3c50-9555f9f162e2.htm" />
   <HelpKINode Title="OnFileSynchronized event" Url="html/c8f7559c-1c3d-bcd5-57d0-4ae55a137fab.htm" />
   <HelpKINode Title="OnInactive event" Url="html/f4938f58-7e3d-c3fd-3893-a1c61ac54170.htm" />
-  <HelpKINode Title="OnMetadataUpdated event" Url="html/23cc1e5f-1b5d-112b-a287-a85e431e4fa6.htm" />
+  <HelpKINode Title="OnMetadataUpdated event">
+    <HelpKINode Title="BufferedClient.OnMetadataUpdated Event" Url="html/29fdd0f6-d689-d29e-abd3-b809355b75d5.htm" />
+    <HelpKINode Title="Client.OnMetadataUpdated Event" Url="html/23cc1e5f-1b5d-112b-a287-a85e431e4fa6.htm" />
+    <HelpKINode Title="IClient.OnMetadataUpdated Event" Url="html/095aa3fb-f42f-8513-ed86-5f2e97426603.htm" />
+  </HelpKINode>
   <HelpKINode Title="OnRemoteOperations event" Url="html/07f82e47-c389-bbbc-9c41-076626497fce.htm" />
   <HelpKINode Title="OnServerAdded event" Url="html/532f9e8d-123c-6da2-603d-a8fd43af2536.htm" />
   <HelpKINode Title="OnStarted event" Url="html/03418be8-0039-f70d-f457-22dcd1480663.htm" />
@@ -120,7 +199,9 @@
   <HelpKINode Title="Operation.Offset property" Url="html/4afecef8-7314-6bb9-de5c-e7be9dcac065.htm" />
   <HelpKINode Title="Operation.Text property" Url="html/0c7d6e2e-f95f-4835-1a2a-e1473076dd5c.htm" />
   <HelpKINode Title="OTEX namespace" Url="html/110cfb18-c84a-36a5-51ca-2423d7bfd6e3.htm" />
+  <HelpKINode Title="OTEX.BufferedClient class" Url="html/47036802-3dc0-da95-1b3c-9b65444f37de.htm" />
   <HelpKINode Title="OTEX.Client class" Url="html/5f70d4b0-7475-f876-cc92-90c2f357aa6a.htm" />
+  <HelpKINode Title="OTEX.IClient interface" Url="html/dc014f4c-0a8c-7658-60a6-bc5e26662622.htm" />
   <HelpKINode Title="OTEX.Node class" Url="html/87102cc1-86e6-cb0c-f5e8-9b76d9d84050.htm" />
   <HelpKINode Title="OTEX.Operation class" Url="html/525e4dfd-f399-89db-8937-f15c8dc4df41.htm" />
   <HelpKINode Title="OTEX.Password class" Url="html/2e7e9b44-d645-bc9c-85c4-e38c58030eab.htm" />
@@ -210,7 +291,11 @@
   <HelpKINode Title="Server.StartParams.ReplaceTabsWithSpaces field" Url="html/5c844108-28b6-c066-b33d-6d66a0a58d3c.htm" />
   <HelpKINode Title="Server.StartParams.StartParams constructor" Url="html/c7317e1a-9ca5-f76b-7cba-a32fbb21c9aa.htm" />
   <HelpKINode Title="Server.Stop method" Url="html/89a540b4-9002-2d7b-c19d-e62b4973afd3.htm" />
-  <HelpKINode Title="ServerAddress property" Url="html/8a6fee0c-35f6-dcc1-9ef8-3b51700041a4.htm" />
+  <HelpKINode Title="ServerAddress property">
+    <HelpKINode Title="BufferedClient.ServerAddress Property " Url="html/0cfa5f13-0ebc-9302-2864-512493d9acd4.htm" />
+    <HelpKINode Title="Client.ServerAddress Property " Url="html/8a6fee0c-35f6-dcc1-9ef8-3b51700041a4.htm" />
+    <HelpKINode Title="IClient.ServerAddress Property " Url="html/287ccea9-931b-832b-c8c7-36526344c633.htm" />
+  </HelpKINode>
   <HelpKINode Title="ServerDescription class">
     <HelpKINode Title="ServerDescription Class" Url="html/7d4c5c07-188a-3591-1911-4d1501871296.htm" />
     <HelpKINode Title="about ServerDescription class" Url="html/7d4c5c07-188a-3591-1911-4d1501871296.htm" />
@@ -233,8 +318,16 @@
   <HelpKINode Title="ServerDescription.RequiresPassword property" Url="html/9766e1fd-511e-15cc-a380-12fbd8bbdb6e.htm" />
   <HelpKINode Title="ServerDescription.Tag field" Url="html/36d3e7cc-ed36-6a95-32e4-b8fd980f607a.htm" />
   <HelpKINode Title="ServerDescription.TemporaryDocument property" Url="html/e5edcef1-decf-6755-5951-0ed01228f33c.htm" />
-  <HelpKINode Title="ServerFilePath property" Url="html/9742bd58-1cde-99d9-ab76-e1dcbcf15e21.htm" />
-  <HelpKINode Title="ServerID property" Url="html/43f1a85f-464d-de5c-4f15-6aca86ccd66f.htm" />
+  <HelpKINode Title="ServerFilePath property">
+    <HelpKINode Title="BufferedClient.ServerFilePath Property " Url="html/4a4581e1-0a57-e213-3f67-42a09b1124e5.htm" />
+    <HelpKINode Title="Client.ServerFilePath Property " Url="html/9742bd58-1cde-99d9-ab76-e1dcbcf15e21.htm" />
+    <HelpKINode Title="IClient.ServerFilePath Property " Url="html/5ba9c02a-c4dc-e08d-da55-ebcaa33b8cf2.htm" />
+  </HelpKINode>
+  <HelpKINode Title="ServerID property">
+    <HelpKINode Title="BufferedClient.ServerID Property " Url="html/04576870-a491-a1e9-a756-6522518f4d10.htm" />
+    <HelpKINode Title="Client.ServerID Property " Url="html/43f1a85f-464d-de5c-4f15-6aca86ccd66f.htm" />
+    <HelpKINode Title="IClient.ServerID Property " Url="html/f09cc043-984b-316c-e4fc-bf2e7b3c8304.htm" />
+  </HelpKINode>
   <HelpKINode Title="ServerListener class">
     <HelpKINode Title="ServerListener Class" Url="html/386fb4af-5e5c-12d9-9572-f98de63277e7.htm" />
     <HelpKINode Title="about ServerListener class" Url="html/386fb4af-5e5c-12d9-9572-f98de63277e7.htm" />
@@ -249,8 +342,16 @@
   <HelpKINode Title="ServerListener.OnServerAdded event" Url="html/532f9e8d-123c-6da2-603d-a8fd43af2536.htm" />
   <HelpKINode Title="ServerListener.ServerListener constructor" Url="html/ebe5811b-04d6-bb27-bc4a-dd52daa97e6e.htm" />
   <HelpKINode Title="ServerListener.Servers property" Url="html/b6b4a8d0-8bae-b1e6-8118-489d2ce3bb62.htm" />
-  <HelpKINode Title="ServerName property" Url="html/1f834841-2d9f-3fb9-7d75-21a3296c208d.htm" />
-  <HelpKINode Title="ServerPort property" Url="html/99cf2197-141d-d97b-1ec7-f1402b6d410f.htm" />
+  <HelpKINode Title="ServerName property">
+    <HelpKINode Title="BufferedClient.ServerName Property " Url="html/e50146c8-be79-748c-79e4-fec9f637a3e8.htm" />
+    <HelpKINode Title="Client.ServerName Property " Url="html/1f834841-2d9f-3fb9-7d75-21a3296c208d.htm" />
+    <HelpKINode Title="IClient.ServerName Property " Url="html/9da492a0-a416-d358-13f0-f5af06655110.htm" />
+  </HelpKINode>
+  <HelpKINode Title="ServerPort property">
+    <HelpKINode Title="BufferedClient.ServerPort Property " Url="html/8c02ec06-69cc-38bf-5ce6-8ebe0b2e2521.htm" />
+    <HelpKINode Title="Client.ServerPort Property " Url="html/99cf2197-141d-d97b-1ec7-f1402b6d410f.htm" />
+    <HelpKINode Title="IClient.ServerPort Property " Url="html/d365326a-fb0f-6af3-50fb-fa29ae0bb424.htm" />
+  </HelpKINode>
   <HelpKINode Title="Servers property" Url="html/b6b4a8d0-8bae-b1e6-8118-489d2ce3bb62.htm" />
   <HelpKINode Title="Start method" Url="html/59942ca8-63b2-91d2-0cb7-26024a591ecc.htm" />
   <HelpKINode Title="StartParams class">
@@ -269,6 +370,7 @@
     <HelpKINode Title="methods" Url="html/9a4a30aa-2c14-d5ca-dbc9-5d8a4b083939.htm" />
   </HelpKINode>
   <HelpKINode Title="ThreadController.CaptureException method" Url="html/829b6e5f-0995-eb25-dcd5-3373fc3446bb.htm" />
+  <HelpKINode Title="ThreadController.NotifyException method" Url="html/e8577bd1-fb81-449f-f843-f57195f383ad.htm" />
   <HelpKINode Title="ThreadController.OnThreadException event" Url="html/1d3fccef-1407-59b0-30a3-d7bb67094299.htm" />
   <HelpKINode Title="ThreadController.ThreadController constructor" Url="html/a5d949b2-dec8-4f5f-fa44-f4c40f232657.htm" />
   <HelpKINode Title="ThreadController.ThreadException class">
@@ -280,5 +382,9 @@
     <HelpKINode Title="properties" Url="html/acd0c8ca-7fd7-b12c-4a7e-4a291d0b4317.htm" />
   </HelpKINode>
   <HelpKINode Title="ToString method" Url="html/5f6f21e7-93a9-27da-87ee-42162062ddc8.htm" />
-  <HelpKINode Title="UpdateInterval property" Url="html/6e66f2c5-ae30-d86c-8732-4d2b3a272bda.htm" />
+  <HelpKINode Title="UpdateInterval property">
+    <HelpKINode Title="BufferedClient.UpdateInterval Property " Url="html/6c9dedf6-3545-465d-e932-3341e707e19c.htm" />
+    <HelpKINode Title="Client.UpdateInterval Property " Url="html/6e66f2c5-ae30-d86c-8732-4d2b3a272bda.htm" />
+    <HelpKINode Title="IClient.UpdateInterval Property " Url="html/abcc84bc-cb97-fc84-de24-3c09725e75a1.htm" />
+  </HelpKINode>
 </HelpKI>
