@@ -147,7 +147,12 @@ namespace OTEX
         /// </summary>
         public string FilePath
         {
-            get { return startParams == null ? "" : startParams.FilePath; }
+            get
+            {
+                if (isDisposed)
+                    throw new ObjectDisposedException("OTEX.Server");
+                return startParams == null ? "" : startParams.FilePath;
+            }
         }
 
         /// <summary>
@@ -155,7 +160,12 @@ namespace OTEX
         /// </summary>
         public ushort Port
         {
-            get { return startParams == null ? (ushort)DefaultPort : startParams.Port; }
+            get
+            {
+                if (isDisposed)
+                    throw new ObjectDisposedException("OTEX.Server");
+                return startParams == null ? (ushort)DefaultPort : startParams.Port;
+            }
         }
 
         /// <summary>
@@ -163,7 +173,12 @@ namespace OTEX
         /// </summary>
         public bool Public
         {
-            get { return startParams == null ? false : startParams.Public; }
+            get
+            {
+                if (isDisposed)
+                    throw new ObjectDisposedException("OTEX.Server");
+                return startParams == null ? false : startParams.Public;
+            }
         }
 
         /// <summary>
@@ -171,7 +186,12 @@ namespace OTEX
         /// </summary>
         public bool RequiresPassword
         {
-            get { return startParams == null ? false : startParams.Password != null; }
+            get
+            {
+                if (isDisposed)
+                    throw new ObjectDisposedException("OTEX.Server");
+                return startParams == null ? false : startParams.Password != null;
+            }
         }
 
         /// <summary>
@@ -179,7 +199,12 @@ namespace OTEX
         /// </summary>
         public string Name
         {
-            get { return startParams == null ? "" : startParams.Name; }
+            get
+            {
+                if (isDisposed)
+                    throw new ObjectDisposedException("OTEX.Server");
+                return startParams == null ? "" : startParams.Name;
+            }
         }
 
         /// <summary>
@@ -192,7 +217,12 @@ namespace OTEX
         /// </summary>
         public uint ClientCount
         {
-            get { return (uint)connectedClients.Count; }
+            get
+            {
+                if (isDisposed)
+                    throw new ObjectDisposedException("OTEX.Server");
+                return (uint)connectedClients.Count;
+            }
         }
 
         /// <summary>
@@ -200,7 +230,12 @@ namespace OTEX
         /// </summary>
         public uint MaxClients
         {
-            get { return startParams == null ? 10u : startParams.MaxClients; }
+            get
+            {
+                if (isDisposed)
+                    throw new ObjectDisposedException("OTEX.Server");
+                return startParams == null ? 10u : startParams.MaxClients;
+            }
         }
 
         /// <summary>
@@ -227,7 +262,12 @@ namespace OTEX
         /// </summary>
         public bool Running
         {
-            get { return running; }
+            get
+            {
+                if (isDisposed)
+                    throw new ObjectDisposedException("OTEX.Server");
+                return running;
+            }
         }
         private volatile bool running = false;
 
@@ -251,7 +291,12 @@ namespace OTEX
         /// </summary>
         public string FileLineEndings
         {
-            get { return fileLineEnding; }
+            get
+            {
+                if (isDisposed)
+                    throw new ObjectDisposedException("OTEX.Server");
+                return fileLineEnding;
+            }
         }
         private volatile string fileLineEnding = Environment.NewLine;
 
@@ -385,9 +430,10 @@ namespace OTEX
                                     fileLineEnding = Environment.NewLine;
                                 fileContentsNoCRLF = null;
 
-                                //normalize line endings to crlf for otex editor
-                                fileContents = fileContents.Replace("\r\n", "\n").Replace("\r", "\n")
-                                    .Replace("\n", "\r\n");
+                                //normalize line endings
+                                fileContents = fileContents.Replace("\r\n", "\n").Replace("\r", "\n");
+                                if (!Environment.NewLine.Equals("\n"))
+                                    fileContents = fileContents.Replace("\n", Environment.NewLine);
                                
                                 //add initial operation
                                 masterOperations.Add(new Operation(ID, 0, fileContents));
@@ -794,8 +840,8 @@ namespace OTEX
 
             //check line ending normalization
             var fileOutput = fileContents;
-            if (!fileLineEnding.Equals("\r\n"))
-                fileOutput = fileContents.Replace("\r\n", fileLineEnding);
+            if (!fileLineEnding.Equals(Environment.NewLine))
+                fileOutput = fileContents.Replace(Environment.NewLine, fileLineEnding);
 
             //write contents to disk
             File.WriteAllText(FilePath, fileOutput);

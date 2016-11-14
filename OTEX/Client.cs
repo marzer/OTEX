@@ -24,7 +24,7 @@ namespace OTEX
     /// <summary>
     /// Client class for the OTEX framework.
     /// </summary>
-    public sealed class Client : Node, IDisposable
+    public sealed class Client : Node, IDisposable, IClient
     {
         /////////////////////////////////////////////////////////////////////
         // EVENTS
@@ -33,7 +33,19 @@ namespace OTEX
         /// <summary>
         /// Triggered when the client successfully connects to an OTEX server.
         /// </summary>
-        public event Action<Client> OnConnected;
+        public event Action<IClient> OnConnected;
+
+        /// <summary>
+        /// Triggered when a remote client updates it's metadata.
+        /// Do not call any of this object's methods from this callback or you may deadlock!
+        /// </summary>
+        public event Action<IClient, Guid, byte[]> OnMetadataUpdated;
+
+        /// <summary>
+        /// Triggered when the client is disconnected from an OTEX server.
+        /// Boolean parameter is true if the disconnection was forced by the server.
+        /// </summary>
+        public event Action<IClient, bool> OnDisconnected;
 
         /// <summary>
         /// Triggered when the client receives remote operations from the server.
@@ -41,24 +53,12 @@ namespace OTEX
         /// </summary>
         public event Action<Client, IEnumerable<Operation>> OnRemoteOperations;
 
-        /// <summary>
-        /// Triggered when a remote client updates it's metadata.
-        /// Do not call any of this object's methods from this callback or you may deadlock!
-        /// </summary>
-        public event Action<Client, Guid, byte[]> OnMetadataUpdated;
-
-        /// <summary>
-        /// Triggered when the client is disconnected from an OTEX server.
-        /// Boolean parameter is true if the disconnection was forced by the server.
-        /// </summary>
-        public event Action<Client, bool> OnDisconnected;
-
         /////////////////////////////////////////////////////////////////////
         // PROPERTIES/VARIABLES
         /////////////////////////////////////////////////////////////////////
 
         /// <summary>
-        /// has this client been disposed?
+        /// Has this client been disposed?
         /// </summary>
         public bool IsDisposed
         {
@@ -71,7 +71,12 @@ namespace OTEX
         /// </summary>
         public bool Connected
         {
-            get { return connected; }
+            get
+            {
+                if (isDisposed)
+                    throw new ObjectDisposedException("OTEX.Client");
+                return connected;
+            }
         }
         private volatile bool connected = false;
         private volatile bool clientSideDisconnection = false;
@@ -86,7 +91,12 @@ namespace OTEX
         /// </summary>
         public IPAddress ServerAddress
         {
-            get { return serverAddress; }
+            get
+            {
+                if (isDisposed)
+                    throw new ObjectDisposedException("OTEX.Client");
+                return serverAddress;
+            }
         }
         private volatile IPAddress serverAddress;
 
@@ -95,7 +105,12 @@ namespace OTEX
         /// </summary>
         public ushort ServerPort
         {
-            get { return serverPort; }
+            get
+            {
+                if (isDisposed)
+                    throw new ObjectDisposedException("OTEX.Client");
+                return serverPort;
+            }
         }
         private volatile ushort serverPort;
 
@@ -104,7 +119,12 @@ namespace OTEX
         /// </summary>
         public string ServerFilePath
         {
-            get { return serverFilePath; }
+            get
+            {
+                if (isDisposed)
+                    throw new ObjectDisposedException("OTEX.Client");
+                return serverFilePath;
+            }
         }
         private volatile string serverFilePath;
 
@@ -113,7 +133,12 @@ namespace OTEX
         /// </summary>
         public string ServerName
         {
-            get { return serverName; }
+            get
+            {
+                if (isDisposed)
+                    throw new ObjectDisposedException("OTEX.Client");
+                return serverName;
+            }
         }
         private volatile string serverName;
 
@@ -122,7 +147,12 @@ namespace OTEX
         /// </summary>
         public Guid ServerID
         {
-            get { return serverID; }
+            get
+            {
+                if (isDisposed)
+                    throw new ObjectDisposedException("OTEX.Client");
+                return serverID;
+            }
         }
         private Guid serverID = Guid.Empty;
 
@@ -157,8 +187,18 @@ namespace OTEX
         /// </summary>
         public float UpdateInterval
         {
-            get { return updateInterval; }
-            set { updateInterval = value.Clamp(0.5f,5.0f); }
+            get
+            {
+                if (isDisposed)
+                    throw new ObjectDisposedException("OTEX.Client");
+                return updateInterval;
+            }
+            set
+            {
+                if (isDisposed)
+                    throw new ObjectDisposedException("OTEX.Client");
+                updateInterval = value.Clamp(0.5f,5.0f);
+            }
         }
         private volatile float updateInterval = 0.5f;
 
@@ -211,7 +251,7 @@ namespace OTEX
         {
             if (address == null)
                 throw new ArgumentNullException("address");
-            Connect(new IPEndPoint(address, port), password);
+            Connect(new IPEndPoint(address, port), password, metadata);
         }
 
         /// <summary>
@@ -234,7 +274,7 @@ namespace OTEX
         {
             if (serverDescription == null)
                 throw new ArgumentNullException("serverDescription");
-            Connect(serverDescription.EndPoint, password);
+            Connect(serverDescription.EndPoint, password, metadata);
         }
 
         /// <summary>
@@ -535,17 +575,19 @@ namespace OTEX
         /// <exception cref="InvalidOperationException" />
         public void Insert(uint offset, string text)
         {
+            if (isDisposed)
+                throw new ObjectDisposedException("OTEX.Client");
             if (text == null)
                 throw new ArgumentNullException("text");
             if (text.Length == 0)
                 throw new ArgumentException("insert text cannot be blank", "text");
-            if (isDisposed)
-                throw new ObjectDisposedException("OTEX.Client");
             if (!connected)
                 throw new InvalidOperationException("cannot send an operation without being connected");
 
             lock (operationsLock)
             {
+                if (isDisposed)
+                    throw new ObjectDisposedException("OTEX.Client");
                 outgoingOperations.Add(new Operation(ID, (int)offset, text));
             }
         }
@@ -560,15 +602,17 @@ namespace OTEX
         /// <exception cref="InvalidOperationException" />
         public void Delete(uint offset, uint length)
         {
-            if (length == 0)
-                throw new ArgumentOutOfRangeException("length", "deletion length cannot be zero");
             if (isDisposed)
                 throw new ObjectDisposedException("OTEX.Client");
+            if (length == 0)
+                throw new ArgumentOutOfRangeException("length", "deletion length cannot be zero");
             if (!connected)
                 throw new InvalidOperationException("cannot send an operation without being connected");
 
             lock (operationsLock)
             {
+                if (isDisposed)
+                    throw new ObjectDisposedException("OTEX.Client");
                 outgoingOperations.Add(new Operation(ID, (int)offset, (int)length));
             }
         }
@@ -579,9 +623,12 @@ namespace OTEX
 
         /// <summary>
         /// Updates this client's application-specific metadata, sending it to the server
-        /// which then ensures the new version is receieved by all other clients.
+        /// which then ensures the new version is received by all other clients.
         /// </summary>
         /// <param name="metadata">This client's metadata. Can be null ("I don't have any metadata").</param>
+        /// <exception cref="ArgumentOutOfRangeException" />
+        /// <exception cref="ObjectDisposedException" />
+        /// <exception cref="InvalidOperationException" />
         public void Metadata(byte[] metadata)
         {
             if (isDisposed)
@@ -596,6 +643,8 @@ namespace OTEX
             {
                 lock (pendingMetadataLock)
                 {
+                    if (isDisposed)
+                        throw new ObjectDisposedException("OTEX.Client");
                     if (metadata != pendingMetadata)
                         pendingMetadata = metadata;
                 }
