@@ -1,12 +1,7 @@
-﻿using DiffPlex;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.IO;
-using System.Linq;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace OTEX
 {
@@ -192,22 +187,22 @@ namespace OTEX
                         return;
 
                     //do diff on two versions of text
-                    var diffs = differ.CreateCharacterDiffs(document, input, false, false);
+                    var diffs = Diff.Calculate(document.ToCharArray(), input.ToCharArray());
 
                     //convert changes into operations
                     int position = 0;
-                    foreach (var diff in diffs.DiffBlocks)
+                    foreach (var diff in diffs)
                     {
                         //skip unchanged characters
-                        position = Math.Min(diff.InsertStartB, document.Length);
+                        position = Math.Min(diff.InsertStart, document.Length);
 
                         //process a deletion
-                        if (diff.DeleteCountA > 0)
-                            client.Delete((uint)position, (uint)diff.DeleteCountA);
+                        if (diff.DeleteLength > 0)
+                            client.Delete((uint)position, (uint)diff.DeleteLength);
 
                         //process an insertion
-                        if (position < (diff.InsertStartB + diff.InsertCountB))
-                            client.Insert((uint)position, document.Substring(position, diff.InsertCountB));
+                        if (position < (diff.InsertStart + diff.InsertLength))
+                            client.Insert((uint)position, document.Substring(position, diff.InsertLength));
                     }
 
                     //update value fire event
@@ -220,11 +215,6 @@ namespace OTEX
         }
         private volatile string document = "";
         private readonly object documentLock = new object();
-
-        /// <summary>
-        /// Differ object.
-        /// </summary>
-        private readonly Differ differ = new Differ();
 
         /////////////////////////////////////////////////////////////////////
         // CONSTRUCTION

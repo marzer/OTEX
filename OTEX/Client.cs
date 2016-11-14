@@ -22,7 +22,10 @@ namespace OTEX
      */
 
     /// <summary>
-    /// Client class for the OTEX framework.
+    /// Client class for the OTEX framework. Manages connection to a server, and provides methods to
+    /// notify the server of local replica insertions and deletions. If you want a simpler, less flexible
+    /// implementation, one that lets you read/write the whole document and have the operations
+    /// determined for you automatically, use BufferedClient instead.
     /// </summary>
     public sealed class Client : Node, IDisposable, IClient
     {

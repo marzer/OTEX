@@ -29,6 +29,8 @@
   <HelpKINode Title="BufferedClient.ServerName property" Url="html/e50146c8-be79-748c-79e4-fec9f637a3e8.htm" />
   <HelpKINode Title="BufferedClient.ServerPort property" Url="html/8c02ec06-69cc-38bf-5ce6-8ebe0b2e2521.htm" />
   <HelpKINode Title="BufferedClient.UpdateInterval property" Url="html/6c9dedf6-3545-465d-e932-3341e707e19c.htm" />
+  <HelpKINode Title="Calculate(Of T) method" Url="html/7bc65e9b-1385-c72a-b559-faf4a004174c.htm" />
+  <HelpKINode Title="Calculate&lt;T&gt; method" Url="html/7bc65e9b-1385-c72a-b559-faf4a004174c.htm" />
   <HelpKINode Title="CaptureException method" Url="html/829b6e5f-0995-eb25-dcd5-3373fc3446bb.htm" />
   <HelpKINode Title="Client class">
     <HelpKINode Title="Client Class" Url="html/5f70d4b0-7475-f876-cc92-90c2f357aa6a.htm" />
@@ -76,6 +78,25 @@
   <HelpKINode Title="Count property" Url="html/b14e4b7c-c7b4-ee91-e98c-a91c8e519922.htm" />
   <HelpKINode Title="DefaultPort field" Url="html/bb982708-57a7-b1bf-c91c-2c5689189e1b.htm" />
   <HelpKINode Title="Delete method" Url="html/b1514b46-aac8-1180-d515-92ca8e790c27.htm" />
+  <HelpKINode Title="DeleteLength property" Url="html/406ad3ae-b65a-28f7-9120-dbb0216fc45d.htm" />
+  <HelpKINode Title="DeleteStart property" Url="html/f387b893-6445-c021-17d2-334c1de666a9.htm" />
+  <HelpKINode Title="Diff class">
+    <HelpKINode Title="Diff Class" Url="html/e8737e51-c732-d89f-bb48-96f111c42a2b.htm" />
+    <HelpKINode Title="about Diff class" Url="html/e8737e51-c732-d89f-bb48-96f111c42a2b.htm" />
+    <HelpKINode Title="methods" Url="html/d37301fc-927d-bf14-c8a5-d00c210ab01f.htm" />
+  </HelpKINode>
+  <HelpKINode Title="Diff.Calculate(Of T) method" Url="html/7bc65e9b-1385-c72a-b559-faf4a004174c.htm" />
+  <HelpKINode Title="Diff.Calculate&lt;T&gt; method" Url="html/7bc65e9b-1385-c72a-b559-faf4a004174c.htm" />
+  <HelpKINode Title="Diff.Item class">
+    <HelpKINode Title="Diff.Item Class" Url="html/47a6c28b-f5dc-91b5-35e0-075d4e2371e2.htm" />
+    <HelpKINode Title="about Diff.Item class" Url="html/47a6c28b-f5dc-91b5-35e0-075d4e2371e2.htm" />
+    <HelpKINode Title="constructor" Url="html/8dae289e-979b-a035-5c2d-705b0df68649.htm" />
+  </HelpKINode>
+  <HelpKINode Title="Diff.Item.DeleteLength property" Url="html/406ad3ae-b65a-28f7-9120-dbb0216fc45d.htm" />
+  <HelpKINode Title="Diff.Item.DeleteStart property" Url="html/f387b893-6445-c021-17d2-334c1de666a9.htm" />
+  <HelpKINode Title="Diff.Item.InsertLength property" Url="html/7dd7c4c7-b3ef-4473-ad66-fb927e808c3c.htm" />
+  <HelpKINode Title="Diff.Item.InsertStart property" Url="html/f3a26a79-1610-549f-e67a-ea92a95ddc7b.htm" />
+  <HelpKINode Title="Diff.Item.Item constructor" Url="html/8dae289e-979b-a035-5c2d-705b0df68649.htm" />
   <HelpKINode Title="Disconnect method">
     <HelpKINode Title="BufferedClient.Disconnect Method " Url="html/207b8740-29f0-01f2-9153-f25baaf458f6.htm" />
     <HelpKINode Title="Client.Disconnect Method " Url="html/181cc882-021b-29e4-fb52-152b246d7ba0.htm" />
@@ -118,6 +139,8 @@
   <HelpKINode Title="ID field" Url="html/845501e4-f809-04fc-b03f-81945b6ebd0a.htm" />
   <HelpKINode Title="ID property" Url="html/19439f42-2d39-f69d-42e0-754e4de6de8d.htm" />
   <HelpKINode Title="Insert method" Url="html/b4376504-082c-5788-9c95-8895c48971ce.htm" />
+  <HelpKINode Title="InsertLength property" Url="html/7dd7c4c7-b3ef-4473-ad66-fb927e808c3c.htm" />
+  <HelpKINode Title="InsertStart property" Url="html/f3a26a79-1610-549f-e67a-ea92a95ddc7b.htm" />
   <HelpKINode Title="IsDeletion property" Url="html/040b6bb3-05fe-2018-ef08-b961777046b9.htm" />
   <HelpKINode Title="IsDisposed property">
     <HelpKINode Title="BufferedClient.IsDisposed Property " Url="html/dd464dd4-3455-df04-a4c5-d8356d04b32b.htm" />
@@ -127,6 +150,10 @@
   </HelpKINode>
   <HelpKINode Title="IsInsertion property" Url="html/08775702-6d3d-96e2-9b7e-44d703347eb6.htm" />
   <HelpKINode Title="IsNoop property" Url="html/e425a994-d4ce-e4f9-c3dc-133026a103d5.htm" />
+  <HelpKINode Title="Item class">
+    <HelpKINode Title="methods" Url="html/a9a45c91-c901-bde1-9320-1b018c7b1a4b.htm" />
+    <HelpKINode Title="properties" Url="html/47f5851a-f073-68df-9fd0-325933e8c40d.htm" />
+  </HelpKINode>
   <HelpKINode Title="Last property" Url="html/da07fc28-cda8-6624-dc13-d86510c2a320.htm" />
   <HelpKINode Title="LastUpdated property" Url="html/68a07100-6c7c-ea7c-9f93-76ff2a63e135.htm" />
   <HelpKINode Title="Length property" Url="html/79e0b65b-608d-fc17-0f0e-be56ae54dfdb.htm" />
@@ -201,6 +228,8 @@
   <HelpKINode Title="OTEX namespace" Url="html/110cfb18-c84a-36a5-51ca-2423d7bfd6e3.htm" />
   <HelpKINode Title="OTEX.BufferedClient class" Url="html/47036802-3dc0-da95-1b3c-9b65444f37de.htm" />
   <HelpKINode Title="OTEX.Client class" Url="html/5f70d4b0-7475-f876-cc92-90c2f357aa6a.htm" />
+  <HelpKINode Title="OTEX.Diff class" Url="html/e8737e51-c732-d89f-bb48-96f111c42a2b.htm" />
+  <HelpKINode Title="OTEX.Diff.Item class" Url="html/47a6c28b-f5dc-91b5-35e0-075d4e2371e2.htm" />
   <HelpKINode Title="OTEX.IClient interface" Url="html/dc014f4c-0a8c-7658-60a6-bc5e26662622.htm" />
   <HelpKINode Title="OTEX.Node class" Url="html/87102cc1-86e6-cb0c-f5e8-9b76d9d84050.htm" />
   <HelpKINode Title="OTEX.Operation class" Url="html/525e4dfd-f399-89db-8937-f15c8dc4df41.htm" />

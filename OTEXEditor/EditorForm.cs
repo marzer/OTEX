@@ -10,8 +10,6 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.IO;
 using System.Linq;
-using DiffPlex;
-using OTEX.Packets;
 using System.Collections.Generic;
 
 namespace OTEX
@@ -29,7 +27,6 @@ namespace OTEX
         private volatile Thread clientConnectingThread = null;
         private volatile bool closing = false;
         private volatile string previousText = null;
-        private static readonly Differ differ = new Differ();
         private volatile bool disableOperationGeneration = false;
         private FlyoutForm passwordForm = null, settingsForm = null;
         private volatile IPEndPoint lastConnectionEndpoint = null;
@@ -462,6 +459,9 @@ namespace OTEX
                 };
                 otexServerListener.OnServerAdded += (sl, s) =>
                 {
+                    if (s.ID.Equals(otexServer.ID)) //ignore self
+                        return;
+
                     Logger.I("ServerListener: new server {0}: {1}", s.ID, s.EndPoint);
                     this.Execute(() =>
                     {
@@ -548,22 +548,22 @@ namespace OTEX
 
                 //do diff on two versions of text
                 var currentText = tbEditor.Text;
-                var diffs = differ.CreateCharacterDiffs(previousText, currentText, false, false);
+                var diffs = Diff.Calculate(previousText.ToCharArray(), currentText.ToCharArray());
 
                 //convert changes into operations
                 int position = 0;
-                foreach (var diff in diffs.DiffBlocks)
+                foreach (var diff in diffs)
                 {
                     //skip unchanged characters
-                    position = Math.Min(diff.InsertStartB, currentText.Length);
+                    position = Math.Min(diff.InsertStart, currentText.Length);
 
                     //process a deletion
-                    if (diff.DeleteCountA > 0)
-                        otexClient.Delete((uint)position, (uint)diff.DeleteCountA);
+                    if (diff.DeleteLength > 0)
+                        otexClient.Delete((uint)position, (uint)diff.DeleteLength);
 
                     //process an insertion
-                    if (position < (diff.InsertStartB + diff.InsertCountB))
-                        otexClient.Insert((uint)position, currentText.Substring(position, diff.InsertCountB));
+                    if (position < (diff.InsertStart + diff.InsertLength))
+                        otexClient.Insert((uint)position, currentText.Substring(position, diff.InsertLength));
                 }
             };
             tbEditor.SelectionChanged += (s, e) =>

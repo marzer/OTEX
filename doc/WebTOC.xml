@@ -1,10 +1,10 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <HelpTOC>
 
-  <HelpTOCNode Id="634bd142-f0a8-4155-ba7f-71421e19205a" Title="OTEX" Url="html/110cfb18-c84a-36a5-51ca-2423d7bfd6e3.htm">
-    <HelpTOCNode Id="d35efaba-abd4-4d96-87e6-f3f420adbc27" Title="BufferedClient Class" Url="html/47036802-3dc0-da95-1b3c-9b65444f37de.htm">
+  <HelpTOCNode Id="179e58dd-4144-4e07-956b-2f1e73a3165a" Title="OTEX" Url="html/110cfb18-c84a-36a5-51ca-2423d7bfd6e3.htm">
+    <HelpTOCNode Id="535496d4-fd76-4db8-87f9-6683c88d76fd" Title="BufferedClient Class" Url="html/47036802-3dc0-da95-1b3c-9b65444f37de.htm">
       <HelpTOCNode Title="BufferedClient Constructor " Url="html/6eff74f7-1044-b4dd-87b6-f629e060d9af.htm" />
-      <HelpTOCNode Id="8158832a-8fcb-4a7f-9908-c62285a44648" Title="BufferedClient Properties" Url="html/90bd79ba-df93-37b7-9319-eab443334768.htm">
+      <HelpTOCNode Id="5e25f279-f6c9-437d-9469-f316be6b338e" Title="BufferedClient Properties" Url="html/90bd79ba-df93-37b7-9319-eab443334768.htm">
         <HelpTOCNode Title="Connected Property " Url="html/3f97a43a-8483-e2ad-1ae0-2e8d327c87be.htm" />
         <HelpTOCNode Title="Document Property " Url="html/4f6d340d-c4a0-fbc0-e0ac-d4c1dfec46dc.htm" />
         <HelpTOCNode Title="IsDisposed Property " Url="html/dd464dd4-3455-df04-a4c5-d8356d04b32b.htm" />
@@ -15,8 +15,8 @@
         <HelpTOCNode Title="ServerPort Property " Url="html/8c02ec06-69cc-38bf-5ce6-8ebe0b2e2521.htm" />
         <HelpTOCNode Title="UpdateInterval Property " Url="html/6c9dedf6-3545-465d-e932-3341e707e19c.htm" />
       </HelpTOCNode>
-      <HelpTOCNode Id="432e2ec8-118e-473b-8160-c2bad2ffa38a" Title="BufferedClient Methods" Url="html/48585643-c5fd-58b9-7216-c510cb4f581a.htm">
-        <HelpTOCNode Id="26accc86-1f2b-40db-b5eb-2111b9fd3e19" Title="Connect Method " Url="html/2ed289ea-9267-591d-a3dc-cec5bd4d7ce6.htm">
+      <HelpTOCNode Id="16aa93fa-ec43-4c36-9b6d-f544064522d0" Title="BufferedClient Methods" Url="html/48585643-c5fd-58b9-7216-c510cb4f581a.htm">
+        <HelpTOCNode Id="8af07198-8c66-4251-8134-e9c5d6b085f4" Title="Connect Method " Url="html/2ed289ea-9267-591d-a3dc-cec5bd4d7ce6.htm">
           <HelpTOCNode Title="Connect Method (IPEndPoint, Password, Byte[])" Url="html/4318f1a0-f9a6-caf9-fb57-8786049e5e3e.htm" />
           <HelpTOCNode Title="Connect Method (ServerDescription, Password, Byte[])" Url="html/767bb8c7-dc1a-1815-4b2d-e71f5bf836f0.htm" />
           <HelpTOCNode Title="Connect Method (IPAddress, UInt16, Password, Byte[])" Url="html/9513a567-3695-1575-8df4-a6a3497e5706.htm" />
@@ -25,16 +25,16 @@
         <HelpTOCNode Title="Dispose Method " Url="html/35e46624-1c7d-a713-1f47-1ecb806464ae.htm" />
         <HelpTOCNode Title="Metadata Method " Url="html/e5401fe5-bddf-c71e-d01f-76b820a60c63.htm" />
       </HelpTOCNode>
-      <HelpTOCNode Id="32beac1f-4f2e-41ac-b3d0-76cbb4f79993" Title="BufferedClient Events" Url="html/43e49860-8b1b-9a6f-b3ab-3cbd1a03e3df.htm">
+      <HelpTOCNode Id="228cc0b5-75a2-4ebf-9f8c-4677c9ff7f37" Title="BufferedClient Events" Url="html/43e49860-8b1b-9a6f-b3ab-3cbd1a03e3df.htm">
         <HelpTOCNode Title="OnConnected Event" Url="html/035fcd57-7f1c-5ad5-353f-c80c54dca932.htm" />
         <HelpTOCNode Title="OnDisconnected Event" Url="html/a6c07d99-afe7-595c-d63b-2c48578160da.htm" />
         <HelpTOCNode Title="OnDocumentChanged Event" Url="html/ff777107-b32c-7b68-3c50-9555f9f162e2.htm" />
         <HelpTOCNode Title="OnMetadataUpdated Event" Url="html/29fdd0f6-d689-d29e-abd3-b809355b75d5.htm" />
       </HelpTOCNode>
     </HelpTOCNode>
-    <HelpTOCNode Id="cab0a345-9758-4792-97d1-549e4bd38333" Title="Client Class" Url="html/5f70d4b0-7475-f876-cc92-90c2f357aa6a.htm">
+    <HelpTOCNode Id="ce09344a-f8bb-41a8-8cc9-18dc93bec401" Title="Client Class" Url="html/5f70d4b0-7475-f876-cc92-90c2f357aa6a.htm">
       <HelpTOCNode Title="Client Constructor " Url="html/9d83ee21-5ec0-0817-792e-c9a8261a19de.htm" />
-      <HelpTOCNode Id="95bfb343-d3c0-4cb0-9c27-25bd18d140d7" Title="Client Properties" Url="html/643b2e67-3cf7-df22-d758-5cf2f96b3ca2.htm">
+      <HelpTOCNode Id="c6048503-1c82-404e-99b1-2a20569c876b" Title="Client Properties" Url="html/643b2e67-3cf7-df22-d758-5cf2f96b3ca2.htm">
         <HelpTOCNode Title="Connected Property " Url="html/790c71a3-a6b7-fb4d-cfcb-9cb747c675d2.htm" />
         <HelpTOCNode Title="IsDisposed Property " Url="html/b7ede259-4f65-ebb7-6d8a-663d56af49e0.htm" />
         <HelpTOCNode Title="ServerAddress Property " Url="html/8a6fee0c-35f6-dcc1-9ef8-3b51700041a4.htm" />
@@ -44,8 +44,8 @@
         <HelpTOCNode Title="ServerPort Property " Url="html/99cf2197-141d-d97b-1ec7-f1402b6d410f.htm" />
         <HelpTOCNode Title="UpdateInterval Property " Url="html/6e66f2c5-ae30-d86c-8732-4d2b3a272bda.htm" />
       </HelpTOCNode>
-      <HelpTOCNode Id="402ac544-4ec8-416f-8dbf-770548b3f877" Title="Client Methods" Url="html/da79f769-3799-d1eb-5004-b98715828c15.htm">
-        <HelpTOCNode Id="fbb2ccb8-ba5f-4ac0-b931-c3c3a9a01d2e" Title="Connect Method " Url="html/a87d03d9-1f05-9289-b13e-da70e739b805.htm">
+      <HelpTOCNode Id="6c9e1148-e4fb-48b2-bbcc-f2275fc508d2" Title="Client Methods" Url="html/da79f769-3799-d1eb-5004-b98715828c15.htm">
+        <HelpTOCNode Id="48a33125-5749-4bc5-b8dd-3afea1041309" Title="Connect Method " Url="html/a87d03d9-1f05-9289-b13e-da70e739b805.htm">
           <HelpTOCNode Title="Connect Method (IPEndPoint, Password, Byte[])" Url="html/22979ef6-8bda-aaaf-c285-4dc6868fca6b.htm" />
           <HelpTOCNode Title="Connect Method (ServerDescription, Password, Byte[])" Url="html/b43b36ca-8758-6fd1-1249-3683a8222695.htm" />
           <HelpTOCNode Title="Connect Method (IPAddress, UInt16, Password, Byte[])" Url="html/a103c16b-b530-1cb9-e584-2e496b0bf266.htm" />
@@ -56,7 +56,7 @@
         <HelpTOCNode Title="Insert Method " Url="html/b4376504-082c-5788-9c95-8895c48971ce.htm" />
         <HelpTOCNode Title="Metadata Method " Url="html/8df55fa7-1f3e-d491-0800-43c2d7b8c6ee.htm" />
       </HelpTOCNode>
-      <HelpTOCNode Id="7ed7f6cc-aa5d-4439-b2b0-486d0426a23b" Title="Client Events" Url="html/bd50c660-32d7-1464-7d8e-8bfa28e496e4.htm">
+      <HelpTOCNode Id="53b8cdd5-7c5a-4e16-a505-a43a5ab6c64f" Title="Client Events" Url="html/bd50c660-32d7-1464-7d8e-8bfa28e496e4.htm">
         <HelpTOCNode Title="OnConnected Event" Url="html/4f1c0928-882b-9a3f-f006-3ea185f49d29.htm" />
         <HelpTOCNode Title="OnDisconnected Event" Url="html/dd6f0978-c4fe-fca0-e85e-21a1b37df3be.htm" />
         <HelpTOCNode Title="OnMetadataUpdated Event" Url="html/23cc1e5f-1b5d-112b-a287-a85e431e4fa6.htm" />
@@ -64,8 +64,23 @@
       </HelpTOCNode>
       <HelpTOCNode Title="Client Fields" Url="html/6a53fd25-1dc6-6098-ab97-26eb67536435.htm" />
     </HelpTOCNode>
-    <HelpTOCNode Id="d0ecebd6-ff20-4d5c-ba31-bf4b490da377" Title="IClient Interface" Url="html/dc014f4c-0a8c-7658-60a6-bc5e26662622.htm">
-      <HelpTOCNode Id="9429b16b-b25e-447f-b54b-583de0f0a399" Title="IClient Properties" Url="html/760da942-3d08-a35e-4c86-a18d4ae09ac0.htm">
+    <HelpTOCNode Id="63462031-6a0f-4763-9603-80f3f1bcea08" Title="Diff Class" Url="html/e8737e51-c732-d89f-bb48-96f111c42a2b.htm">
+      <HelpTOCNode Id="d915dee6-f3a2-4dbc-aac9-330aa14ae6db" Title="Diff Methods" Url="html/d37301fc-927d-bf14-c8a5-d00c210ab01f.htm">
+        <HelpTOCNode Title="Calculate(T) Method " Url="html/7bc65e9b-1385-c72a-b559-faf4a004174c.htm" />
+      </HelpTOCNode>
+    </HelpTOCNode>
+    <HelpTOCNode Id="be8acd99-ceaf-44bf-a424-6776640bd3da" Title="Diff.Item Class" Url="html/47a6c28b-f5dc-91b5-35e0-075d4e2371e2.htm">
+      <HelpTOCNode Title="Diff.Item Constructor " Url="html/8dae289e-979b-a035-5c2d-705b0df68649.htm" />
+      <HelpTOCNode Id="1f1cc59b-0be7-4566-801c-7244ee0c484b" Title="Item Properties" Url="html/47f5851a-f073-68df-9fd0-325933e8c40d.htm">
+        <HelpTOCNode Title="DeleteLength Property " Url="html/406ad3ae-b65a-28f7-9120-dbb0216fc45d.htm" />
+        <HelpTOCNode Title="DeleteStart Property " Url="html/f387b893-6445-c021-17d2-334c1de666a9.htm" />
+        <HelpTOCNode Title="InsertLength Property " Url="html/7dd7c4c7-b3ef-4473-ad66-fb927e808c3c.htm" />
+        <HelpTOCNode Title="InsertStart Property " Url="html/f3a26a79-1610-549f-e67a-ea92a95ddc7b.htm" />
+      </HelpTOCNode>
+      <HelpTOCNode Title="Item Methods" Url="html/a9a45c91-c901-bde1-9320-1b018c7b1a4b.htm" />
+    </HelpTOCNode>
+    <HelpTOCNode Id="19efc631-8ed5-4114-81df-4c1a76772baa" Title="IClient Interface" Url="html/dc014f4c-0a8c-7658-60a6-bc5e26662622.htm">
+      <HelpTOCNode Id="c6332a29-5f63-49ed-9b73-6b96e53d0a18" Title="IClient Properties" Url="html/760da942-3d08-a35e-4c86-a18d4ae09ac0.htm">
         <HelpTOCNode Title="Connected Property " Url="html/a3671627-ae9c-a2cd-751f-6ff89c802653.htm" />
         <HelpTOCNode Title="ServerAddress Property " Url="html/287ccea9-931b-832b-c8c7-36526344c633.htm" />
         <HelpTOCNode Title="ServerFilePath Property " Url="html/5ba9c02a-c4dc-e08d-da55-ebcaa33b8cf2.htm" />
@@ -74,8 +89,8 @@
         <HelpTOCNode Title="ServerPort Property " Url="html/d365326a-fb0f-6af3-50fb-fa29ae0bb424.htm" />
         <HelpTOCNode Title="UpdateInterval Property " Url="html/abcc84bc-cb97-fc84-de24-3c09725e75a1.htm" />
       </HelpTOCNode>
-      <HelpTOCNode Id="57b2e059-f75d-40aa-aba1-6cc16d7b7785" Title="IClient Methods" Url="html/6aba5538-050a-2422-3e98-3800760a4348.htm">
-        <HelpTOCNode Id="a72884bd-66b1-4c50-a470-a6e6509a176c" Title="Connect Method " Url="html/9063e117-cb0d-65ba-c018-3c9be4ed2d59.htm">
+      <HelpTOCNode Id="2cc5c269-16e4-437d-8d4c-4fbea3a45748" Title="IClient Methods" Url="html/6aba5538-050a-2422-3e98-3800760a4348.htm">
+        <HelpTOCNode Id="384414ff-5be3-495e-8317-3e64c0340e5d" Title="Connect Method " Url="html/9063e117-cb0d-65ba-c018-3c9be4ed2d59.htm">
           <HelpTOCNode Title="Connect Method (IPEndPoint, Password, Byte[])" Url="html/72ed9b45-a549-1417-7e55-74432e0adcdd.htm" />
           <HelpTOCNode Title="Connect Method (ServerDescription, Password, Byte[])" Url="html/7a619348-4c5a-1fc2-78e7-716ed02bf273.htm" />
           <HelpTOCNode Title="Connect Method (IPAddress, UInt16, Password, Byte[])" Url="html/8e165077-1ad5-1865-4da8-d21615598a05.htm" />
@@ -83,22 +98,22 @@
         <HelpTOCNode Title="Disconnect Method " Url="html/356dde9a-e8bd-a8e2-5f1d-ca9d94ebb73b.htm" />
         <HelpTOCNode Title="Metadata Method " Url="html/9ad5f025-ff67-a28d-3886-a23193690d23.htm" />
       </HelpTOCNode>
-      <HelpTOCNode Id="f954f954-3456-45ad-bf43-89882fe9484c" Title="IClient Events" Url="html/796b142e-42bb-9ff7-de2b-1df7b91ca73a.htm">
+      <HelpTOCNode Id="d27edeb4-6f09-4796-b4f8-d00156b56ee8" Title="IClient Events" Url="html/796b142e-42bb-9ff7-de2b-1df7b91ca73a.htm">
         <HelpTOCNode Title="OnConnected Event" Url="html/93073231-cea4-693a-bed0-a1ec2f688e74.htm" />
         <HelpTOCNode Title="OnDisconnected Event" Url="html/01aed22b-e152-3fa3-0c9e-13de1861038e.htm" />
         <HelpTOCNode Title="OnMetadataUpdated Event" Url="html/095aa3fb-f42f-8513-ed86-5f2e97426603.htm" />
       </HelpTOCNode>
     </HelpTOCNode>
-    <HelpTOCNode Id="8c43b5db-f06b-43db-921f-ca051040a1b2" Title="Node Class" Url="html/87102cc1-86e6-cb0c-f5e8-9b76d9d84050.htm">
+    <HelpTOCNode Id="632d6059-9da4-4e26-ad15-318155f1ccfb" Title="Node Class" Url="html/87102cc1-86e6-cb0c-f5e8-9b76d9d84050.htm">
       <HelpTOCNode Title="Node Constructor " Url="html/aa596c10-3981-e2c1-b82b-c0f2f9036170.htm" />
       <HelpTOCNode Title="Node Methods" Url="html/9548793c-e391-04ff-e3d9-944a77699165.htm" />
       <HelpTOCNode Title="Node Events" Url="html/9d294fc3-7dcc-8d5b-84d6-dc336c7ca334.htm" />
-      <HelpTOCNode Id="eb697617-89ad-480c-9302-15b27d3a373c" Title="Node Fields" Url="html/150ed1b0-a959-0cbb-872f-532113b4a1d6.htm">
+      <HelpTOCNode Id="85ef291f-b6e5-4f6f-8004-29efad6805d6" Title="Node Fields" Url="html/150ed1b0-a959-0cbb-872f-532113b4a1d6.htm">
         <HelpTOCNode Title="ID Field" Url="html/845501e4-f809-04fc-b03f-81945b6ebd0a.htm" />
       </HelpTOCNode>
     </HelpTOCNode>
-    <HelpTOCNode Id="3c30caa1-bf69-4755-8387-4e7320400bbc" Title="Operation Class" Url="html/525e4dfd-f399-89db-8937-f15c8dc4df41.htm">
-      <HelpTOCNode Id="8f851ee7-7c37-4cc0-a145-0e97b54248d8" Title="Operation Properties" Url="html/22e44214-2b26-315c-a6ca-bc1e127e847f.htm">
+    <HelpTOCNode Id="d33464e0-b16b-484e-8214-37f9b0db214b" Title="Operation Class" Url="html/525e4dfd-f399-89db-8937-f15c8dc4df41.htm">
+      <HelpTOCNode Id="e47b5a6d-b344-49ed-b1a3-e22d32a4acac" Title="Operation Properties" Url="html/22e44214-2b26-315c-a6ca-bc1e127e847f.htm">
         <HelpTOCNode Title="IsDeletion Property " Url="html/040b6bb3-05fe-2018-ef08-b961777046b9.htm" />
         <HelpTOCNode Title="IsInsertion Property " Url="html/08775702-6d3d-96e2-9b7e-44d703347eb6.htm" />
         <HelpTOCNode Title="IsNoop Property " Url="html/e425a994-d4ce-e4f9-c3dc-133026a103d5.htm" />
@@ -107,23 +122,23 @@
         <HelpTOCNode Title="Offset Property " Url="html/4afecef8-7314-6bb9-de5c-e7be9dcac065.htm" />
         <HelpTOCNode Title="Text Property " Url="html/0c7d6e2e-f95f-4835-1a2a-e1473076dd5c.htm" />
       </HelpTOCNode>
-      <HelpTOCNode Id="c6977145-801c-4223-8e7e-6caee8b6e6e1" Title="Operation Methods" Url="html/9abd733a-c866-bf8d-04bc-21c2bb87ffa4.htm">
+      <HelpTOCNode Id="956a2ab8-adca-4d05-941d-de77fb513cc2" Title="Operation Methods" Url="html/9abd733a-c866-bf8d-04bc-21c2bb87ffa4.htm">
         <HelpTOCNode Title="Execute Method " Url="html/d3c82730-d860-9934-2270-28a006a2808f.htm" />
       </HelpTOCNode>
     </HelpTOCNode>
-    <HelpTOCNode Id="4534e2f9-fa1e-4fb4-9b25-9f3cc352952a" Title="Password Class" Url="html/2e7e9b44-d645-bc9c-85c4-e38c58030eab.htm">
+    <HelpTOCNode Id="79805c2f-d2b6-4967-9c1e-63861ad733b1" Title="Password Class" Url="html/2e7e9b44-d645-bc9c-85c4-e38c58030eab.htm">
       <HelpTOCNode Title="Password Constructor " Url="html/0923e18f-4dac-601b-e3a2-ace82fd48296.htm" />
       <HelpTOCNode Title="Password Methods" Url="html/1eba2ad7-678a-1e43-7be0-62415a814ada.htm" />
     </HelpTOCNode>
-    <HelpTOCNode Id="30bd3017-2de4-444a-b774-ba7a1b4884d1" Title="PortRange Class" Url="html/1e2a64f3-48a1-0320-4545-d068cccc01cd.htm">
+    <HelpTOCNode Id="8a145fdf-f657-4a4a-8707-4e53591ea4aa" Title="PortRange Class" Url="html/1e2a64f3-48a1-0320-4545-d068cccc01cd.htm">
       <HelpTOCNode Title="PortRange Constructor " Url="html/baad93cc-bbe2-5052-86ee-053315f10c85.htm" />
-      <HelpTOCNode Id="f033e88e-6f0d-4dff-bfd1-d24968b1c90d" Title="PortRange Properties" Url="html/f96211c4-2a4e-ef00-f0e6-c82172334d8d.htm">
+      <HelpTOCNode Id="14ff39e4-f5ac-4b60-809c-0f58882f2890" Title="PortRange Properties" Url="html/f96211c4-2a4e-ef00-f0e6-c82172334d8d.htm">
         <HelpTOCNode Title="Count Property " Url="html/b14e4b7c-c7b4-ee91-e98c-a91c8e519922.htm" />
         <HelpTOCNode Title="First Property " Url="html/5742a83f-d6e4-f691-8967-14d713320ae2.htm" />
         <HelpTOCNode Title="Last Property " Url="html/da07fc28-cda8-6624-dc13-d86510c2a320.htm" />
       </HelpTOCNode>
-      <HelpTOCNode Id="2fd1ce58-9a3c-48ef-a78b-e5cd81baf94f" Title="PortRange Methods" Url="html/37b45d6e-da55-ddb6-3f1f-ce179a8ed129.htm">
-        <HelpTOCNode Id="68b1e10e-9d49-48fa-8dd0-669906062eb3" Title="Contains Method " Url="html/9b5bdb4f-52b6-785d-4e16-11627bb32dae.htm">
+      <HelpTOCNode Id="4fbc4f3f-6eab-4539-982d-c1aa7436fa89" Title="PortRange Methods" Url="html/37b45d6e-da55-ddb6-3f1f-ce179a8ed129.htm">
+        <HelpTOCNode Id="e345ee8a-0878-4dd9-bae3-677378c5e871" Title="Contains Method " Url="html/9b5bdb4f-52b6-785d-4e16-11627bb32dae.htm">
           <HelpTOCNode Title="Contains Method (Int32)" Url="html/b309ef21-7baf-9e61-b79d-96b844dea0e2.htm" />
           <HelpTOCNode Title="Contains Method (Int64)" Url="html/b07f836f-aa4c-2ea3-fcc4-2201b295eec4.htm" />
           <HelpTOCNode Title="Contains Method (UInt16)" Url="html/f47e86c6-7829-51dc-6bbd-b6ee9f8df142.htm" />
@@ -132,9 +147,9 @@
         <HelpTOCNode Title="ToString Method " Url="html/5f6f21e7-93a9-27da-87ee-42162062ddc8.htm" />
       </HelpTOCNode>
     </HelpTOCNode>
-    <HelpTOCNode Id="c46d81db-065a-4195-8035-b66a0ab5d1ee" Title="Server Class" Url="html/41d7650a-8fb2-062b-f378-a01deb5c6511.htm">
+    <HelpTOCNode Id="4b1bb7dd-2efe-45a6-b686-01ffa6990396" Title="Server Class" Url="html/41d7650a-8fb2-062b-f378-a01deb5c6511.htm">
       <HelpTOCNode Title="Server Constructor " Url="html/242d10b8-d753-df95-bb87-7e5b146ae911.htm" />
-      <HelpTOCNode Id="d3337066-3c79-42c6-a4dc-67a4990aed5c" Title="Server Properties" Url="html/de8deb7a-5209-4f86-3f6e-978096fb9bc2.htm">
+      <HelpTOCNode Id="3606cfc5-bfc1-4a43-93e4-f6af300a9bef" Title="Server Properties" Url="html/de8deb7a-5209-4f86-3f6e-978096fb9bc2.htm">
         <HelpTOCNode Title="ClientCount Property " Url="html/5bbf5597-c0ea-fcbf-3898-447d7113db84.htm" />
         <HelpTOCNode Title="FileLineEndings Property " Url="html/51898931-75eb-1a9d-9a2c-ecc7f97b28fc.htm" />
         <HelpTOCNode Title="FilePath Property " Url="html/4908f98f-bbde-b8ee-6b97-ab04345a3e4b.htm" />
@@ -146,27 +161,27 @@
         <HelpTOCNode Title="RequiresPassword Property " Url="html/46f3e454-297b-1478-bf89-9058b8541123.htm" />
         <HelpTOCNode Title="Running Property " Url="html/d8a53631-fa98-d32b-4348-07988ac6c105.htm" />
       </HelpTOCNode>
-      <HelpTOCNode Id="a0c9c5a6-556c-4aa3-9f76-2de8fa3d874c" Title="Server Methods" Url="html/8c8e74ad-6b28-0323-28cd-ec2f6ebacf4d.htm">
+      <HelpTOCNode Id="47ad4a11-603a-4934-9b8c-54d2d6e85692" Title="Server Methods" Url="html/8c8e74ad-6b28-0323-28cd-ec2f6ebacf4d.htm">
         <HelpTOCNode Title="Dispose Method " Url="html/afae5c1e-08cb-658e-6839-0009c3a8a785.htm" />
         <HelpTOCNode Title="Start Method " Url="html/59942ca8-63b2-91d2-0cb7-26024a591ecc.htm" />
         <HelpTOCNode Title="Stop Method " Url="html/89a540b4-9002-2d7b-c19d-e62b4973afd3.htm" />
       </HelpTOCNode>
-      <HelpTOCNode Id="b297d762-952a-4ea3-ba67-4c16a5f54265" Title="Server Events" Url="html/bad61dc9-4b2d-261e-684d-968fd42e0882.htm">
+      <HelpTOCNode Id="433b3ae3-45bd-4225-98dd-7f9e9d360e6f" Title="Server Events" Url="html/bad61dc9-4b2d-261e-684d-968fd42e0882.htm">
         <HelpTOCNode Title="OnClientConnected Event" Url="html/7b92141f-aa75-237f-4ab7-6640555fc74d.htm" />
         <HelpTOCNode Title="OnClientDisconnected Event" Url="html/9912d311-1931-8e71-d28f-4604b39be1ec.htm" />
         <HelpTOCNode Title="OnFileSynchronized Event" Url="html/c8f7559c-1c3d-bcd5-57d0-4ae55a137fab.htm" />
         <HelpTOCNode Title="OnStarted Event" Url="html/03418be8-0039-f70d-f457-22dcd1480663.htm" />
         <HelpTOCNode Title="OnStopped Event" Url="html/589336d8-2edb-8b43-14dc-2ce757c6ab5f.htm" />
       </HelpTOCNode>
-      <HelpTOCNode Id="c0111e29-a507-4872-a918-0bde379e26cf" Title="Server Fields" Url="html/b4bd8fa0-1868-6bbb-7513-7b4b7173c978.htm">
+      <HelpTOCNode Id="312af5f3-d236-4b43-b369-c039e217c286" Title="Server Fields" Url="html/b4bd8fa0-1868-6bbb-7513-7b4b7173c978.htm">
         <HelpTOCNode Title="AnnouncePorts Field" Url="html/3ed64c4b-48c4-6a9b-b011-f7a12c8c3cbf.htm" />
         <HelpTOCNode Title="DefaultPort Field" Url="html/bb982708-57a7-b1bf-c91c-2c5689189e1b.htm" />
       </HelpTOCNode>
     </HelpTOCNode>
-    <HelpTOCNode Id="466d3fb8-c753-4238-b8c8-f31ec114a747" Title="Server.StartParams Class" Url="html/ed3d62bd-d61b-7c84-e9fd-e0252a1484a4.htm">
+    <HelpTOCNode Id="f77bb59b-4f08-4ee2-8d9b-3a951d20fbc1" Title="Server.StartParams Class" Url="html/ed3d62bd-d61b-7c84-e9fd-e0252a1484a4.htm">
       <HelpTOCNode Title="Server.StartParams Constructor " Url="html/c7317e1a-9ca5-f76b-7cba-a32fbb21c9aa.htm" />
       <HelpTOCNode Title="StartParams Methods" Url="html/b14423bf-b0df-1769-6546-24cf621f2ee7.htm" />
-      <HelpTOCNode Id="785a8fca-a0b4-4077-8de5-1dd817058a27" Title="StartParams Fields" Url="html/0f6ec8f7-2020-9dde-c4e6-16ca658dd86f.htm">
+      <HelpTOCNode Id="10d59f1d-10d0-425d-a35b-1cf0f3627169" Title="StartParams Fields" Url="html/0f6ec8f7-2020-9dde-c4e6-16ca658dd86f.htm">
         <HelpTOCNode Title="EditMode Field" Url="html/532cd922-9aaa-d577-3d26-a260916e0b95.htm" />
         <HelpTOCNode Title="FilePath Field" Url="html/7db471d3-ade5-a0a3-713a-1ffdd865cf39.htm" />
         <HelpTOCNode Title="MaxClients Field" Url="html/95ea0754-316b-0c6c-2aef-b283a5582349.htm" />
@@ -177,8 +192,8 @@
         <HelpTOCNode Title="ReplaceTabsWithSpaces Field" Url="html/5c844108-28b6-c066-b33d-6d66a0a58d3c.htm" />
       </HelpTOCNode>
     </HelpTOCNode>
-    <HelpTOCNode Id="33de9f4b-9d79-43d5-88ec-c50a8511fbff" Title="ServerDescription Class" Url="html/7d4c5c07-188a-3591-1911-4d1501871296.htm">
-      <HelpTOCNode Id="41bd2c13-ac7f-4cc3-909e-49be3c15b32d" Title="ServerDescription Properties" Url="html/721b793c-18b2-6812-dbf6-d91444084b59.htm">
+    <HelpTOCNode Id="d6b04cac-79a7-49e1-81d9-0a902ad2ef2e" Title="ServerDescription Class" Url="html/7d4c5c07-188a-3591-1911-4d1501871296.htm">
+      <HelpTOCNode Id="4917a21f-10cc-4ee6-b059-f5153b84357e" Title="ServerDescription Properties" Url="html/721b793c-18b2-6812-dbf6-d91444084b59.htm">
         <HelpTOCNode Title="Active Property " Url="html/2c11ecc0-2ef7-1c71-6846-e017edea692d.htm" />
         <HelpTOCNode Title="ClientCount Property " Url="html/99cc7722-b06a-ac7d-d0ea-ef682ee6642a.htm" />
         <HelpTOCNode Title="EndPoint Property " Url="html/9325ef8a-368a-e8a6-23a1-4977c1cf73dd.htm" />
@@ -192,39 +207,39 @@
         <HelpTOCNode Title="TemporaryDocument Property " Url="html/e5edcef1-decf-6755-5951-0ed01228f33c.htm" />
       </HelpTOCNode>
       <HelpTOCNode Title="ServerDescription Methods" Url="html/46a95659-8e92-28a9-c19d-355269c31252.htm" />
-      <HelpTOCNode Id="414008bf-a541-41d0-a83f-eefff00a7edf" Title="ServerDescription Events" Url="html/222a6969-1f7c-888b-b8e7-ee9a81f3c9e7.htm">
+      <HelpTOCNode Id="ca162e14-ceef-45db-a3d5-2187a8da309e" Title="ServerDescription Events" Url="html/222a6969-1f7c-888b-b8e7-ee9a81f3c9e7.htm">
         <HelpTOCNode Title="OnInactive Event" Url="html/f4938f58-7e3d-c3fd-3893-a1c61ac54170.htm" />
         <HelpTOCNode Title="OnUpdated Event" Url="html/c0508750-ec9c-d1cf-e6b1-bc00161c1878.htm" />
       </HelpTOCNode>
-      <HelpTOCNode Id="5946d232-797f-459c-9e6c-0cf96c8c358b" Title="ServerDescription Fields" Url="html/40553565-5bae-e7ef-32cc-71dd26ea4fb0.htm">
+      <HelpTOCNode Id="1217f780-7aa5-43c4-9d30-438decd73be9" Title="ServerDescription Fields" Url="html/40553565-5bae-e7ef-32cc-71dd26ea4fb0.htm">
         <HelpTOCNode Title="Tag Field" Url="html/36d3e7cc-ed36-6a95-32e4-b8fd980f607a.htm" />
       </HelpTOCNode>
     </HelpTOCNode>
-    <HelpTOCNode Id="da0aa762-8840-4758-b332-3e8924b9e829" Title="ServerListener Class" Url="html/386fb4af-5e5c-12d9-9572-f98de63277e7.htm">
+    <HelpTOCNode Id="ed214554-161c-4d26-a3e6-86beb076d0bb" Title="ServerListener Class" Url="html/386fb4af-5e5c-12d9-9572-f98de63277e7.htm">
       <HelpTOCNode Title="ServerListener Constructor " Url="html/ebe5811b-04d6-bb27-bc4a-dd52daa97e6e.htm" />
-      <HelpTOCNode Id="c38479c4-2f97-49fa-a7b2-e01623e870e7" Title="ServerListener Properties" Url="html/0085d5ac-bb7c-708b-f4f0-f8da9e40a9c6.htm">
+      <HelpTOCNode Id="1ecc5f2f-c4bd-41e2-85c2-24c00905f895" Title="ServerListener Properties" Url="html/0085d5ac-bb7c-708b-f4f0-f8da9e40a9c6.htm">
         <HelpTOCNode Title="AutoPing Property " Url="html/9e6f3303-c8aa-a597-f740-2830ef2dc944.htm" />
         <HelpTOCNode Title="IsDisposed Property " Url="html/8ab377b3-399a-b545-1732-3bf0b932792e.htm" />
         <HelpTOCNode Title="Servers Property " Url="html/b6b4a8d0-8bae-b1e6-8118-489d2ce3bb62.htm" />
       </HelpTOCNode>
-      <HelpTOCNode Id="703d4678-b309-4613-8f07-cf9d7c194a2b" Title="ServerListener Methods" Url="html/9ba40c8a-2bae-b625-93ff-98562173914a.htm">
+      <HelpTOCNode Id="fc494485-8bed-4c19-b0f0-7ef09a4d6baf" Title="ServerListener Methods" Url="html/9ba40c8a-2bae-b625-93ff-98562173914a.htm">
         <HelpTOCNode Title="Dispose Method " Url="html/bd81261e-a026-c76e-a985-dbb030ef5a13.htm" />
       </HelpTOCNode>
-      <HelpTOCNode Id="639e6353-ab75-43cb-a8c6-e390a79260b4" Title="ServerListener Events" Url="html/eba2bb6e-bdf2-7c8e-cc5f-1547139d1bb8.htm">
+      <HelpTOCNode Id="beb114e7-5591-4e10-8bcc-975724f8a9db" Title="ServerListener Events" Url="html/eba2bb6e-bdf2-7c8e-cc5f-1547139d1bb8.htm">
         <HelpTOCNode Title="OnServerAdded Event" Url="html/532f9e8d-123c-6da2-603d-a8fd43af2536.htm" />
       </HelpTOCNode>
     </HelpTOCNode>
-    <HelpTOCNode Id="09aa8a10-da5f-457f-b142-422e20c5386a" Title="ThreadController Class" Url="html/21900b7b-c95f-e1e8-77fd-2c8ecc874983.htm">
+    <HelpTOCNode Id="ff90ba9d-5e7c-4dc8-9a66-dec179528777" Title="ThreadController Class" Url="html/21900b7b-c95f-e1e8-77fd-2c8ecc874983.htm">
       <HelpTOCNode Title="ThreadController Constructor " Url="html/a5d949b2-dec8-4f5f-fa44-f4c40f232657.htm" />
-      <HelpTOCNode Id="c81d55a1-df2a-4172-87ca-f54d91d1d225" Title="ThreadController Methods" Url="html/9a4a30aa-2c14-d5ca-dbc9-5d8a4b083939.htm">
+      <HelpTOCNode Id="671707a1-695c-438e-9fad-24dd5e1f2fbc" Title="ThreadController Methods" Url="html/9a4a30aa-2c14-d5ca-dbc9-5d8a4b083939.htm">
         <HelpTOCNode Title="CaptureException Method " Url="html/829b6e5f-0995-eb25-dcd5-3373fc3446bb.htm" />
         <HelpTOCNode Title="NotifyException Method " Url="html/e8577bd1-fb81-449f-f843-f57195f383ad.htm" />
       </HelpTOCNode>
-      <HelpTOCNode Id="42828e71-364e-4215-8ea6-5a453d97d497" Title="ThreadController Events" Url="html/34eb6491-0ded-dcec-df58-ed7599854853.htm">
+      <HelpTOCNode Id="e4a39d5d-7ba3-41e3-b688-84e254088e9a" Title="ThreadController Events" Url="html/34eb6491-0ded-dcec-df58-ed7599854853.htm">
         <HelpTOCNode Title="OnThreadException Event" Url="html/1d3fccef-1407-59b0-30a3-d7bb67094299.htm" />
       </HelpTOCNode>
     </HelpTOCNode>
-    <HelpTOCNode Id="a8105edb-789e-4588-95fe-6129e9166317" Title="ThreadController.ThreadException Class" Url="html/694dc0eb-dda1-404c-5397-6a2e68e71f8d.htm">
+    <HelpTOCNode Id="b8a86dc0-21f6-404f-a564-aa5e1167aa05" Title="ThreadController.ThreadException Class" Url="html/694dc0eb-dda1-404c-5397-6a2e68e71f8d.htm">
       <HelpTOCNode Title="ThreadException Properties" Url="html/acd0c8ca-7fd7-b12c-4a7e-4a291d0b4317.htm" />
       <HelpTOCNode Title="ThreadException Methods" Url="html/6ede1fa5-4cba-3bd7-f9ab-e6cad5b7f23f.htm" />
     </HelpTOCNode>
