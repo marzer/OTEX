@@ -389,14 +389,14 @@ namespace OTEX
                     {
                         if (operation.IsInsertion)
                         {
-                            tbEditor.InsertTextAndRestoreSelection(
+                            InsertTextAndRestoreSelection(
                                 new Range(tbEditor, tbEditor.PositionToPlace(operation.Offset),
                                     tbEditor.PositionToPlace(operation.Offset)),
                                 operation.Text, null);
                         }
                         else if (operation.IsDeletion)
                         {
-                            tbEditor.InsertTextAndRestoreSelection(
+                            InsertTextAndRestoreSelection(
                                 new Range(tbEditor, tbEditor.PositionToPlace(operation.Offset),
                                     tbEditor.PositionToPlace(operation.Offset + operation.Length)),
                                 "", null);
@@ -1084,6 +1084,28 @@ namespace OTEX
                 otexClient.Metadata(localClient.Serialize());
             }
             catch (Exception) { }
+        }
+
+        //this is a version of FCTB's InsertTextAndRestoreSelection that does not move the bloody scroll window
+        private Range InsertTextAndRestoreSelection(Range replaceRange, string text, Style style)
+        {
+            if (text == null)
+                return null;
+
+            var oldStart = tbEditor.PlaceToPosition(tbEditor.Selection.Start);
+            var oldEnd = tbEditor.PlaceToPosition(tbEditor.Selection.End);
+            var count = replaceRange.Text.Length;
+            var pos = tbEditor.PlaceToPosition(replaceRange.Start);
+            //
+            tbEditor.Selection.BeginUpdate();
+            tbEditor.Selection = replaceRange;
+            var range = tbEditor.InsertText(text, style, false);
+            //
+            count = range.Text.Length - count;
+            tbEditor.Selection.Start = tbEditor.PositionToPlace(oldStart + (oldStart >= pos ? count : 0));
+            tbEditor.Selection.End = tbEditor.PositionToPlace(oldEnd + (oldEnd >= pos ? count : 0));
+            tbEditor.Selection.EndUpdate();
+            return range;
         }
     }
 }
