@@ -50,10 +50,19 @@ namespace OTEX
             }
             catch (Exception exc)
             {
-                OnThreadException?.Invoke(this, new ThreadException(exc));
+                NotifyException(new ThreadException(exc));
                 return true;
             }
             return false;
+        }
+
+        /// <summary>
+        /// Invokes the OnThreadException event for the given exception.
+        /// </summary>
+        /// <param name="ex">The exception to pass to the OnThreadException event handler.</param>
+        protected void NotifyException(ThreadException ex)
+        {
+            OnThreadException?.Invoke(this, ex);
         }
     }
 }
