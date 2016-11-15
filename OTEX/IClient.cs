@@ -21,7 +21,7 @@ namespace OTEX
         /// Triggered when a remote client updates it's metadata.
         /// Do not call any of this object's methods from this callback or you may deadlock!
         /// </summary>
-        event Action<IClient, Guid, byte[]> OnMetadataUpdated;
+        event Action<IClient, Guid, byte[]> OnRemoteMetadata;
 
         /// <summary>
         /// Triggered when the client receives remote operations from the server.
@@ -69,6 +69,11 @@ namespace OTEX
         /// </summary>
         float UpdateInterval { get; set; }
 
+        /// <summary>
+        /// This client's metadata.
+        /// </summary>
+        byte[] Metadata { get; set; }
+
         /////////////////////////////////////////////////////////////////////
         // METHODS
         /////////////////////////////////////////////////////////////////////
@@ -79,35 +84,25 @@ namespace OTEX
         /// <param name="address">IP Address of the OTEX server.</param>
         /// <param name="port">Listen port of the OTEX server.</param>
         /// <param name="password">Password required to connect to the server, if any. Leave as null for none.</param>
-        /// <param name="metadata">Client-specific application data to send to the server.</param>
-        void Connect(IPAddress address, ushort port = 55550, Password password = null, byte[] metadata = null);
+        void Connect(IPAddress address, ushort port = 55550, Password password = null);
 
         /// <summary>
         /// Connect to an OTEX server.
         /// </summary>
         /// <param name="serverDescription">ServerDescription for an OTEX server.</param>
         /// <param name="password">Password required to connect to the server, if any. Leave as null for none.</param>
-        /// <param name="metadata">Client-specific application data to send to the server.</param>
-        void Connect(ServerDescription serverDescription, Password password = null, byte[] metadata = null);
+        void Connect(ServerDescription serverDescription, Password password = null);
 
         /// <summary>
         /// Connect to an OTEX server.
         /// </summary>
         /// <param name="endpoint">IP Endpoint (address and port) of the OTEX server.</param>
         /// <param name="password">Password required to connect to the server, if any. Leave as null for none.</param>
-        /// <param name="metadata">Client-specific application data to send to the server.</param>
-        void Connect(IPEndPoint endpoint, Password password = null, byte[] metadata = null);
+        void Connect(IPEndPoint endpoint, Password password = null);
 
         /// <summary>
         /// Disconnect from an OTEX server. Does nothing if not already connected.
         /// </summary>
         void Disconnect();
-
-        /// <summary>
-        /// Updates this client's application-specific metadata, sending it to the server
-        /// which then ensures the new version is receieved by all other clients.
-        /// </summary>
-        /// <param name="metadata">This client's metadata. Can be null ("I don't have any metadata").</param>
-        void Metadata(byte[] metadata);
     }
 }

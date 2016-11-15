@@ -26,6 +26,15 @@ namespace OTEX.Packets
         }
 
         /// <summary>
+        /// Session ID of the client sending the connection request.
+        /// </summary>
+        public Guid ClientID
+        {
+            get { return clientID; }
+        }
+        private Guid clientID;
+
+        /// <summary>
         /// Password for server (if the server requires one).
         /// </summary>
         public Password Password
@@ -50,16 +59,19 @@ namespace OTEX.Packets
         /// <summary>
         /// Construct a connection request packet.
         /// </summary>
+        /// <param name="clientID">Client's session ID.</param>
+        /// <param name="metadata">Initial metadata for the client, if any.</param>
         /// <param name="password">Password for the server, if requred.</param>
-        /// <param name="metadata">Initial metadata for the client.</param>
         /// <exception cref="ArgumentOutOfRangeException" />
-        public ConnectionRequest(Password password = null, byte[] metadata = null)
+        public ConnectionRequest(Guid clientID, byte[] metadata = null, Password password = null)
         {
-            if (metadata != null && metadata.Length > ClientMetadata.MaxSize)
+            if ((this.clientID = clientID).Equals(Guid.Empty))
+                throw new ArgumentOutOfRangeException("clientID", "clientID cannot be Guid.Empty");
+            if (metadata != null && metadata.LongLength >= Client.MaxMetadataSize)
                 throw new ArgumentOutOfRangeException("metadata",
-                    string.Format("metadata.Length may not be greater than {0}.", ClientMetadata.MaxSize));
+                    string.Format("metadata byte arrays may not be longer than {0} bytes", Client.MaxMetadataSize));
             this.password = password;
-            this.metadata = metadata;
+            this.metadata = metadata != null && metadata.Length > 0 ? metadata : null;
         }
     }
 }

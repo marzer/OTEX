@@ -25,7 +25,7 @@ namespace OTEX
         /// Triggered when a remote client updates it's metadata.
         /// Do not call any of this object's methods from this callback or you may deadlock!
         /// </summary>
-        public event Action<IClient, Guid, byte[]> OnMetadataUpdated;
+        public event Action<IClient, Guid, byte[]> OnRemoteMetadata;
 
         /// <summary>
         /// Triggered when the client is disconnected from an OTEX server.
@@ -151,6 +151,30 @@ namespace OTEX
         }
 
         /// <summary>
+        /// This client's metadata. Setting this value causes it to be sent to the server with the next update.
+        /// The server then ensures the new version is received by all other clients during their next updates.
+        /// May be set when the client is not connected; this means "send this when I next connect to a server".
+        /// 
+        /// The getter returns a copy of the internal metadata buffer (if not null); it does not keep a reference
+        /// to the original set value.
+        /// </summary>
+        public byte[] Metadata
+        {
+            get
+            {
+                if (isDisposed)
+                    throw new ObjectDisposedException("OTEX.BufferedClient");
+                return client.Metadata;
+            }
+            set
+            {
+                if (isDisposed)
+                    throw new ObjectDisposedException("OTEX.BufferedClient");
+                client.Metadata = value;
+            }
+        }
+
+        /// <summary>
         /// Internal client this BufferedClient is wrapping.
         /// </summary>
         private readonly Client client;
@@ -230,7 +254,7 @@ namespace OTEX
             client = new Client(guid);
             client.OnConnected += (c) => { OnConnected?.Invoke(this); };
             client.OnDisconnected += (c,forced) => { OnDisconnected?.Invoke(this, forced); };
-            client.OnMetadataUpdated += (c,id,md) => { OnMetadataUpdated?.Invoke(this,id,md); };
+            client.OnRemoteMetadata += (c,id,md) => { OnRemoteMetadata?.Invoke(this,id,md); };
             client.OnThreadException += (c, ex) => { NotifyException(ex); };
             client.OnRemoteOperations += (c, ops) =>
             {               
@@ -263,7 +287,6 @@ namespace OTEX
         /// <param name="address">IP Address of the OTEX server.</param>
         /// <param name="port">Listen port of the OTEX server.</param>
         /// <param name="password">Password required to connect to the server, if any. Leave as null for none.</param>
-        /// <param name="metadata">Client-specific application data to send to the server.</param>
         /// <exception cref="ArgumentException" />
         /// <exception cref="ArgumentNullException" />
         /// <exception cref="ArgumentOutOfRangeException" />
@@ -274,11 +297,11 @@ namespace OTEX
         /// <exception cref="System.Security.SecurityException" />
         /// <exception cref="IOException" />
         /// <exception cref="InvalidOperationException" />
-        public void Connect(IPAddress address, ushort port = Server.DefaultPort, Password password = null, byte[] metadata = null)
+        public void Connect(IPAddress address, ushort port = Server.DefaultPort, Password password = null)
         {
             if (isDisposed)
                 throw new ObjectDisposedException("OTEX.BufferedClient");
-            client.Connect(address, port, password, metadata);
+            client.Connect(address, port, password);
         }
 
         /// <summary>
@@ -286,7 +309,6 @@ namespace OTEX
         /// </summary>
         /// <param name="serverDescription">ServerDescription for an OTEX server.</param>
         /// <param name="password">Password required to connect to the server, if any. Leave as null for none.</param>
-        /// <param name="metadata">Client-specific application data to send to the server.</param>
         /// <exception cref="ArgumentException" />
         /// <exception cref="ArgumentNullException" />
         /// <exception cref="ArgumentOutOfRangeException" />
@@ -297,11 +319,11 @@ namespace OTEX
         /// <exception cref="System.Security.SecurityException" />
         /// <exception cref="IOException" />
         /// <exception cref="InvalidOperationException" />
-        public void Connect(ServerDescription serverDescription, Password password = null, byte[] metadata = null)
+        public void Connect(ServerDescription serverDescription, Password password = null)
         {
             if (isDisposed)
                 throw new ObjectDisposedException("OTEX.BufferedClient");
-            client.Connect(serverDescription.EndPoint, password, metadata);
+            client.Connect(serverDescription.EndPoint, password);
         }
 
         /// <summary>
@@ -309,7 +331,6 @@ namespace OTEX
         /// </summary>
         /// <param name="endpoint">IP Endpoint (address and port) of the OTEX server.</param>
         /// <param name="password">Password required to connect to the server, if any. Leave as null for none.</param>
-        /// <param name="metadata">Client-specific application data to send to the server.</param>
         /// <exception cref="ArgumentException" />
         /// <exception cref="ArgumentNullException" />
         /// <exception cref="ArgumentOutOfRangeException" />
@@ -320,30 +341,11 @@ namespace OTEX
         /// <exception cref="System.Security.SecurityException" />
         /// <exception cref="IOException" />
         /// <exception cref="InvalidOperationException" />
-        public void Connect(IPEndPoint endpoint, Password password = null, byte[] metadata = null)
+        public void Connect(IPEndPoint endpoint, Password password = null)
         {
             if (isDisposed)
                 throw new ObjectDisposedException("OTEX.BufferedClient");
-            client.Connect(endpoint, password, metadata);
-        }
-
-        /////////////////////////////////////////////////////////////////////
-        // SEND CLIENT-SPECIFIC APPLICATION DATA (METADATA)
-        /////////////////////////////////////////////////////////////////////
-
-        /// <summary>
-        /// Updates this client's application-specific metadata, sending it to the server
-        /// which then ensures the new version is receieved by all other clients.
-        /// </summary>
-        /// <param name="metadata">This client's metadata. Can be null ("I don't have any metadata").</param>
-        /// <exception cref="ArgumentOutOfRangeException" />
-        /// <exception cref="ObjectDisposedException" />
-        /// <exception cref="InvalidOperationException" />
-        public void Metadata(byte[] metadata)
-        {
-            if (isDisposed)
-                throw new ObjectDisposedException("OTEX.BufferedClient");
-            client.Metadata(metadata);
+            client.Connect(endpoint, password);
         }
 
         /////////////////////////////////////////////////////////////////////

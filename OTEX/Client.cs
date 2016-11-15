@@ -42,7 +42,7 @@ namespace OTEX
         /// Triggered when a remote client updates it's metadata.
         /// Do not call any of this object's methods from this callback or you may deadlock!
         /// </summary>
-        public event Action<IClient, Guid, byte[]> OnMetadataUpdated;
+        public event Action<IClient, Guid, byte[]> OnRemoteMetadata;
 
         /// <summary>
         /// Triggered when the client is disconnected from an OTEX server.
@@ -59,6 +59,11 @@ namespace OTEX
         /////////////////////////////////////////////////////////////////////
         // PROPERTIES/VARIABLES
         /////////////////////////////////////////////////////////////////////
+
+        /// <summary>
+        /// Maximum size of a client's metadata.
+        /// </summary>
+        public const uint MaxMetadataSize = 2048;
 
         /// <summary>
         /// Has this client been disposed?
@@ -206,14 +211,67 @@ namespace OTEX
         private volatile float updateInterval = 0.5f;
 
         /// <summary>
-        /// Pending metadata.
+        /// This client's metadata. Setting this value causes it to be sent to the server with the next update.
+        /// The server then ensures the new version is received by all other clients during their next updates.
+        /// May be set when the client is not connected; this means "send this when I next connect to a server".
+        /// 
+        /// The getter returns a copy of the internal metadata buffer (if not null); it does not keep a reference
+        /// to the original set value.
         /// </summary>
-        private volatile byte[] pendingMetadata = null;
+        public byte[] Metadata
+        {
+            get
+            {
+                if (isDisposed)
+                    throw new ObjectDisposedException("OTEX.Client");
 
-        /// <summary>
-        /// Lock object for pending metadata.
-        /// </summary>
-        private readonly object pendingMetadataLock = new object();
+                lock (metadataLock)
+                {
+                    if (isDisposed)
+                        throw new ObjectDisposedException("OTEX.Client");
+
+                    if (metadata == null || metadata.Length == 0)
+                        return null;
+                    byte[] md = new byte[metadata.Length];
+                    metadata.CopyTo(md,0);
+                    return md;
+                }
+            }
+            set
+            {
+                if (isDisposed)
+                    throw new ObjectDisposedException("OTEX.Client");
+
+                lock (metadataLock)
+                {
+                    if (isDisposed)
+                        throw new ObjectDisposedException("OTEX.Client");
+
+                    if (value != null && value.LongLength >= MaxMetadataSize)
+                        throw new ArgumentOutOfRangeException("metadata",
+                            string.Format("metadata byte arrays may not be longer than {0} bytes", MaxMetadataSize));
+
+                    byte[] md = (value == null || value.Length == 0) ? null : value;
+                    if ((metadata == null && md != null)
+                        || (metadata != null && (md == null
+                            || !metadata.MemoryEquals(md))))
+                    {
+                        if (md == null)
+                            metadata = null;
+                        else
+                        {
+                            metadata = new byte[md.Length];
+                            md.CopyTo(metadata, 0);
+                            metadataChanged = true;
+                        }
+                    }
+                }
+                
+            }
+        }
+        private volatile byte[] metadata = null;
+        private volatile bool metadataChanged = false;
+        private readonly object metadataLock = new object();
 
         /////////////////////////////////////////////////////////////////////
         // CONSTRUCTION
@@ -239,7 +297,6 @@ namespace OTEX
         /// <param name="address">IP Address of the OTEX server.</param>
         /// <param name="port">Listen port of the OTEX server.</param>
         /// <param name="password">Password required to connect to the server, if any. Leave as null for none.</param>
-        /// <param name="metadata">Client-specific application data to send to the server.</param>
         /// <exception cref="ArgumentException" />
         /// <exception cref="ArgumentNullException" />
         /// <exception cref="ArgumentOutOfRangeException" />
@@ -250,11 +307,11 @@ namespace OTEX
         /// <exception cref="System.Security.SecurityException" />
         /// <exception cref="IOException" />
         /// <exception cref="InvalidOperationException" />
-        public void Connect(IPAddress address, ushort port = Server.DefaultPort, Password password = null, byte[] metadata = null)
+        public void Connect(IPAddress address, ushort port = Server.DefaultPort, Password password = null)
         {
             if (address == null)
                 throw new ArgumentNullException("address");
-            Connect(new IPEndPoint(address, port), password, metadata);
+            Connect(new IPEndPoint(address, port), password);
         }
 
         /// <summary>
@@ -273,11 +330,11 @@ namespace OTEX
         /// <exception cref="System.Security.SecurityException" />
         /// <exception cref="IOException" />
         /// <exception cref="InvalidOperationException" />
-        public void Connect(ServerDescription serverDescription, Password password = null, byte[] metadata = null)
+        public void Connect(ServerDescription serverDescription, Password password = null)
         {
             if (serverDescription == null)
                 throw new ArgumentNullException("serverDescription");
-            Connect(serverDescription.EndPoint, password, metadata);
+            Connect(serverDescription.EndPoint, password);
         }
 
         /// <summary>
@@ -296,7 +353,7 @@ namespace OTEX
         /// <exception cref="System.Security.SecurityException" />
         /// <exception cref="IOException" />
         /// <exception cref="InvalidOperationException" />
-        public void Connect(IPEndPoint endpoint, Password password = null, byte[] metadata = null)
+        public void Connect(IPEndPoint endpoint, Password password = null)
         {
             if (isDisposed)
                 throw new ObjectDisposedException("OTEX.Client");
@@ -324,11 +381,6 @@ namespace OTEX
                             || endpoint.Address.Equals(IPAddress.IPv6None))
                             throw new ArgumentOutOfRangeException("endpoint.Address", "Address cannot be Any, None or Broadcast.");
 
-                        //check metadata
-                        if (metadata != null && metadata.Length > ClientMetadata.MaxSize)
-                            throw new ArgumentOutOfRangeException("metadata",
-                                string.Format("metadata.Length may not be greater than {0}.", ClientMetadata.MaxSize));
-
                         //session connection
                         TcpClient tcpClient = null;
                         PacketStream packetStream = null;
@@ -342,18 +394,26 @@ namespace OTEX
                             tcpClient.Connect(endpoint);
                             packetStream = new PacketStream(tcpClient);
 
+                            //get metadata
+                            byte[] md = null;
+                            lock (metadataLock)
+                            {
+                                md = metadata;
+                                metadataChanged = false;
+                            }
+
                             //send connection request packet
-                            packetStream.Write(ID, new ConnectionRequest(password, metadata));
+                            packetStream.Write(new ConnectionRequest(ID, md, password));
 
                             //get response
                             responsePacket = packetStream.Read();
-                            if (responsePacket.SenderID.Equals(Guid.Empty))
-                                throw new InvalidDataException("responsePacket.SenderID was Guid.Empty");
                             if (responsePacket.PayloadType != ConnectionResponse.PayloadType)
                                 throw new InvalidDataException("unexpected response packet type");
                             response = responsePacket.Payload.Deserialize<ConnectionResponse>();
                             if (response.Result != ConnectionResponse.ResponseCode.Approved)
                                 throw new Exception(string.Format("connection rejected by server: {0}",response.Result));
+                            if (response.ServerID.Equals(Guid.Empty))
+                                throw new InvalidDataException("response.ServerID was Guid.Empty");
                         }
                         catch (Exception)
                         {
@@ -371,16 +431,16 @@ namespace OTEX
                         serverAddress = endpoint.Address;
                         serverFilePath = response.FilePath ?? "";
                         serverName = response.Name ?? "";
-                        serverID = responsePacket.SenderID;
+                        serverID = response.ServerID;
                         awaitingOperationList = false;
 
                         //fire events
                         OnConnected?.Invoke(this);
                         InvokeRemoteOperations(response.Operations);
-                        if (response.Metadata != null && OnMetadataUpdated != null)
+                        if (response.Metadata != null && response.Metadata.Count > 0 && OnRemoteMetadata != null)
                         {
                             foreach (var md in response.Metadata)
-                                OnMetadataUpdated?.Invoke(this, md.Key, md.Value);
+                                OnRemoteMetadata?.Invoke(this, md.Key, md.Value);
                         }
 
                         //create management thread
@@ -411,7 +471,7 @@ namespace OTEX
                 
                 //listen for packets first
                 //(returns true if the server has asked us to disconnect)
-                if (Listen(stream))
+                if (Listen(stream, lastOpsRequestTimer))
                 {
                     //override clientSideDisconnection so we don't send
                     //unnecessarily send a disconnection to the server
@@ -433,10 +493,22 @@ namespace OTEX
                         if (outgoingOperations.Count > 0 && incomingOperations.Count > 0)
                             Operation.SymmetricLinearTransform(outgoingOperations, incomingOperations);
 
+                        //send metadata update
+                        Dictionary<Guid, byte[]> md = null;
+                        lock (metadataLock)
+                        {
+                            if (metadataChanged)
+                            {
+                                metadataChanged = false;
+                                md = new Dictionary<Guid, byte[]>();
+                                md[ID] = metadata;
+                            }
+                        }
+
                         //send request (2)
-                        if (CaptureException(() => { stream.Write(ID,
-                            new OperationList(outgoingOperations.Count > 0 ? outgoingOperations : null)); }))
+                        if (CaptureException(() =>{ stream.Write(new ClientUpdate(outgoingOperations, md)); }))
                             break;
+
                         awaitingOperationList = true;
 
                         //clear outgoing packet list (1)
@@ -446,33 +518,17 @@ namespace OTEX
                         //apply any incoming operations (also clears list)
                         InvokeRemoteOperations(incomingOperations);
                     }
-                    lastOpsRequestTimer.Reset();
-                }
-
-                //send off any pending metadata updates
-                if (pendingMetadata != null)
-                {
-                    lock (pendingMetadataLock)
-                    {
-                        if (pendingMetadata != null)
-                        {
-                            if (CaptureException(() => { stream.Write(ID, new ClientMetadata(ID, pendingMetadata));  }))
-                                break;
-                            pendingMetadata = null;
-                        }
-                    }
                 }
             }
 
             //disconnect
             connected = false;
             if (clientSideDisconnection) //tell the server the user is disconnecting client-side
-                CaptureException(() => { stream.Write(ID, new DisconnectionRequest()); });
+                CaptureException(() => { stream.Write(new DisconnectionRequest()); });
             stream.Dispose();
             client.Close();
             outgoingOperations.Clear();
             incomingOperations.Clear();
-            pendingMetadata = null;
 
             //fire event
             OnDisconnected?.Invoke(this, !clientSideDisconnection);
@@ -483,8 +539,9 @@ namespace OTEX
         /// Listen for packets coming in from the server and handle them accordingly.
         /// </summary>
         /// <param name="stream">PacketStream in use by the Control thread.</param>
+        /// <param name="lastOpsRequestTimer">Timer for timing request send intervals.</param>
         /// <returns>True if the server has asked us to disconnect.</returns>
-        private bool Listen(PacketStream stream)
+        private bool Listen(PacketStream stream, Marzersoft.Timer lastOpsRequestTimer)
         {
             while (stream.Connected && stream.DataAvailable)
             {
@@ -493,44 +550,36 @@ namespace OTEX
                 if (CaptureException(() => { packet = stream.Read(); }))
                     break;
 
-                //check if guid of sender matches server
-                if (!packet.SenderID.Equals(serverID))
-                    continue; //ignore 
-
                 switch (packet.PayloadType)
                 {
                     case DisconnectionRequest.PayloadType: //disconnection request from server
                         return true;
 
-                    case OperationList.PayloadType:  //operation list (4)
+                    case ClientUpdate.PayloadType:  //operation list (4)
                         /*
                          * COMP7722: step 4 of HOB: incoming operations are appended to the local
                          * incoming operation buffer.
                          */
                         if (awaitingOperationList)
                         {
-                            OperationList operationList = null;
-                            if (CaptureException(() => { operationList = packet.Payload.Deserialize<OperationList>(); }))
-                                break;
-                            if (operationList.Operations != null && operationList.Operations.Count > 0)
-                                incomingOperations.AddRange(operationList.Operations);
                             awaitingOperationList = false;
-                        }
-                        break;
-
-                    case ClientMetadata.PayloadType:
-                        {
-                            //deserialize metadata packet
-                            ClientMetadata metadataPacket = null;
-                            if (CaptureException(() => { metadataPacket = packet.Payload.Deserialize<ClientMetadata>(); })
-                                || metadataPacket.Metadata == null || metadataPacket.Metadata.Count == 0)
+                            ClientUpdate update = null;
+                            if (CaptureException(() => { update = packet.Payload.Deserialize<ClientUpdate>(); }))
                                 break;
 
-                            if (metadataPacket.Metadata != null && OnMetadataUpdated != null)
+                            //get incoming operations
+                            if (update.Operations != null && update.Operations.Count > 0)
+                                incomingOperations.AddRange(update.Operations);
+
+                            //get incoming metadata
+                            if (update.Metadata != null && update.Metadata.Count > 0 && OnRemoteMetadata != null)
                             {
-                                foreach (var md in metadataPacket.Metadata)
-                                    OnMetadataUpdated?.Invoke(this, md.Key, md.Value);
+                                foreach (var md in update.Metadata)
+                                    OnRemoteMetadata?.Invoke(this, md.Key, md.Value);
                             }
+
+                            //reset request timer so the wait interval starts from now
+                            lastOpsRequestTimer.Reset();
                         }
                         break;
                 }
@@ -620,39 +669,6 @@ namespace OTEX
             }
         }
 
-        /////////////////////////////////////////////////////////////////////
-        // SEND CLIENT-SPECIFIC APPLICATION DATA (METADATA)
-        /////////////////////////////////////////////////////////////////////
-
-        /// <summary>
-        /// Updates this client's application-specific metadata, sending it to the server
-        /// which then ensures the new version is received by all other clients.
-        /// </summary>
-        /// <param name="metadata">This client's metadata. Can be null ("I don't have any metadata").</param>
-        /// <exception cref="ArgumentOutOfRangeException" />
-        /// <exception cref="ObjectDisposedException" />
-        /// <exception cref="InvalidOperationException" />
-        public void Metadata(byte[] metadata)
-        {
-            if (isDisposed)
-                throw new ObjectDisposedException("OTEX.Client");
-            if (!connected)
-                throw new InvalidOperationException("cannot send a metadata update without being connected");
-            if (metadata != null && metadata.Length > ClientMetadata.MaxSize)
-                throw new ArgumentOutOfRangeException("metadata",
-                    string.Format("metadata.Length may not be greater than {0}.", ClientMetadata.MaxSize));
-
-            if (metadata != pendingMetadata)
-            {
-                lock (pendingMetadataLock)
-                {
-                    if (isDisposed)
-                        throw new ObjectDisposedException("OTEX.Client");
-                    if (metadata != pendingMetadata)
-                        pendingMetadata = metadata;
-                }
-            }
-        }
 
         /////////////////////////////////////////////////////////////////////
         // DISCONNECTING FROM THE SERVER

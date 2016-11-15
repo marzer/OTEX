@@ -153,10 +153,10 @@ namespace OTEX
                 int newVal = value.ToArgb();
                 if (localClient.Colour == newVal)
                     return;
-                localClient.Colour = newVal; 
+                localClient.Colour = newVal;
 
                 //push to server
-                PushUpdatedMetadata();
+                otexClient.Metadata = localClient.Serialize();
 
                 //update locally
                 this.Execute(() =>
@@ -406,11 +406,12 @@ namespace OTEX
                     disableOperationGeneration = false;
                 }, false);
             };
-            otexClient.OnMetadataUpdated += (c, id, md) =>
+            otexClient.OnRemoteMetadata += (c, id, md) =>
             {
                 lock (remoteClients)
                 {
-                    remoteClients[id] = md.Deserialize<EditorClient>();
+                    if (md != null)
+                        remoteClients[id] = md.Deserialize<EditorClient>();
                 }
                 this.Execute(() => { tbEditor.Refresh(); });
             };
@@ -573,7 +574,7 @@ namespace OTEX
                 var sel = tbEditor.Selection;
                 localClient.SelectionStart = tbEditor.PlaceToPosition(sel.Start);
                 localClient.SelectionEnd = tbEditor.PlaceToPosition(sel.End);
-                PushUpdatedMetadata();
+                otexClient.Metadata = localClient.Serialize();
             };
             tbEditor.PaintLine += (s, e) =>
             {
@@ -667,7 +668,8 @@ namespace OTEX
             //start client
             try
             {
-                otexClient.Connect(IPAddress.Loopback, startParams.Port, null, localClient.Serialize());
+                otexClient.Metadata = localClient.Serialize();
+                otexClient.Connect(IPAddress.Loopback, startParams.Port, null);
             }
             catch (Exception exc)
             {
@@ -859,7 +861,8 @@ namespace OTEX
             {
                 try
                 {
-                    otexClient.Connect(lastConnectionEndpoint, lastConnectionPassword, localClient.Serialize());
+                    otexClient.Metadata = localClient.Serialize();
+                    otexClient.Connect(lastConnectionEndpoint, lastConnectionPassword);
                 }
                 catch (Exception exc)
                 {
@@ -1075,15 +1078,6 @@ namespace OTEX
         private void nudClientUpdateInterval_ValueChanged(object sender, EventArgs e)
         {
             otexClient.UpdateInterval = (float)nudClientUpdateInterval.Value;
-        }
-
-        private void PushUpdatedMetadata()
-        {
-            try
-            {
-                otexClient.Metadata(localClient.Serialize());
-            }
-            catch (Exception) { }
         }
 
         //this is a version of FCTB's InsertTextAndRestoreSelection that does not move the bloody scroll window
