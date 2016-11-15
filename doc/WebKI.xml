@@ -31,7 +31,7 @@
   <HelpKINode Title="BufferedClient.UpdateInterval property" Url="html/6c9dedf6-3545-465d-e932-3341e707e19c.htm" />
   <HelpKINode Title="Calculate(Of T) method" Url="html/7bc65e9b-1385-c72a-b559-faf4a004174c.htm" />
   <HelpKINode Title="Calculate&lt;T&gt; method" Url="html/7bc65e9b-1385-c72a-b559-faf4a004174c.htm" />
-  <HelpKINode Title="CaptureException method" Url="html/1fda147b-317a-d4db-b122-e7e8f850bacc.htm" />
+  <HelpKINode Title="CaptureException method" Url="html/829b6e5f-0995-eb25-dcd5-3373fc3446bb.htm" />
   <HelpKINode Title="Client class">
     <HelpKINode Title="Client Class" Url="html/5f70d4b0-7475-f876-cc92-90c2f357aa6a.htm" />
     <HelpKINode Title="about Client class" Url="html/5f70d4b0-7475-f876-cc92-90c2f357aa6a.htm" />
@@ -400,7 +400,7 @@
     <HelpKINode Title="events" Url="html/34eb6491-0ded-dcec-df58-ed7599854853.htm" />
     <HelpKINode Title="methods" Url="html/9a4a30aa-2c14-d5ca-dbc9-5d8a4b083939.htm" />
   </HelpKINode>
-  <HelpKINode Title="ThreadController.CaptureException method" Url="html/1fda147b-317a-d4db-b122-e7e8f850bacc.htm" />
+  <HelpKINode Title="ThreadController.CaptureException method" Url="html/829b6e5f-0995-eb25-dcd5-3373fc3446bb.htm" />
   <HelpKINode Title="ThreadController.NotifyException method" Url="html/e8577bd1-fb81-449f-f843-f57195f383ad.htm" />
   <HelpKINode Title="ThreadController.OnThreadException event" Url="html/1d3fccef-1407-59b0-30a3-d7bb67094299.htm" />
   <HelpKINode Title="ThreadController.ThreadController constructor" Url="html/a5d949b2-dec8-4f5f-fa44-f4c40f232657.htm" />
