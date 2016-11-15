@@ -13,15 +13,6 @@ namespace OTEX
         /////////////////////////////////////////////////////////////////////
 
         /// <summary>
-        /// Session ID of the node sending the packet.
-        /// </summary>
-        public Guid SenderID
-        {
-            get { return sender; }
-        }
-        private Guid sender;
-
-        /// <summary>
         /// Payload type.
         /// </summary>
         public uint PayloadType
@@ -46,14 +37,12 @@ namespace OTEX
         /// <summary>
         /// Creates an OTEX packet.
         /// </summary>
-        /// <param name="sender">ID of the node sending this packet.</param>
         /// <param name="payloadType">Unique type ID for this packet's payload.</param>
         /// <param name="payload">Serialized payload object.</param>
-        public Packet(Guid sender, uint payloadType, byte[] payload = null)
+        public Packet(uint payloadType, byte[] payload = null)
         {
-            this.sender = sender;
             this.payloadType = payloadType;
-            this.payload = payload;
+            this.payload = payload != null && payload.Length > 0 ? payload : null;
         }
     }
 }

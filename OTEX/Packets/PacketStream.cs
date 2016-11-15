@@ -203,10 +203,6 @@ namespace OTEX.Packets
             Array.Copy(buffer, serializedPacket, size);
             var packet = serializedPacket.Deserialize<Packet>();
 
-            //check guid
-            if (packet.SenderID.Equals(Guid.Empty))
-                throw new InvalidDataException("packet.SenderID was Guid.Empty");
-
             return packet;
         }
 
@@ -227,7 +223,7 @@ namespace OTEX.Packets
         /// <exception cref="System.Security.SecurityException" />
         /// <exception cref="IOException" />
         /// <exception cref="ObjectDisposedException" />
-        public void Write<T>(Guid senderID, T data) where T : IPacketPayload
+        public void Write<T>(T data) where T : IPacketPayload
         {
             if (isDisposed)
                 throw new ObjectDisposedException("OTEX.PacketStream");
@@ -237,11 +233,9 @@ namespace OTEX.Packets
                 throw new ArgumentNullException("data");
             if (!typeof(T).IsSerializable)
                 throw new ArgumentException("data type must have the [Serializable] attribute", "data");
-            if (senderID.Equals(Guid.Empty))
-                throw new ArgumentOutOfRangeException("senderID", "senderID cannot be Guid.Empty");
 
             //packet data
-            Packet packet = new Packet(senderID, data.PacketPayloadType, data.Serialize());
+            Packet packet = new Packet(data.PacketPayloadType, data.Serialize());
             var serializedPacket = packet.Serialize();
             var serializedLength = BitConverter.GetBytes(serializedPacket.Length);
 
