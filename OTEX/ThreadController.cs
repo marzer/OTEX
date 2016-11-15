@@ -1,4 +1,8 @@
 ﻿using System;
+#if DEBUG
+using System.Runtime.CompilerServices;
+using Marzersoft;
+#endif
 
 namespace OTEX
 {
@@ -39,7 +43,13 @@ namespace OTEX
         /// </summary>
         /// <param name="func">The action to execute. Exceptions raised within will be caught and redirected to the OnThreadException event.</param>
         /// <returns>True if an exception was caught.</returns>
-        protected bool CaptureException(Action func)
+        protected bool CaptureException(Action func
+#if DEBUG
+            , [CallerMemberName] string memberName = "",
+            [CallerFilePath] string sourceFilePath = "",
+            [CallerLineNumber] int sourceLineNumber = 0
+#endif
+            )
         {
             if (func == null)
                 throw new ArgumentNullException("func");
@@ -50,6 +60,11 @@ namespace OTEX
             }
             catch (Exception exc)
             {
+#if DEBUG
+                Logger.E("[{0}:{1}, {2}] {3}: {4}",
+                    System.IO.Path.GetFileName(sourceFilePath), sourceLineNumber, memberName,
+                    exc.GetType().Name, exc.Message);
+#endif
                 NotifyException(new ThreadException(exc));
                 return true;
             }
