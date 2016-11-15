@@ -319,7 +319,6 @@ namespace OTEX
         /// </summary>
         /// <param name="serverDescription">ServerDescription for an OTEX server.</param>
         /// <param name="password">Password required to connect to the server, if any. Leave as null for none.</param>
-        /// <param name="metadata">Client-specific application data to send to the server.</param>
         /// <exception cref="ArgumentException" />
         /// <exception cref="ArgumentNullException" />
         /// <exception cref="ArgumentOutOfRangeException" />
@@ -342,7 +341,6 @@ namespace OTEX
         /// </summary>
         /// <param name="endpoint">IP Endpoint (address and port) of the OTEX server.</param>
         /// <param name="password">Password required to connect to the server, if any. Leave as null for none.</param>
-        /// <param name="metadata">Client-specific application data to send to the server.</param>
         /// <exception cref="ArgumentException" />
         /// <exception cref="ArgumentNullException" />
         /// <exception cref="ArgumentOutOfRangeException" />

@@ -18,11 +18,11 @@
   <HelpKINode Title="BufferedClient.Dispose method" Url="html/35e46624-1c7d-a713-1f47-1ecb806464ae.htm" />
   <HelpKINode Title="BufferedClient.Document property" Url="html/4f6d340d-c4a0-fbc0-e0ac-d4c1dfec46dc.htm" />
   <HelpKINode Title="BufferedClient.IsDisposed property" Url="html/dd464dd4-3455-df04-a4c5-d8356d04b32b.htm" />
-  <HelpKINode Title="BufferedClient.Metadata method" Url="html/e5401fe5-bddf-c71e-d01f-76b820a60c63.htm" />
+  <HelpKINode Title="BufferedClient.Metadata property" Url="html/2ae80ff7-b33f-860b-f36e-ea5ce6ee2244.htm" />
   <HelpKINode Title="BufferedClient.OnConnected event" Url="html/035fcd57-7f1c-5ad5-353f-c80c54dca932.htm" />
   <HelpKINode Title="BufferedClient.OnDisconnected event" Url="html/a6c07d99-afe7-595c-d63b-2c48578160da.htm" />
   <HelpKINode Title="BufferedClient.OnDocumentChanged event" Url="html/ff777107-b32c-7b68-3c50-9555f9f162e2.htm" />
-  <HelpKINode Title="BufferedClient.OnMetadataUpdated event" Url="html/29fdd0f6-d689-d29e-abd3-b809355b75d5.htm" />
+  <HelpKINode Title="BufferedClient.OnRemoteMetadata event" Url="html/ba02bea4-4d6a-c538-9ded-62c507e7d318.htm" />
   <HelpKINode Title="BufferedClient.ServerAddress property" Url="html/0cfa5f13-0ebc-9302-2864-512493d9acd4.htm" />
   <HelpKINode Title="BufferedClient.ServerFilePath property" Url="html/4a4581e1-0a57-e213-3f67-42a09b1124e5.htm" />
   <HelpKINode Title="BufferedClient.ServerID property" Url="html/04576870-a491-a1e9-a756-6522518f4d10.htm" />
@@ -31,7 +31,7 @@
   <HelpKINode Title="BufferedClient.UpdateInterval property" Url="html/6c9dedf6-3545-465d-e932-3341e707e19c.htm" />
   <HelpKINode Title="Calculate(Of T) method" Url="html/7bc65e9b-1385-c72a-b559-faf4a004174c.htm" />
   <HelpKINode Title="Calculate&lt;T&gt; method" Url="html/7bc65e9b-1385-c72a-b559-faf4a004174c.htm" />
-  <HelpKINode Title="CaptureException method" Url="html/829b6e5f-0995-eb25-dcd5-3373fc3446bb.htm" />
+  <HelpKINode Title="CaptureException method" Url="html/1fda147b-317a-d4db-b122-e7e8f850bacc.htm" />
   <HelpKINode Title="Client class">
     <HelpKINode Title="Client Class" Url="html/5f70d4b0-7475-f876-cc92-90c2f357aa6a.htm" />
     <HelpKINode Title="about Client class" Url="html/5f70d4b0-7475-f876-cc92-90c2f357aa6a.htm" />
@@ -49,10 +49,11 @@
   <HelpKINode Title="Client.Dispose method" Url="html/3b8a02e5-1a49-b55e-f0b4-fd1f3f762d92.htm" />
   <HelpKINode Title="Client.Insert method" Url="html/b4376504-082c-5788-9c95-8895c48971ce.htm" />
   <HelpKINode Title="Client.IsDisposed property" Url="html/b7ede259-4f65-ebb7-6d8a-663d56af49e0.htm" />
-  <HelpKINode Title="Client.Metadata method" Url="html/8df55fa7-1f3e-d491-0800-43c2d7b8c6ee.htm" />
+  <HelpKINode Title="Client.MaxMetadataSize field" Url="html/adb52c4a-0d52-9bb2-a351-6acebbf01767.htm" />
+  <HelpKINode Title="Client.Metadata property" Url="html/bc7a01ae-9e63-cd07-64e2-636d823327d6.htm" />
   <HelpKINode Title="Client.OnConnected event" Url="html/4f1c0928-882b-9a3f-f006-3ea185f49d29.htm" />
   <HelpKINode Title="Client.OnDisconnected event" Url="html/dd6f0978-c4fe-fca0-e85e-21a1b37df3be.htm" />
-  <HelpKINode Title="Client.OnMetadataUpdated event" Url="html/23cc1e5f-1b5d-112b-a287-a85e431e4fa6.htm" />
+  <HelpKINode Title="Client.OnRemoteMetadata event" Url="html/b5477931-a76d-b5a9-2dab-4edeee6bc035.htm" />
   <HelpKINode Title="Client.OnRemoteOperations event" Url="html/07f82e47-c389-bbbc-9c41-076626497fce.htm" />
   <HelpKINode Title="Client.ServerAddress property" Url="html/8a6fee0c-35f6-dcc1-9ef8-3b51700041a4.htm" />
   <HelpKINode Title="Client.ServerFilePath property" Url="html/9742bd58-1cde-99d9-ab76-e1dcbcf15e21.htm" />
@@ -126,10 +127,10 @@
   <HelpKINode Title="IClient.Connect method" Url="html/9063e117-cb0d-65ba-c018-3c9be4ed2d59.htm" />
   <HelpKINode Title="IClient.Connected property" Url="html/a3671627-ae9c-a2cd-751f-6ff89c802653.htm" />
   <HelpKINode Title="IClient.Disconnect method" Url="html/356dde9a-e8bd-a8e2-5f1d-ca9d94ebb73b.htm" />
-  <HelpKINode Title="IClient.Metadata method" Url="html/9ad5f025-ff67-a28d-3886-a23193690d23.htm" />
+  <HelpKINode Title="IClient.Metadata property" Url="html/8bbb878c-918c-2540-dc8a-2ded70af09c0.htm" />
   <HelpKINode Title="IClient.OnConnected event" Url="html/93073231-cea4-693a-bed0-a1ec2f688e74.htm" />
   <HelpKINode Title="IClient.OnDisconnected event" Url="html/01aed22b-e152-3fa3-0c9e-13de1861038e.htm" />
-  <HelpKINode Title="IClient.OnMetadataUpdated event" Url="html/095aa3fb-f42f-8513-ed86-5f2e97426603.htm" />
+  <HelpKINode Title="IClient.OnRemoteMetadata event" Url="html/0746524c-a0fe-a70e-a3a3-8b5b4993d683.htm" />
   <HelpKINode Title="IClient.ServerAddress property" Url="html/287ccea9-931b-832b-c8c7-36526344c633.htm" />
   <HelpKINode Title="IClient.ServerFilePath property" Url="html/5ba9c02a-c4dc-e08d-da55-ebcaa33b8cf2.htm" />
   <HelpKINode Title="IClient.ServerID property" Url="html/f09cc043-984b-316c-e4fc-bf2e7b3c8304.htm" />
@@ -162,10 +163,11 @@
     <HelpKINode Title="Server.MaxClients Property " Url="html/dafe5307-ffd0-f1e6-d58e-398ad773ece4.htm" />
     <HelpKINode Title="ServerDescription.MaxClients Property " Url="html/e304df85-36fb-5122-4e7e-fd031d32397b.htm" />
   </HelpKINode>
-  <HelpKINode Title="Metadata method">
-    <HelpKINode Title="BufferedClient.Metadata Method " Url="html/e5401fe5-bddf-c71e-d01f-76b820a60c63.htm" />
-    <HelpKINode Title="Client.Metadata Method " Url="html/8df55fa7-1f3e-d491-0800-43c2d7b8c6ee.htm" />
-    <HelpKINode Title="IClient.Metadata Method " Url="html/9ad5f025-ff67-a28d-3886-a23193690d23.htm" />
+  <HelpKINode Title="MaxMetadataSize field" Url="html/adb52c4a-0d52-9bb2-a351-6acebbf01767.htm" />
+  <HelpKINode Title="Metadata property">
+    <HelpKINode Title="BufferedClient.Metadata Property " Url="html/2ae80ff7-b33f-860b-f36e-ea5ce6ee2244.htm" />
+    <HelpKINode Title="Client.Metadata Property " Url="html/bc7a01ae-9e63-cd07-64e2-636d823327d6.htm" />
+    <HelpKINode Title="IClient.Metadata Property " Url="html/8bbb878c-918c-2540-dc8a-2ded70af09c0.htm" />
   </HelpKINode>
   <HelpKINode Title="Name field" Url="html/8b25e478-d6eb-b495-ce8a-92dbe9ed901e.htm" />
   <HelpKINode Title="Name property">
@@ -200,10 +202,10 @@
   <HelpKINode Title="OnDocumentChanged event" Url="html/ff777107-b32c-7b68-3c50-9555f9f162e2.htm" />
   <HelpKINode Title="OnFileSynchronized event" Url="html/c8f7559c-1c3d-bcd5-57d0-4ae55a137fab.htm" />
   <HelpKINode Title="OnInactive event" Url="html/f4938f58-7e3d-c3fd-3893-a1c61ac54170.htm" />
-  <HelpKINode Title="OnMetadataUpdated event">
-    <HelpKINode Title="BufferedClient.OnMetadataUpdated Event" Url="html/29fdd0f6-d689-d29e-abd3-b809355b75d5.htm" />
-    <HelpKINode Title="Client.OnMetadataUpdated Event" Url="html/23cc1e5f-1b5d-112b-a287-a85e431e4fa6.htm" />
-    <HelpKINode Title="IClient.OnMetadataUpdated Event" Url="html/095aa3fb-f42f-8513-ed86-5f2e97426603.htm" />
+  <HelpKINode Title="OnRemoteMetadata event">
+    <HelpKINode Title="BufferedClient.OnRemoteMetadata Event" Url="html/ba02bea4-4d6a-c538-9ded-62c507e7d318.htm" />
+    <HelpKINode Title="Client.OnRemoteMetadata Event" Url="html/b5477931-a76d-b5a9-2dab-4edeee6bc035.htm" />
+    <HelpKINode Title="IClient.OnRemoteMetadata Event" Url="html/0746524c-a0fe-a70e-a3a3-8b5b4993d683.htm" />
   </HelpKINode>
   <HelpKINode Title="OnRemoteOperations event" Url="html/07f82e47-c389-bbbc-9c41-076626497fce.htm" />
   <HelpKINode Title="OnServerAdded event" Url="html/532f9e8d-123c-6da2-603d-a8fd43af2536.htm" />
@@ -398,7 +400,7 @@
     <HelpKINode Title="events" Url="html/34eb6491-0ded-dcec-df58-ed7599854853.htm" />
     <HelpKINode Title="methods" Url="html/9a4a30aa-2c14-d5ca-dbc9-5d8a4b083939.htm" />
   </HelpKINode>
-  <HelpKINode Title="ThreadController.CaptureException method" Url="html/829b6e5f-0995-eb25-dcd5-3373fc3446bb.htm" />
+  <HelpKINode Title="ThreadController.CaptureException method" Url="html/1fda147b-317a-d4db-b122-e7e8f850bacc.htm" />
   <HelpKINode Title="ThreadController.NotifyException method" Url="html/e8577bd1-fb81-449f-f843-f57195f383ad.htm" />
   <HelpKINode Title="ThreadController.OnThreadException event" Url="html/1d3fccef-1407-59b0-30a3-d7bb67094299.htm" />
   <HelpKINode Title="ThreadController.ThreadController constructor" Url="html/a5d949b2-dec8-4f5f-fa44-f4c40f232657.htm" />

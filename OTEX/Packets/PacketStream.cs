@@ -214,7 +214,6 @@ namespace OTEX.Packets
         /// Sends an OTEX packet object over the TCP stream.
         /// </summary>
         /// <typeparam name="T">Payload object type. Must have the [Serializable] attribute.</typeparam>
-        /// <param name="senderID">ID of the node sending this packet.</param>
         /// <param name="data">Payload object.</param>
         /// <exception cref="ArgumentException" />
         /// <exception cref="ArgumentNullException" />
