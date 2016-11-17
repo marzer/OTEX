@@ -33,8 +33,7 @@ namespace OTEX
         private volatile Password lastConnectionPassword = null;
         private volatile string lastConnectionFailedReason = null;
         private volatile bool lastConnectionReturnToServerBrowser = false;
-        private CustomTitleBarButton logoutButton = null, settingsButton;
-        private Image flatIconImage = null;
+        private TitleBarButton logoutButton = null, settingsButton;
 
         private bool MainMenuPage
         {
@@ -252,14 +251,8 @@ namespace OTEX
             filterFactory.Apply(dlgServerOpenExisting);
 
             //form styles
-            FormBorderStyle = FormBorderStyle.None;
             TextFlourishes = false;
             Text = App.Name;
-            CustomTitleBar = true;
-            ResizeHandleOverride = true;
-            IconOverride = (b) => { return null; };
-            flatIconImage = App.Images.Resource("otex_icon_flat", App.Assembly, "OTEX");
-            ImageOverride = (b) => { return flatIconImage; };
 
             //settings menu
             settingsForm = new FlyoutForm(panSettings);
@@ -267,14 +260,14 @@ namespace OTEX
             settingsButton = AddCustomTitleBarButton();
             settingsButton.Colour = App.Theme.GetAccent(3).DarkDark.Colour;
             settingsButton.Image = App.Images.Resource("cog", App.Assembly, "OTEX");
-            settingsButton.OnClick += (b) => { settingsForm.Flyout(PointToScreen(b.Bounds.BottomMiddle())); };
+            settingsButton.Click += (b) => { settingsForm.Flyout(PointToScreen(b.Bounds.BottomMiddle())); };
 
             //logout button
             logoutButton = AddCustomTitleBarButton();
             logoutButton.Colour = Color.Red;
             logoutButton.Image = App.Images.Resource("logout", App.Assembly, "OTEX");
             logoutButton.Visible = false;
-            logoutButton.OnClick += (b) =>
+            logoutButton.Click += (b) =>
             {
                 if (otexServer.Running && otexServer.ClientCount > 1 &&
                     !Logger.WarningQuestion("You are currently running in server mode. "
@@ -981,11 +974,6 @@ namespace OTEX
             {
                 settingsForm.Dispose();
                 settingsForm = null;
-            }
-            if (flatIconImage != null)
-            {
-                flatIconImage.Dispose();
-                flatIconImage = null;
             }
             base.OnClosed(e);
         }

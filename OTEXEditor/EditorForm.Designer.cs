@@ -571,6 +571,7 @@
             // 
             this.cbClientColour.DrawMode = System.Windows.Forms.DrawMode.OwnerDrawFixed;
             this.cbClientColour.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cbClientColour.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.cbClientColour.FormattingEnabled = true;
             this.cbClientColour.Location = new System.Drawing.Point(8, 63);
             this.cbClientColour.Margin = new System.Windows.Forms.Padding(0);
@@ -603,7 +604,7 @@
             this.nudClientUpdateInterval.Size = new System.Drawing.Size(54, 20);
             this.nudClientUpdateInterval.TabIndex = 110;
             this.nudClientUpdateInterval.Value = new decimal(new int[] {
-            5,
+            10,
             0,
             0,
             65536});
