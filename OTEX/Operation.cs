@@ -4,11 +4,6 @@ using System.Linq;
 
 namespace OTEX
 {
-    /*
-     * COMP7722: This is the Operation class. The static methods from the java sample
-     * have been translated into member methods of this class.
-     */
-
     /// <summary>
     /// A single operation.
     /// </summary>
@@ -130,11 +125,6 @@ namespace OTEX
 
         /////////////////////////////////////////////////////////////////////
         // TRANSFORMATIONS
-        /*
-         * COMP7722: OTEX uses the NICE approach, so the SLOT algorithm
-         * is defined below (the SIT part does not get it's own function since it
-         * was essentially a one-liner; i've folded it up into the SLOT function).
-         */
         /////////////////////////////////////////////////////////////////////
 
         /// <summary>
@@ -240,13 +230,6 @@ namespace OTEX
 
         /////////////////////////////////////////////////////////////////////
         // EXECUTION
-        /*
-         * COMP7722: This is a "replay" function, allowing an operation to be
-         * executed against some text. It is not used in the Editor demo since
-         * it's text synchronization is handled differently, but the Server
-         * uses it to periodically synchronize the internal document buffer
-         * with the file on disk.
-         */
         /////////////////////////////////////////////////////////////////////
 
         /// <summary>
@@ -269,6 +252,44 @@ namespace OTEX
 
             return IsInsertion ? document.Insert(offset, text)
                 : (offset == 0 && length >= document.Length ? "" : document.Remove(offset, length));
+        }
+
+        /////////////////////////////////////////////////////////////////////
+        // MERGING
+        /////////////////////////////////////////////////////////////////////
+
+        /// <summary>
+        /// Merge this operation with another one, if possible. Assumes the other operation
+        /// is the very next element in a sequence of operations.
+        /// </summary>
+        /// <param name="op">The other operation.</param>
+        /// <returns>True if a merge was sucessful.</returns>
+        /// <exception cref="ArgumentNullException" />
+        internal bool Merge(Operation op)
+        {
+            if (op == null)
+                throw new ArgumentNullException("op");
+            if (op.IsNoop)
+                return true;
+
+            //both operations are insertions, directly back-to-back
+            if (IsInsertion && op.IsInsertion && (offset + length) == op.offset)
+            {
+                text = text.Substring(0, length) + op.text.Substring(0, op.length);
+                length += op.length;
+                op.MakeNoop();
+                return true;
+            }
+
+            //both operations are deletions, directly back-to-back
+            if (IsDeletion && op.IsDeletion && offset == op.offset)
+            {
+                length += op.length;
+                op.MakeNoop();
+                return true;
+            }
+
+            return false;
         }
     }
 }

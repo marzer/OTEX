@@ -10,17 +10,6 @@ using OTEX.Packets;
 
 namespace OTEX
 {
-    /*
-     * COMP7722: The class implemented below is the Client side of the OTEX framework.
-     * It is responsible for collecting local operations and periodically sending them
-     * off to the server, and then listening for the response. The client-side of the SLOT
-     * algorithm from the NICE approach is applied within.
-     * 
-     * Unlike the server, the client does not maintain it's own internal copy of the document;
-     * instead all new incoming operations are handled using callbacks which advertise the
-     * operations. This allows applications to use the Client as an intermediary.
-     */
-
     /// <summary>
     /// Client class for the OTEX framework. Manages connection to a server, and provides methods to
     /// notify the server of local replica insertions and deletions. If you want a simpler, less flexible
@@ -482,14 +471,24 @@ namespace OTEX
                 {
                     lock (operationsLock)
                     {
-                        /*
-                         * COMP7722: step 1 & 2 of HOB: all outgoing operations sent to the server,
-                         * clearing the local outgoing operation buffer.
-                         */
+                        //merge adjacent operations
+                        int s = 0;
+                        while (s < (outgoingOperations.Count - 1))
+                        {
+                            if (outgoingOperations[s].Merge(outgoingOperations[s + 1]))
+                                outgoingOperations.RemoveAt(s + 1);
+                            else
+                                ++s;
+                        }
 
                         //perform SLOT(OB,CIB) (1)
                         if (outgoingOperations.Count > 0 && incomingOperations.Count > 0)
+                        {
                             Operation.SymmetricLinearTransform(outgoingOperations, incomingOperations);
+
+                            //prune any operations which are now no-ops
+                            outgoingOperations.RemoveAll((op) => { return op.IsNoop; });
+                        }
 
                         //send metadata update
                         Dictionary<Guid, byte[]> md = null;
@@ -554,10 +553,6 @@ namespace OTEX
                         return true;
 
                     case ClientUpdate.PayloadType:  //operation list (4)
-                        /*
-                         * COMP7722: step 4 of HOB: incoming operations are appended to the local
-                         * incoming operation buffer.
-                         */
                         if (awaitingOperationList)
                         {
                             awaitingOperationList = false;
@@ -589,11 +584,6 @@ namespace OTEX
         // INVOKE REMOTE OPERATIONS
         /////////////////////////////////////////////////////////////////////
 
-        /*
-        * COMP7722: This function notifies any callback subscribers
-        * clearing the local outgoing operation buffer.
-        */
-
         private void InvokeRemoteOperations(List<Operation> ops)
         {
             if (ops != null && ops.Count() > 0)
@@ -606,13 +596,6 @@ namespace OTEX
         /////////////////////////////////////////////////////////////////////
         // SEND LOCAL OPERATIONS
         /////////////////////////////////////////////////////////////////////
-
-        /*
-        * COMP7722: Because the OTEX client acts as an intemediary, and does not directly maintain
-        * it's own internal document buffer, it must provide applications with a method of
-        * notifying the OTEX server when a local operation has been generated. The functions below
-        * provide this functionality.
-        */
 
         /// <summary>
         /// Send a notification to the server that some text was inserted at the client end.
