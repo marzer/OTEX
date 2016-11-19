@@ -2,7 +2,6 @@
 using System.IO;
 using System.Net.Sockets;
 using Marzersoft;
-using Marzersoft.Extensions;
 
 namespace OTEX.Packets
 {

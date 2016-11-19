@@ -10,13 +10,6 @@ using OTEX.Packets;
 
 namespace OTEX
 {
-    /*
-     * COMP7722: The class implemented below is the Server side of the OTEX framework.
-     * It is responsible for maintaining the master document and periodically synchronizing it
-     * to disk, as well as listening for client operations and propagating them accordingly.
-     * The server-side of the SLOT algorithm from the NICE approach is applied within.
-     */
-
     /// <summary>
     /// Server class for the OTEX framework.
     /// </summary>
@@ -500,9 +493,6 @@ namespace OTEX
             {
                 Thread.Sleep(1);
 
-                /*
-                 * COMP7722: Incoming connection requests are dispatched to their own managing thread.
-                 */
                 //accept the connection
                 while (tcpListener.Pending())
                 {
@@ -538,9 +528,6 @@ namespace OTEX
                     announceTimer.Reset();
                 }
 
-                /*
-                 * COMP7722: File contents is synchronized to disk periodically (every 15 seconds)
-                 */
                 //flush file contents to disk periodically
                 if (startParams.FilePath.Length > 0 && flushTimer.Seconds >= 15.0)
                 {
@@ -650,11 +637,6 @@ namespace OTEX
                             break;
                         }
 
-                        /*
-                        * COMP7722: Master operation list is sent to new clients as part of the server's response
-                        * to their initial connection request, to bring them up to speed without further handshaking.
-                        */
-
                         //get outgoing set of metadata for other clients for initial sync
                         //(doubles as client list)
                         Dictionary<Guid, byte[]> metadata = new Dictionary<Guid, byte[]>();
@@ -694,12 +676,6 @@ namespace OTEX
                                 ClientUpdate incoming = null;
                                 if (CaptureException(() => { incoming = packet.Payload.Deserialize<ClientUpdate>(); }))
                                     break;
-
-                                /*
-                                 * COMP7722: step 3 of HOB: receive new operations from the client,
-                                 * transform them using SLOT, respond with new operations from other clients,
-                                 * and append the new operations to the outgoing lists of other connected clients.
-                                 */
 
                                 //lock operation lists (3a)
                                 lock (stateLock)

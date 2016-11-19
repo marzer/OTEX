@@ -3,14 +3,6 @@ using System.Collections.Generic;
 
 namespace OTEX.Packets
 {
-    /*
-     * COMP7722: OTEX uses the NICE approach, and keeps the request-response
-     * flow intact. The class implemented below is the server's initial response
-     * to the client's request to connect; in the event the client is connecting to a 
-     * session that is already in progress, this response contains the server's "master"
-     * set of operations, so they may synchronize without any further handshaking.
-     */
-
     /// <summary>
     /// Connection response packet sent from an OTEX server to client.
     /// </summary>
