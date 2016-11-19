@@ -121,9 +121,10 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="OTEX.ico" />
+    <None Include="Resources\logout_black.png" />
+    <None Include="Resources\cog_black.png" />
     <None Include="Resources\logout.png" />
     <None Include="Resources\cog.png" />
-    <None Include="Resources\otex_icon_flat.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
