@@ -259,14 +259,12 @@ namespace OTEX
             settingsForm = new FlyoutForm(panSettings);
             settingsForm.Accent = 1;
             settingsButton = AddCustomTitleBarButton();
-            settingsButton.Image = App.Images.Resource("cog", App.Assembly, "OTEX");
             settingsButton.Click += (b) => { settingsForm.Flyout(PointToScreen(b.Bounds.BottomMiddle())); };
             cbClientColour.ShowNames = false;
 
             //logout button
             logoutButton = AddCustomTitleBarButton();
             logoutButton.Colour = Color.Red;
-            logoutButton.Image = App.Images.Resource("logout", App.Assembly, "OTEX");
             logoutButton.Visible = false;
             logoutButton.Click += (b) =>
             {
@@ -463,7 +461,6 @@ namespace OTEX
                 Logger.ErrorMessage("An error occurred while creating the server listener:\n\n{0}"
                     + "\n\nYou can still use OTEX Editor, but the \"Public Documents\" list will be empty.",
                     exc.Message);
-                return;
             }
 
             // CREATE TEXT EDITOR ////////////////////////////////////////////////
@@ -642,45 +639,27 @@ namespace OTEX
             // HANDLE THEMES /////////////////////////////////////////////////////
             App.ThemeChanged += (t) =>
             {
-                tbClientAddress.Font
-                    = tbClientPassword.Font
-                    = tbServerPassword.Font
-                    = nudClientUpdateInterval.Font
-                    = nudLineLength.Font
-                    = App.Theme.Monospaced.Regular;
-
-                tbClientAddress.BackColor
-                    = tbClientPassword.BackColor
-                    = tbServerPassword.BackColor
-                    = nudClientUpdateInterval.BackColor
-                    = nudLineLength.BackColor
-                    = App.Theme.Controls.LowContrast.Colour;
-
-                tbClientAddress.ForeColor
-                    = tbClientPassword.ForeColor
-                    = tbServerPassword.ForeColor
-                    = nudClientUpdateInterval.ForeColor
-                    = nudLineLength.ForeColor
-                    = App.Theme.Foreground.Colour;
-
                 lblManualEntry.Font
                     = lblServerBrowser.Font
-                    = App.Theme.Font.Large.Regular;
+                    = t.Font.Large.Regular;
 
-                lblTitle.Font = App.Theme.Font.Huge.Bold;
+                lblTitle.Font = t.Font.Huge.Bold;
 
                 lblAbout.ForeColor
                     = lblVersion.ForeColor
-                    = App.Theme.Foreground.LowContrast.Colour;
+                    = t.Foreground.LowContrast.Colour;
 
-                lblAbout.Font = App.Theme.Font.Underline;
+                lblAbout.Font = t.Font.Underline;
 
-                settingsButton.Colour = App.Theme.Accent(1).Colour;
+                settingsButton.Colour = t.Accent(1).Colour;
 
-                tbEditor.BackBrush = App.Theme.Workspace.Brush;
-                tbEditor.IndentBackColor = App.Theme.Workspace.Colour;
-                tbEditor.ServiceLinesColor = App.Theme.Workspace.HighContrast.Colour;
-                tbEditor.Font = App.Theme.Monospaced.Regular;
+                tbEditor.BackBrush = t.Workspace.Brush;
+                tbEditor.IndentBackColor = t.Workspace.Colour;
+                tbEditor.ServiceLinesColor = t.Workspace.HighContrast.Colour;
+                tbEditor.Font = t.Monospaced.Regular;
+
+                settingsButton.Image = App.Images.Resource("cog" + (t.IsDark ? "" : "_black"), App.Assembly, "OTEX");
+                logoutButton.Image = App.Images.Resource("logout" + (t.IsDark ? "" : "_black"), App.Assembly, "OTEX");
             };
             App.Theme = App.Themes[App.Config.User.Get("user.theme", "dark")];
 
