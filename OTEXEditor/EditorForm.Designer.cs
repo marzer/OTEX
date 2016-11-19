@@ -66,10 +66,15 @@
             this.btnConnectingReconnect = new Marzersoft.Themes.ThemedButton();
             this.btnConnectingBack = new Marzersoft.Themes.ThemedButton();
             this.panSettings = new System.Windows.Forms.Panel();
+            this.label6 = new System.Windows.Forms.Label();
+            this.nudLineLength = new System.Windows.Forms.NumericUpDown();
+            this.label5 = new System.Windows.Forms.Label();
+            this.cbLineLength = new System.Windows.Forms.CheckBox();
             this.label4 = new System.Windows.Forms.Label();
             this.cbClientColour = new Marzersoft.Controls.ColourComboBox();
             this.nudClientUpdateInterval = new System.Windows.Forms.NumericUpDown();
             this.label3 = new System.Windows.Forms.Label();
+            this.cbTheme = new Marzersoft.Themes.ThemedComboBox();
             this.panMenu.SuspendLayout();
             this.panMenuButtons.SuspendLayout();
             this.panServerBrowserPage.SuspendLayout();
@@ -79,6 +84,7 @@
             this.panConnectingPage.SuspendLayout();
             this.panConnectingContent.SuspendLayout();
             this.panSettings.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.nudLineLength)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.nudClientUpdateInterval)).BeginInit();
             this.SuspendLayout();
             // 
@@ -197,9 +203,9 @@
             // label1
             // 
             this.label1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.label1.Location = new System.Drawing.Point(137, 126);
+            this.label1.Location = new System.Drawing.Point(116, 126);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(60, 20);
+            this.label1.Size = new System.Drawing.Size(81, 20);
             this.label1.TabIndex = 108;
             this.label1.Text = "Address:";
             this.label1.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
@@ -337,9 +343,9 @@
             // label2
             // 
             this.label2.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.label2.Location = new System.Drawing.Point(137, 154);
+            this.label2.Location = new System.Drawing.Point(116, 154);
             this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(60, 20);
+            this.label2.Size = new System.Drawing.Size(81, 20);
             this.label2.TabIndex = 104;
             this.label2.Text = "Password:";
             this.label2.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
@@ -547,36 +553,109 @@
             // 
             // panSettings
             // 
+            this.panSettings.Controls.Add(this.label6);
+            this.panSettings.Controls.Add(this.cbTheme);
+            this.panSettings.Controls.Add(this.nudLineLength);
+            this.panSettings.Controls.Add(this.label5);
+            this.panSettings.Controls.Add(this.cbLineLength);
             this.panSettings.Controls.Add(this.label4);
             this.panSettings.Controls.Add(this.cbClientColour);
             this.panSettings.Controls.Add(this.nudClientUpdateInterval);
             this.panSettings.Controls.Add(this.label3);
             this.panSettings.Location = new System.Drawing.Point(548, 114);
             this.panSettings.Name = "panSettings";
-            this.panSettings.Size = new System.Drawing.Size(221, 97);
+            this.panSettings.Size = new System.Drawing.Size(245, 185);
             this.panSettings.TabIndex = 8;
+            // 
+            // label6
+            // 
+            this.label6.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.label6.Location = new System.Drawing.Point(7, 151);
+            this.label6.Name = "label6";
+            this.label6.Size = new System.Drawing.Size(109, 24);
+            this.label6.TabIndex = 117;
+            this.label6.Text = "Visual style:";
+            this.label6.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            // 
+            // nudLineLength
+            // 
+            this.nudLineLength.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.nudLineLength.Increment = new decimal(new int[] {
+            10,
+            0,
+            0,
+            0});
+            this.nudLineLength.Location = new System.Drawing.Point(182, 117);
+            this.nudLineLength.Maximum = new decimal(new int[] {
+            200,
+            0,
+            0,
+            0});
+            this.nudLineLength.Minimum = new decimal(new int[] {
+            60,
+            0,
+            0,
+            0});
+            this.nudLineLength.Name = "nudLineLength";
+            this.nudLineLength.Size = new System.Drawing.Size(54, 20);
+            this.nudLineLength.TabIndex = 115;
+            this.nudLineLength.Value = new decimal(new int[] {
+            100,
+            0,
+            0,
+            0});
+            this.nudLineLength.ValueChanged += new System.EventHandler(this.nudLineLength_ValueChanged);
+            // 
+            // label5
+            // 
+            this.label5.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.label5.Location = new System.Drawing.Point(7, 115);
+            this.label5.Name = "label5";
+            this.label5.Size = new System.Drawing.Size(169, 24);
+            this.label5.TabIndex = 114;
+            this.label5.Text = "Ruler offset (characters):";
+            this.label5.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            // 
+            // cbLineLength
+            // 
+            this.cbLineLength.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.cbLineLength.CheckAlign = System.Drawing.ContentAlignment.MiddleRight;
+            this.cbLineLength.Checked = true;
+            this.cbLineLength.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.cbLineLength.Location = new System.Drawing.Point(7, 82);
+            this.cbLineLength.Name = "cbLineLength";
+            this.cbLineLength.Size = new System.Drawing.Size(229, 24);
+            this.cbLineLength.TabIndex = 113;
+            this.cbLineLength.Text = "Draw line-length guide ruler?";
+            this.cbLineLength.UseVisualStyleBackColor = true;
+            this.cbLineLength.CheckedChanged += new System.EventHandler(this.cbLineLength_CheckedChanged);
             // 
             // label4
             // 
             this.label4.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.label4.Location = new System.Drawing.Point(5, 41);
+            this.label4.Location = new System.Drawing.Point(7, 45);
             this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(147, 20);
+            this.label4.Size = new System.Drawing.Size(169, 24);
             this.label4.TabIndex = 112;
             this.label4.Text = "User colour:";
             this.label4.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
             // cbClientColour
             // 
+            this.cbClientColour.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.cbClientColour.DrawMode = System.Windows.Forms.DrawMode.OwnerDrawFixed;
             this.cbClientColour.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cbClientColour.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.cbClientColour.FormattingEnabled = true;
-            this.cbClientColour.Location = new System.Drawing.Point(8, 63);
+            this.cbClientColour.Location = new System.Drawing.Point(182, 44);
             this.cbClientColour.Margin = new System.Windows.Forms.Padding(0);
             this.cbClientColour.Name = "cbClientColour";
-            this.cbClientColour.Size = new System.Drawing.Size(204, 21);
+            this.cbClientColour.ShowNames = true;
+            this.cbClientColour.Size = new System.Drawing.Size(54, 21);
             this.cbClientColour.TabIndex = 111;
             this.cbClientColour.SelectedIndexChanged += new System.EventHandler(this.cbClientColour_SelectedIndexChanged);
             // 
@@ -589,7 +668,7 @@
             0,
             0,
             65536});
-            this.nudClientUpdateInterval.Location = new System.Drawing.Point(158, 12);
+            this.nudClientUpdateInterval.Location = new System.Drawing.Point(182, 12);
             this.nudClientUpdateInterval.Maximum = new decimal(new int[] {
             50,
             0,
@@ -614,12 +693,20 @@
             // 
             this.label3.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.label3.Location = new System.Drawing.Point(5, 12);
+            this.label3.Location = new System.Drawing.Point(7, 10);
             this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(151, 20);
+            this.label3.Size = new System.Drawing.Size(169, 24);
             this.label3.TabIndex = 109;
             this.label3.Text = "Update interval (seconds):";
             this.label3.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            // 
+            // cbTheme
+            // 
+            this.cbTheme.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cbTheme.Location = new System.Drawing.Point(131, 151);
+            this.cbTheme.Name = "cbTheme";
+            this.cbTheme.Size = new System.Drawing.Size(105, 21);
+            this.cbTheme.TabIndex = 116;
             // 
             // EditorForm
             // 
@@ -648,6 +735,7 @@
             this.panConnectingPage.ResumeLayout(false);
             this.panConnectingContent.ResumeLayout(false);
             this.panSettings.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.nudLineLength)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.nudClientUpdateInterval)).EndInit();
             this.ResumeLayout(false);
 
@@ -696,6 +784,11 @@
         private System.Windows.Forms.Label label3;
         private Marzersoft.Controls.ColourComboBox cbClientColour;
         private System.Windows.Forms.Label label4;
+        private System.Windows.Forms.CheckBox cbLineLength;
+        private System.Windows.Forms.NumericUpDown nudLineLength;
+        private System.Windows.Forms.Label label5;
+        private System.Windows.Forms.Label label6;
+        private Marzersoft.Themes.ThemedComboBox cbTheme;
     }
 }
 

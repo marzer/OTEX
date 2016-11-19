@@ -1,5 +1,4 @@
 ﻿using Marzersoft;
-using Marzersoft.Extensions;
 using Marzersoft.Forms;
 using System;
 using System.Drawing;
@@ -11,6 +10,7 @@ using System.Threading;
 using System.IO;
 using System.Linq;
 using System.Collections.Generic;
+using Marzersoft.Themes;
 
 namespace OTEX
 {
@@ -34,6 +34,7 @@ namespace OTEX
         private volatile string lastConnectionFailedReason = null;
         private volatile bool lastConnectionReturnToServerBrowser = false;
         private TitleBarButton logoutButton = null, settingsButton;
+        private volatile bool settingsLoaded = false;
 
         private bool MainMenuPage
         {
@@ -149,10 +150,13 @@ namespace OTEX
             set
             {
                 //check value
-                int newVal = value.ToArgb();
-                if (localClient.Colour == newVal)
+                var newVal = value;
+                if (newVal.A != 255)
+                    newVal = Color.FromArgb(255, newVal);
+                var intVal = newVal.ToArgb();
+                if (localClient.Colour == intVal)
                     return;
-                localClient.Colour = newVal;
+                localClient.Colour = intVal;
 
                 //push to server
                 otexClient.Metadata = localClient.Serialize();
@@ -164,10 +168,17 @@ namespace OTEX
                         = tbEditor.CurrentLineColor
                         = tbEditor.LineNumberColor
                         = localClient.Colour.ToColour();
-                    tbEditor.CaretColor = localClient.Colour.ToColour().Lighten(0.3f);
+                    tbEditor.CaretColor = localClient.Colour.ToColour().Brighten(0.3f);
                     if (tbEditor.Visible)
                         tbEditor.Refresh();
                 });
+
+                //update in settings file
+                if (settingsLoaded)
+                {
+                    App.Config.User.Set("user.colour", newVal);
+                    App.Config.User.Flush();
+                }
             }
         }
 
@@ -182,22 +193,18 @@ namespace OTEX
             if (IsDesignMode)
                 return;
 
-            //title
-            lblTitle.Font = App.Theme.Titles.Large.Regular;
-
+            
             //splash panel
             panMenuPage.Dock = DockStyle.Fill;
 
             //colours
             btnServerNew.Accent = btnServerExisting.Accent = 2;
-            btnServerTemporary.Accent = 3;
-            lblAbout.ForeColor = lblVersion.ForeColor = App.Theme.Background.Light.Colour;
+            btnServerTemporary.Accent = 1;
 
             //about link
             lblAbout.Cursor = Cursors.Hand;
-            lblAbout.Font = App.Theme.Controls.Normal.Underline;
-            lblAbout.MouseEnter += (s, e) => { lblAbout.ForeColor = App.Theme.Foreground.Mid.Colour; };
-            lblAbout.MouseLeave += (s, e) => { lblAbout.ForeColor = App.Theme.Background.Light.Colour; };
+            lblAbout.MouseEnter += (s, e) => { lblAbout.ForeColor = App.Theme.Foreground.Colour; };
+            lblAbout.MouseLeave += (s, e) => { lblAbout.ForeColor = App.Theme.Foreground.LowContrast.Colour; };
             lblAbout.Click += (s, e) => { App.Website.LaunchWebsite(); };
 
             //version label
@@ -211,13 +218,7 @@ namespace OTEX
             btnClientConnect.Image = App.Images.Resource("next");
             btnClientCancel.Image = App.Images.Resource("previous");
             btnClientConnect.ImageAlign = btnClientCancel.ImageAlign = ContentAlignment.MiddleCenter;
-            tbClientAddress.Font = tbClientPassword.Font = tbServerPassword.Font
-                = nudClientUpdateInterval.Font = App.Theme.Monospaced.Normal.Regular;
-            tbClientAddress.BackColor = tbClientPassword.BackColor = tbServerPassword.BackColor
-                = nudClientUpdateInterval.BackColor = App.Theme.Background.Light.Colour;
-            tbClientAddress.ForeColor = tbClientPassword.ForeColor = tbServerPassword.ForeColor
-                = nudClientUpdateInterval.ForeColor = App.Theme.Foreground.BaseColour;
-            lblManualEntry.Font = lblServerBrowser.Font = App.Theme.Controls.Large.Regular;
+
             panServerBrowserPage.Dock = DockStyle.Fill;
             dgvServers.ColumnHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleLeft;
             dgvServers.Columns[1].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleLeft;
@@ -256,11 +257,11 @@ namespace OTEX
 
             //settings menu
             settingsForm = new FlyoutForm(panSettings);
-            settingsForm.Accent = 3;
+            settingsForm.Accent = 1;
             settingsButton = AddCustomTitleBarButton();
-            settingsButton.Colour = App.Theme.GetAccent(3).DarkDark.Colour;
             settingsButton.Image = App.Images.Resource("cog", App.Assembly, "OTEX");
             settingsButton.Click += (b) => { settingsForm.Flyout(PointToScreen(b.Bounds.BottomMiddle())); };
+            cbClientColour.ShowNames = false;
 
             //logout button
             logoutButton = AddCustomTitleBarButton();
@@ -279,12 +280,6 @@ namespace OTEX
             };
 
             // CREATE OTEX SERVER ///////////////////////////////////////////////
-            /*
-             * COMP7722: The OTEX Server is a self-contained class. "Host-mode" (i.e.
-             * allowing a user to edit a load and edit a document using OTEX Editor without
-             * first launching a dedicated server) simply launches a server and a client and
-             * directly connects them together internally.
-             */
             otexServer = new Server();
             otexServer.OnThreadException += (s, e) =>
             {
@@ -312,12 +307,7 @@ namespace OTEX
             };
 
             // CREATE OTEX CLIENT ///////////////////////////////////////////////
-            /*
-             * COMP7722: Like the server, the OTEX Client is a self-contained class.
-             * All of the editor and OT functionality is handled via callbacks.
-             */
             otexClient = new Client();
-            otexClient.UpdateInterval = (float)nudClientUpdateInterval.Value;
             otexClient.OnThreadException += (c, e) =>
             {
                 Logger.W("Client: {0}: {1}", e.InnerException.GetType().Name, e.InnerException.Message);
@@ -327,11 +317,6 @@ namespace OTEX
                 Logger.I("Client: connected to {0}:{1}.", c.ServerAddress, c.ServerPort);
                 this.Execute(() =>
                 {
-                    /*
-                     * COMP7722: when the client first connects, initial textbox contents is set to "",
-                     * but must be done so while operation generation is disabled so
-                     * TextChanging/TextChanged don't do diffs and push operations.
-                     */
                     disableOperationGeneration = true;
                     tbEditor.Text = "";
                     disableOperationGeneration = false;
@@ -364,16 +349,6 @@ namespace OTEX
             };
             otexClient.OnRemoteOperations += (c,operations) =>
             {
-                /*
-                 * COMP7722: this event handler is fired when an OTEX Client receives remote
-                 * operations from the server (they're already transformed internally, and just need
-                 * to be applied).
-                 * 
-                 * The "Execute" function is an extension method that ensures whatever delegate function
-                 * is passed in will always be run on the main UI thread of a windows forms application,
-                 * so this ensures the user is prevented from typing while the remote operations are
-                 * being applied (virtually instantaneous).
-                 */
                 this.Execute(() =>
                 {
                     disableOperationGeneration = true;
@@ -439,11 +414,6 @@ namespace OTEX
             };
 
             // CREATE OTEX SERVER LISTENER //////////////////////////////////////
-            /*
-             * COMP7722: I've given OTEX Servers the ability to advertise their existence to the
-             * local network over UDP, so the ServerListener is a simple UDP listener. When new servers
-             * are identified, or known servers change in some way, events are fired.
-             */
             try
             {
                 otexServerListener = new ServerListener();
@@ -500,10 +470,7 @@ namespace OTEX
             tbEditor = new FastColoredTextBox();
             tbEditor.Parent = this;
             tbEditor.Dock = DockStyle.Fill;
-            tbEditor.BackBrush = App.Theme.Background.Mid.Brush;
-            tbEditor.IndentBackColor = App.Theme.Background.Dark.Colour;
-            tbEditor.ServiceLinesColor = App.Theme.Background.Light.Colour;
-            tbEditor.Font = new Font(App.Theme.Monospaced.Normal.Regular.FontFamily, 11.0f);
+            tbEditor.ReservedCountOfLineNumberChars = 4;
             tbEditor.WordWrap = true;
             tbEditor.WordWrapAutoIndent = true;
             tbEditor.WordWrapMode = WordWrapMode.WordWrapControlWidth;
@@ -512,21 +479,6 @@ namespace OTEX
             tbEditor.HotkeysMapping.Remove(Keys.Control | Keys.H); //remove default "replace" (CTRL + H, wtf?)
             tbEditor.HotkeysMapping[Keys.Control | Keys.R] = FCTBAction.ReplaceDialog; // CTRL + R for replace
             tbEditor.HotkeysMapping[Keys.Control | Keys.Y] = FCTBAction.Undo; // CTRL + Y for undo
-            /*
-             * COMP7722: In this editor example, Operations are not generated by directly
-             * intercepting key press events and the like, since they do not take special
-             * circumstances like Undo, Redo, and text dragging with the mouse into account. Instead,
-             * I've used a Least-Common-Substring-based diff generator (in this case, a package
-             * called DiffPlex: https://www.nuget.org/packages/DiffPlex/) to compare text pre-
-             * and post-change, and create the operations based on the calculated diffs.
-             * 
-             * This does of course cause a slight overhead; in testing with large documents
-             * (3.5mb of plain text, which is a lot!), diff calculation took ~100ms. Documents that
-             * were more realistically-sized took ~3ms (on the same machine), which is imperceptible.
-             * 
-             * I've also implemented some basic awareness painting, so the current position, line
-             * and selection of other editors will be rendered (see PaintLine).
-             */
             tbEditor.TextChanging += (sender, args) =>
             {
                 if (disableOperationGeneration || !otexClient.Connected)
@@ -620,8 +572,21 @@ namespace OTEX
                     }
                 }
             };
+            tbEditor.Paint += (s, e) =>
+            {
+                if (cbLineLength.Checked)
+                {
+                    var pt = tbEditor.PlaceToPoint(new Place(((int)nudLineLength.Value).Clamp(60,200), 0));
+                    using (Pen p = new Pen(((localClient.Colour & 0x00FFFFFF) | 0x30000000).ToColour()))
+                    {
+                        p.Width = 2;
+                        p.DashStyle = System.Drawing.Drawing2D.DashStyle.Dash;
+                        e.Graphics.DrawLine(p, new Point(pt.X, e.ClipRectangle.Top), new Point(pt.X, e.ClipRectangle.Bottom));
+                    }
+                }
+            };
 
-            // CLIENT COLOURS ////////////////////////////////////////////////////
+            // CLIENT SETTINGS ///////////////////////////////////////////////////
             cbClientColour.RegenerateItems(
                 false, //darks
                 true, //mids
@@ -631,10 +596,100 @@ namespace OTEX
                 0.15f, //similarity threshold
                 new Color[] { Color.Blue, Color.MediumBlue, Color.Red, Color.Fuchsia, Color.Magenta } //exlude (colours that contrast poorly with the app theme)
             );
-            var cols = cbClientColour.Items.OfType<Color>().ToList();
-            var col = otexClient.ID.ToColour(cols.ToArray());
-            ClientColour = col;
-            cbClientColour.SelectedIndex = cols.IndexOf(col);
+            //read user colour
+            {
+                var colours = cbClientColour.Items.OfType<Color>().ToList();
+                Color colour = App.Config.User.Get("user.colour", Color.Transparent);
+                if (colour == Color.Transparent)
+                    colour = otexClient.ID.ToColour(colours.ToArray());
+                if (colour.A != 255)
+                    colour = Color.FromArgb(255, colour);
+                var colourIndex = colours.FindIndex((c) => { return c.ToArgb() == colour.ToArgb(); });
+                if (colourIndex >= 0)
+                    cbClientColour.SelectedIndex = colourIndex;
+                ClientColour = colour;
+                App.Config.User.Set("user.colour", colour);
+            }
+            //read update interval
+            otexClient.UpdateInterval = App.Config.User.Get("client.interval", 1.0f);
+            nudClientUpdateInterval.Value = (decimal)otexClient.UpdateInterval;
+            App.Config.User.Set("client.interval", otexClient.UpdateInterval);
+            //read line length ruler
+            cbLineLength.Checked = App.Config.User.Get("user.ruler", true);
+            App.Config.User.Set("user.ruler", cbLineLength.Checked);
+            nudLineLength.Value = App.Config.User.Get("user.ruler_width", 100);
+            App.Config.User.Set("user.ruler_width", ((int)nudLineLength.Value).Clamp(60, 200));
+            //read last direct connection address
+            tbClientAddress.Text = App.Config.User.Get("user.last_direct_connection", "").Trim();
+            if (tbClientAddress.Text.Length == 0)
+                tbClientAddress.Text = "127.0.0.1";
+            //read theme
+            cbTheme.Items.Add("Dark");
+            cbTheme.Items.Add("Light");
+            App.Config.User.Default("user.theme", 0, "dark");
+            for (int i = 0; i < cbTheme.Items.Count; ++i)
+            {
+                if ((cbTheme.Items[i] as string).Trim().ToLower().Equals(App.Config.User.Get("user.theme", "dark").Trim().ToLower()))
+                {
+                    cbTheme.SelectedIndex = i;
+                    break;
+                }
+            }
+            //save settings
+            settingsLoaded = true;
+            App.Config.User.Flush();
+
+            // HANDLE THEMES /////////////////////////////////////////////////////
+            App.ThemeChanged += (t) =>
+            {
+                tbClientAddress.Font
+                    = tbClientPassword.Font
+                    = tbServerPassword.Font
+                    = nudClientUpdateInterval.Font
+                    = nudLineLength.Font
+                    = App.Theme.Monospaced.Regular;
+
+                tbClientAddress.BackColor
+                    = tbClientPassword.BackColor
+                    = tbServerPassword.BackColor
+                    = nudClientUpdateInterval.BackColor
+                    = nudLineLength.BackColor
+                    = App.Theme.Controls.LowContrast.Colour;
+
+                tbClientAddress.ForeColor
+                    = tbClientPassword.ForeColor
+                    = tbServerPassword.ForeColor
+                    = nudClientUpdateInterval.ForeColor
+                    = nudLineLength.ForeColor
+                    = App.Theme.Foreground.Colour;
+
+                lblManualEntry.Font
+                    = lblServerBrowser.Font
+                    = App.Theme.Font.Large.Regular;
+
+                lblTitle.Font = App.Theme.Font.Huge.Bold;
+
+                lblAbout.ForeColor
+                    = lblVersion.ForeColor
+                    = App.Theme.Foreground.LowContrast.Colour;
+
+                lblAbout.Font = App.Theme.Font.Underline;
+
+                settingsButton.Colour = App.Theme.Accent(1).Colour;
+
+                tbEditor.BackBrush = App.Theme.Workspace.Brush;
+                tbEditor.IndentBackColor = App.Theme.Workspace.Colour;
+                tbEditor.ServiceLinesColor = App.Theme.Workspace.HighContrast.Colour;
+                tbEditor.Font = App.Theme.Monospaced.Regular;
+            };
+            App.Theme = App.Themes[App.Config.User.Get("user.theme", "dark")];
+
+            cbTheme.SelectedIndexChanged += (s, e) =>
+            {
+                App.Config.User.Set("user.theme", cbTheme.Items[cbTheme.SelectedIndex] as string);
+                App.Config.User.Flush();
+                App.Theme = App.Themes[App.Config.User.Get("user.theme", "dark")];
+            };
         }
 
         /////////////////////////////////////////////////////////////////////
@@ -931,7 +986,8 @@ namespace OTEX
         private void btnClientConnect_Click(object sender, EventArgs e)
         {
             lastConnectionReturnToServerBrowser = true;
-            StartClientMode(tbClientAddress.Text.Trim(), tbClientPassword.Text.Trim());
+            if (StartClientMode(tbClientAddress.Text.Trim(), tbClientPassword.Text.Trim()))
+                App.Config.User.Set("user.last_direct_connection", tbClientAddress.Text.Trim());
         }
 
         private void EditorForm_FormClosing(object sender, FormClosingEventArgs e)
@@ -1063,9 +1119,37 @@ namespace OTEX
             ClientColour = (Color)cbClientColour.Items[cbClientColour.SelectedIndex];
         }
 
+        private void cbLineLength_CheckedChanged(object sender, EventArgs e)
+        {
+            nudLineLength.Enabled = cbLineLength.Checked;
+            if (tbEditor.Visible)
+                tbEditor.Refresh();
+            if (settingsLoaded)
+            {
+                App.Config.User.Set("user.ruler", cbLineLength.Checked);
+                App.Config.User.Flush();
+            }
+        }
+
+        private void nudLineLength_ValueChanged(object sender, EventArgs e)
+        {
+            if (tbEditor.Visible)
+                tbEditor.Refresh();
+            if (settingsLoaded)
+            {
+                App.Config.User.Set("user.ruler_width", ((int)nudLineLength.Value).Clamp(60, 200));
+                App.Config.User.Flush();
+            }
+        }
+
         private void nudClientUpdateInterval_ValueChanged(object sender, EventArgs e)
         {
             otexClient.UpdateInterval = (float)nudClientUpdateInterval.Value;
+            if (settingsLoaded)
+            {
+                App.Config.User.Set("client.interval", otexClient.UpdateInterval);
+                App.Config.User.Flush();
+            }
         }
 
         //this is a version of FCTB's InsertTextAndRestoreSelection that does not move the bloody scroll window
