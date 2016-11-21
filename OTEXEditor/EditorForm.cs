@@ -407,6 +407,7 @@ namespace OTEX
 
                         Text = App.Name;
                         logoutButton.Visible = false;
+                        tbEditor.Text = "";
                     });
                 }
             };
@@ -476,6 +477,7 @@ namespace OTEX
             tbEditor.HotkeysMapping.Remove(Keys.Control | Keys.H); //remove default "replace" (CTRL + H, wtf?)
             tbEditor.HotkeysMapping[Keys.Control | Keys.R] = FCTBAction.ReplaceDialog; // CTRL + R for replace
             tbEditor.HotkeysMapping[Keys.Control | Keys.Y] = FCTBAction.Undo; // CTRL + Y for undo
+            tbEditor.HighlightingRangeType = HighlightingRangeType.VisibleRange;
             tbEditor.TextChanging += (sender, args) =>
             {
                 if (disableOperationGeneration || !otexClient.Connected)
@@ -639,27 +641,36 @@ namespace OTEX
             // HANDLE THEMES /////////////////////////////////////////////////////
             App.ThemeChanged += (t) =>
             {
-                lblManualEntry.Font
-                    = lblServerBrowser.Font
-                    = t.Font.Large.Regular;
+                this.Execute(() =>
+                {
+                    lblManualEntry.Font
+                        = lblServerBrowser.Font
+                        = t.Font.Large.Regular;
 
-                lblTitle.Font = t.Font.Huge.Bold;
+                    lblTitle.Font = t.Font.Huge.Bold;
 
-                lblAbout.ForeColor
-                    = lblVersion.ForeColor
-                    = t.Foreground.LowContrast.Colour;
+                    lblAbout.ForeColor
+                        = lblVersion.ForeColor
+                        = t.Foreground.LowContrast.Colour;
 
-                lblAbout.Font = t.Font.Underline;
+                    lblAbout.Font = t.Font.Underline;
 
-                settingsButton.Colour = t.Accent(1).Colour;
+                    settingsButton.Colour = t.Accent(1).Colour;
 
-                tbEditor.BackBrush = t.Workspace.Brush;
-                tbEditor.IndentBackColor = t.Workspace.Colour;
-                tbEditor.ServiceLinesColor = t.Workspace.HighContrast.Colour;
-                tbEditor.Font = t.Monospaced.Regular;
+                    tbEditor.ForeColor = t.Foreground.Colour;
+                    tbEditor.BackBrush = t.Workspace.Brush;
+                    tbEditor.IndentBackColor = t.Workspace.Colour;
+                    tbEditor.ServiceLinesColor = t.Workspace.HighContrast.Colour;
+                    tbEditor.Font = t.Monospaced.Regular;
+                    if (tbEditor.Language != Language.Custom)
+                    {
+                        tbEditor.ClearStyle(StyleIndex.All);
+                        tbEditor.SyntaxHighlighter.HighlightSyntax(tbEditor.Language, tbEditor.Range);
+                    }
 
-                settingsButton.Image = App.Images.Resource("cog" + (t.IsDark ? "" : "_black"), App.Assembly, "OTEX");
-                logoutButton.Image = App.Images.Resource("logout" + (t.IsDark ? "" : "_black"), App.Assembly, "OTEX");
+                    settingsButton.Image = App.Images.Resource("cog" + (t.IsDark ? "" : "_black"), App.Assembly, "OTEX");
+                    logoutButton.Image = App.Images.Resource("logout" + (t.IsDark ? "" : "_black"), App.Assembly, "OTEX");
+                }, false);
             };
             App.Theme = App.Themes[App.Config.User.Get("user.theme", "dark")];
 
