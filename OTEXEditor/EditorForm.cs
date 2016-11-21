@@ -11,6 +11,7 @@ using System.IO;
 using System.Linq;
 using System.Collections.Generic;
 using Marzersoft.Themes;
+using Marzersoft.Controls;
 
 namespace OTEX
 {
@@ -31,107 +32,10 @@ namespace OTEX
         private FlyoutForm passwordForm = null, settingsForm = null;
         private volatile IPEndPoint lastConnectionEndpoint = null;
         private volatile Password lastConnectionPassword = null;
-        private volatile string lastConnectionFailedReason = null;
         private volatile bool lastConnectionReturnToServerBrowser = false;
         private TitleBarButton logoutButton = null, settingsButton;
         private volatile bool settingsLoaded = false;
-
-        private bool MainMenuPage
-        {
-            set
-            {
-                panMenuPage.Visible = value;
-                panServerBrowserPage.Visible = !value;
-                panConnectingPage.Visible = !value;
-                tbEditor.Visible = !value;
-                if (value)
-                    panMenu.CenterInParent();
-            }
-        }
-
-        private bool ServerBrowserPage
-        {
-            set
-            {
-                panMenuPage.Visible = !value;
-                panServerBrowserPage.Visible = value;
-                panConnectingPage.Visible = !value;
-                tbEditor.Visible = !value;
-            }
-        }
-
-        private bool ConnectingPageShared
-        {
-            set
-            {
-                panMenuPage.Visible = !value;
-                panServerBrowserPage.Visible = !value;
-                panConnectingPage.Visible = value;
-                tbEditor.Visible = !value;
-                if (value)
-                {
-                    lblConnectingStatus.CenterInParent();
-                    panConnectingContent.CenterInParent();
-                    panConnectingContent.Top = lblConnectingStatus.Bottom + 8;
-                }
-            }
-        }
-
-        private bool ConnectingPage
-        {
-            set
-            {
-                ConnectingPageShared = value;
-                if (value)
-                {
-                    lblConnectingStatus.Text = string.Format("Connecting to {0}...", lastConnectionEndpoint);
-                    btnConnectingBack.Visible = false;
-                    btnConnectingReconnect.Visible = false;
-                }
-            }
-        }
-
-        private bool ConnectingFailedPage
-        {
-            set
-            {
-                ConnectingPageShared = value;
-                if (value)
-                {
-                    lblConnectingStatus.Text = string.Format("Could not connect to {0}.\r\n\r\n{1}",
-                        lastConnectionEndpoint, lastConnectionFailedReason);
-                    btnConnectingBack.Visible = true;
-                    btnConnectingReconnect.Visible = true;
-                }
-            }
-        }
-
-        private bool ConnectionLostPage
-        {
-            set
-            {
-                ConnectingPageShared = value;
-                if (value)
-                {
-                    lblConnectingStatus.Text = string.Format("Connection to {0} was lost.",
-                        lastConnectionEndpoint);
-                    btnConnectingBack.Visible = true;
-                    btnConnectingReconnect.Visible = true;
-                }
-            }
-        }
-
-        private bool EditorPage
-        {
-            get { return tbEditor.Visible; }
-            set
-            {
-                panMenuPage.Visible = !value;
-                panServerBrowserPage.Visible = !value;
-                panConnectingPage.Visible = !value;
-                tbEditor.Visible = value;
-            }
-        }
+        private Paginator paginator = null;
 
         [Serializable]
         private class EditorClient
@@ -193,43 +97,18 @@ namespace OTEX
             if (IsDesignMode)
                 return;
 
-            
-            //splash panel
-            panMenuPage.Dock = DockStyle.Fill;
-
-            //colours
-            btnServerNew.Accent = btnServerExisting.Accent = 2;
-            btnServerTemporary.Accent = 1;
-
-            //about link
-            lblAbout.Cursor = Cursors.Hand;
+            // CONFIGURE MAIN MENU /////////////////////////////////////////////////////////////////
+            //button text alignment
+            btnClient.TextAlign = btnServerNew.TextAlign = btnServerExisting.TextAlign
+                = btnServerTemporary.TextAlign = ContentAlignment.MiddleCenter;
+            //about label
             lblAbout.MouseEnter += (s, e) => { lblAbout.ForeColor = App.Theme.Foreground.Colour; };
             lblAbout.MouseLeave += (s, e) => { lblAbout.ForeColor = App.Theme.Foreground.LowContrast.Colour; };
             lblAbout.Click += (s, e) => { App.Website.LaunchWebsite(); };
-
             //version label
             lblVersion.Text = "v" + Marzersoft.Text.REGEX_VERSION_REPEATING_ZEROES.Replace(App.AssemblyVersion.ToString(),"");
             if (lblVersion.Text.IndexOf('.') == -1)
                 lblVersion.Text += ".0";
-
-            //client connection/server browser panel
-            btnClient.TextAlign = btnServerNew.TextAlign = btnServerExisting.TextAlign
-                = btnServerTemporary.TextAlign = ContentAlignment.MiddleCenter;
-            btnClientConnect.Image = App.Images.Resource("next");
-            btnClientCancel.Image = App.Images.Resource("previous");
-            btnClientConnect.ImageAlign = btnClientCancel.ImageAlign = ContentAlignment.MiddleCenter;
-
-            panServerBrowserPage.Dock = DockStyle.Fill;
-            dgvServers.ColumnHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleLeft;
-            dgvServers.Columns[1].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleLeft;
-            dgvServers.ShowCellToolTips = true;
-
-            //'connecting' page
-            panConnectingPage.Dock = DockStyle.Fill;
-            lblConnectingStatus.Width = panConnectingPage.ClientSize.Width - 10;
-            btnConnectingReconnect.Image = App.Images.Resource("refresh");
-            btnConnectingBack.Image = App.Images.Resource("previous");
-
             //file dialog filters
             FileFilterFactory filterFactory = new FileFilterFactory();
             filterFactory.Add("Text files", "txt");
@@ -251,20 +130,28 @@ namespace OTEX
             filterFactory.Apply(dlgServerCreateNew);
             filterFactory.Apply(dlgServerOpenExisting);
 
-            //form styles
-            TextFlourishes = false;
-            Text = App.Name;
+            // CONFIGURE SERVER BROWSER ////////////////////////////////////////////////////////////
+            btnClientConnect.Image = App.Images.Resource("next");
+            btnClientCancel.Image = App.Images.Resource("previous");
+            dgvServers.ColumnHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleLeft;
+            dgvServers.Columns[1].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleLeft;
 
+            // CONFIGURE "CONNECTING" PAGE /////////////////////////////////////////////////////////
+            lblConnectingStatus.Width = panConnectingPage.ClientSize.Width - 10;
+            btnConnectingReconnect.Image = App.Images.Resource("refresh");
+            btnConnectingBack.Image = App.Images.Resource("previous");
+
+            // CONFIGURE FORM TITLEBAR /////////////////////////////////////////////////////////////
+            //text
+            Text = App.Name;
             //settings menu
             settingsForm = new FlyoutForm(panSettings);
             settingsForm.Accent = 1;
             settingsButton = AddCustomTitleBarButton();
             settingsButton.Click += (b) => { settingsForm.Flyout(PointToScreen(b.Bounds.BottomMiddle())); };
-            cbClientColour.ShowNames = false;
-
             //logout button
             logoutButton = AddCustomTitleBarButton();
-            logoutButton.Colour = Color.Red;
+            logoutButton.Colour = ColorTranslator.FromHtml("#DF3F26");
             logoutButton.Visible = false;
             logoutButton.Click += (b) =>
             {
@@ -277,7 +164,7 @@ namespace OTEX
                 otexServer.Stop();
             };
 
-            // CREATE OTEX SERVER ///////////////////////////////////////////////
+            // CREATE OTEX SERVER //////////////////////////////////////////////////////////////////
             otexServer = new Server();
             otexServer.OnThreadException += (s, e) =>
             {
@@ -285,15 +172,15 @@ namespace OTEX
             };
             otexServer.OnStarted += (s) =>
             {
-                Logger.I("Server: started for {0} on port {1}", s.FilePath, s.Port);
+                Logger.I("Server: started for {0} on port {1}", s.FilePath.Length > 0 ? s.FilePath : "a temporary document", s.Port);
             };
             otexServer.OnClientConnected += (s, id) =>
             {
-                Logger.I("Server: Client {0} connected.", id);
+                Logger.I("Server: client {0} connected.", id);
             };
             otexServer.OnClientDisconnected += (s, id) =>
             {
-                Logger.I("Server: Client {0} disconnected.", id);
+                Logger.I("Server: client {0} disconnected.", id);
             };
             otexServer.OnStopped += (s) =>
             {
@@ -301,10 +188,10 @@ namespace OTEX
             };
             otexServer.OnFileSynchronized += (s) =>
             {
-                Logger.I("Server: File synchronized.");
+                Logger.I("Server: file synchronized.");
             };
 
-            // CREATE OTEX CLIENT ///////////////////////////////////////////////
+            // CREATE OTEX CLIENT //////////////////////////////////////////////////////////////////
             otexClient = new Client();
             otexClient.OnThreadException += (c, e) =>
             {
@@ -341,7 +228,7 @@ namespace OTEX
                         tbEditor.Language = Language.Custom;
 
                     logoutButton.Visible = true;
-                    EditorPage = true;
+                    paginator.ActivePageKey = "editor";
                     tbEditor.Focus();
                 }, false);
             };
@@ -398,12 +285,18 @@ namespace OTEX
                         if (serverSide)
                         {
                             if (lastConnectionEndpoint != null)
-                                ConnectionLostPage = true;
+                            {
+                                lblConnectingStatus.Text = string.Format("Connection to {0} was lost.",
+                                    lastConnectionEndpoint);
+                                btnConnectingBack.Visible = true;
+                                btnConnectingReconnect.Visible = true;
+                                paginator.ActivePageKey = "connecting";
+                            }
                             else
-                                MainMenuPage = true;
+                                paginator.ActivePageKey = "menu";
                         }
                         else
-                            MainMenuPage = true;
+                            paginator.ActivePageKey = "menu";
 
                         Text = App.Name;
                         logoutButton.Visible = false;
@@ -412,7 +305,7 @@ namespace OTEX
                 }
             };
 
-            // CREATE OTEX SERVER LISTENER //////////////////////////////////////
+            // CREATE OTEX SERVER LISTENER /////////////////////////////////////////////////////////
             try
             {
                 otexServerListener = new ServerListener();
@@ -464,7 +357,7 @@ namespace OTEX
                     exc.Message);
             }
 
-            // CREATE TEXT EDITOR ////////////////////////////////////////////////
+            // CREATE TEXT EDITOR //////////////////////////////////////////////////////////////////
             tbEditor = new FastColoredTextBox();
             tbEditor.Parent = this;
             tbEditor.Dock = DockStyle.Fill;
@@ -477,7 +370,7 @@ namespace OTEX
             tbEditor.HotkeysMapping.Remove(Keys.Control | Keys.H); //remove default "replace" (CTRL + H, wtf?)
             tbEditor.HotkeysMapping[Keys.Control | Keys.R] = FCTBAction.ReplaceDialog; // CTRL + R for replace
             tbEditor.HotkeysMapping[Keys.Control | Keys.Y] = FCTBAction.Undo; // CTRL + Y for undo
-            tbEditor.HighlightingRangeType = HighlightingRangeType.VisibleRange;
+            tbEditor.HighlightingRangeType = HighlightingRangeType.AllTextRange;
             tbEditor.TextChanging += (sender, args) =>
             {
                 if (disableOperationGeneration || !otexClient.Connected)
@@ -585,7 +478,7 @@ namespace OTEX
                 }
             };
 
-            // CLIENT SETTINGS ///////////////////////////////////////////////////
+            // CLIENT SETTINGS /////////////////////////////////////////////////////////////////////
             cbClientColour.RegenerateItems(
                 false, //darks
                 true, //mids
@@ -625,6 +518,7 @@ namespace OTEX
             //read theme
             cbTheme.Items.Add("Dark");
             cbTheme.Items.Add("Light");
+            cbTheme.Items.Add("Coffee");
             App.Config.User.Default("user.theme", 0, "dark");
             for (int i = 0; i < cbTheme.Items.Count; ++i)
             {
@@ -634,11 +528,16 @@ namespace OTEX
                     break;
                 }
             }
+            if (cbTheme.SelectedIndex == -1)
+            {
+                cbTheme.SelectedIndex = 0;
+                App.Config.User.Set("user.theme", "dark");
+            }
             //save settings
             settingsLoaded = true;
             App.Config.User.Flush();
 
-            // HANDLE THEMES /////////////////////////////////////////////////////
+            // HANDLE THEMES ///////////////////////////////////////////////////////////////////////
             App.ThemeChanged += (t) =>
             {
                 this.Execute(() =>
@@ -673,13 +572,34 @@ namespace OTEX
                 }, false);
             };
             App.Theme = App.Themes[App.Config.User.Get("user.theme", "dark")];
-
             cbTheme.SelectedIndexChanged += (s, e) =>
             {
                 App.Config.User.Set("user.theme", cbTheme.Items[cbTheme.SelectedIndex] as string);
                 App.Config.User.Flush();
                 App.Theme = App.Themes[App.Config.User.Get("user.theme", "dark")];
             };
+
+            // CONFIGURE PAGINATOR /////////////////////////////////////////////////////////////////
+            paginator = new Paginator(this);
+            paginator.Add("menu", panMenuPage);
+            paginator.Add("connecting", panConnectingPage);
+            paginator.Add("servers", panServerBrowserPage);
+            paginator.Add("editor", tbEditor);
+            paginator.PageActivated += (s, k, p) =>
+            {
+                switch (k)
+                {
+                    case "menu":
+                        panMenu.CenterInParent();
+                        break;
+
+                    case "connecting":
+                        PositionConnectingPageControls();
+                        break;
+                }
+            };
+            //set current page
+            paginator.ActivePageKey = "menu";
         }
 
         /////////////////////////////////////////////////////////////////////
@@ -719,7 +639,6 @@ namespace OTEX
             //set last connection data to null
             lastConnectionEndpoint = null;
             lastConnectionPassword = null;
-            lastConnectionFailedReason = null;
             lastConnectionReturnToServerBrowser = false;
 
             //started ok, set title text
@@ -891,8 +810,10 @@ namespace OTEX
             //show "connecting" page
             lastConnectionEndpoint = endPoint;
             lastConnectionPassword = password;
-            lastConnectionFailedReason = null;
-            ConnectingPage = true;
+            lblConnectingStatus.Text = string.Format("Connecting to {0}...", lastConnectionEndpoint);
+            btnConnectingBack.Visible = false;
+            btnConnectingReconnect.Visible = false;
+            paginator.ActivePageKey = "connecting";
 
             //start connection thread
             clientConnectingThread = new Thread(() =>
@@ -906,8 +827,10 @@ namespace OTEX
                 {
                     this.Execute(() =>
                     {
-                        lastConnectionFailedReason = exc.Message;
-                        ConnectingFailedPage = true;
+                        lblConnectingStatus.Text = string.Format("Could not connect to {0}.\r\n\r\n{1}",
+                            lastConnectionEndpoint, exc.Message);
+                        btnConnectingBack.Visible = true;
+                        btnConnectingReconnect.Visible = true;
                     });
                     clientConnectingThread = null;
                     return;
@@ -940,18 +863,18 @@ namespace OTEX
             base.OnFirstShown(e);
             if (IsDesignMode)
                 return;
-            MainMenuPage = true;
+            paginator.ActivePageKey = "menu";
             Refresh();
         }
 
         private void btnClient_Click(object sender, EventArgs e)
         {
-            ServerBrowserPage = true;
+            paginator.ActivePageKey = "servers";
         }
 
         private void btnClientCancel_Click(object sender, EventArgs e)
         {
-            MainMenuPage = true;
+            paginator.ActivePageKey = "menu";
         }
 
         private void btnServerNew_Click(object sender, EventArgs e)
@@ -991,6 +914,11 @@ namespace OTEX
         protected override void OnClosed(EventArgs e)
         {
             closing = true;
+            if (paginator != null)
+            {
+                paginator.Dispose();
+                paginator = null;
+            }
             if (clientConnectingThread != null)
             {
                 clientConnectingThread.Join();
@@ -1081,9 +1009,8 @@ namespace OTEX
 
         private void panConnectingPage_Resize(object sender, EventArgs e)
         {
-            lblConnectingStatus.CenterInParent();
-            panConnectingContent.CenterInParent();
-            panConnectingContent.Top = lblConnectingStatus.Bottom + 8;
+            if (panConnectingPage.Visible)
+                PositionConnectingPageControls();
         }
 
         private void panMenuPage_Resize(object sender, EventArgs e)
@@ -1094,9 +1021,9 @@ namespace OTEX
         private void btnConnectingBack_Click(object sender, EventArgs e)
         {
             if (lastConnectionReturnToServerBrowser)
-                ServerBrowserPage = true;
+                paginator.ActivePageKey = "servers";
             else
-                MainMenuPage = true;
+                paginator.ActivePageKey = "menu";
         }
 
         private void btnConnectingReconnect_Click(object sender, EventArgs e)
@@ -1162,6 +1089,16 @@ namespace OTEX
             tbEditor.Selection.End = tbEditor.PositionToPlace(oldEnd + (oldEnd >= pos ? count : 0));
             tbEditor.Selection.EndUpdate();
             return range;
+        }
+
+        private void PositionConnectingPageControls()
+        {
+            panConnectingPage.SuspendLayout();
+            lblConnectingStatus.Width = lblConnectingStatus.Parent.Width - 10;
+            lblConnectingStatus.CenterInParent();
+            panConnectingContent.CenterInParent();
+            panConnectingContent.Top = lblConnectingStatus.Bottom + 8;
+            panConnectingPage.ResumeLayout(true);
         }
     }
 }

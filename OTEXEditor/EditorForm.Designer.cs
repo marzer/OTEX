@@ -67,6 +67,7 @@
             this.btnConnectingBack = new Marzersoft.Themes.ThemedButton();
             this.panSettings = new System.Windows.Forms.Panel();
             this.label6 = new System.Windows.Forms.Label();
+            this.cbTheme = new Marzersoft.Themes.ThemedComboBox();
             this.nudLineLength = new Marzersoft.Themes.ThemedNumericUpDown();
             this.label5 = new System.Windows.Forms.Label();
             this.cbLineLength = new System.Windows.Forms.CheckBox();
@@ -74,7 +75,6 @@
             this.cbClientColour = new Marzersoft.Controls.ColourComboBox();
             this.nudClientUpdateInterval = new Marzersoft.Themes.ThemedNumericUpDown();
             this.label3 = new System.Windows.Forms.Label();
-            this.cbTheme = new Marzersoft.Themes.ThemedComboBox();
             this.panMenu.SuspendLayout();
             this.panMenuButtons.SuspendLayout();
             this.panServerBrowserPage.SuspendLayout();
@@ -90,8 +90,15 @@
             // 
             // btnServerExisting
             // 
+            this.btnServerExisting.Accent = ((uint)(2u));
+            this.btnServerExisting.AccentMode = false;
+            this.btnServerExisting.BackColor = System.Drawing.SystemColors.Control;
             this.btnServerExisting.FlatAppearance.BorderSize = 0;
+            this.btnServerExisting.FlatAppearance.MouseDownBackColor = System.Drawing.SystemColors.Highlight;
+            this.btnServerExisting.FlatAppearance.MouseOverBackColor = System.Drawing.SystemColors.ControlLight;
             this.btnServerExisting.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnServerExisting.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.btnServerExisting.ForeColor = System.Drawing.SystemColors.ControlText;
             this.btnServerExisting.ImageAlign = System.Drawing.ContentAlignment.MiddleRight;
             this.btnServerExisting.Location = new System.Drawing.Point(0, 53);
             this.btnServerExisting.Margin = new System.Windows.Forms.Padding(0, 2, 0, 2);
@@ -99,15 +106,21 @@
             this.btnServerExisting.Size = new System.Drawing.Size(267, 48);
             this.btnServerExisting.TabIndex = 1;
             this.btnServerExisting.Text = "Host an existing document";
-            this.btnServerExisting.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             this.btnServerExisting.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
-            this.btnServerExisting.UseVisualStyleBackColor = true;
+            this.btnServerExisting.UseVisualStyleBackColor = false;
             this.btnServerExisting.Click += new System.EventHandler(this.btnServerExisting_Click);
             // 
             // btnServerNew
             // 
+            this.btnServerNew.Accent = ((uint)(2u));
+            this.btnServerNew.AccentMode = false;
+            this.btnServerNew.BackColor = System.Drawing.SystemColors.Control;
             this.btnServerNew.FlatAppearance.BorderSize = 0;
+            this.btnServerNew.FlatAppearance.MouseDownBackColor = System.Drawing.SystemColors.Highlight;
+            this.btnServerNew.FlatAppearance.MouseOverBackColor = System.Drawing.SystemColors.ControlLight;
             this.btnServerNew.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnServerNew.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.btnServerNew.ForeColor = System.Drawing.SystemColors.ControlText;
             this.btnServerNew.ImageAlign = System.Drawing.ContentAlignment.MiddleRight;
             this.btnServerNew.Location = new System.Drawing.Point(0, 0);
             this.btnServerNew.Margin = new System.Windows.Forms.Padding(0, 0, 0, 2);
@@ -115,13 +128,14 @@
             this.btnServerNew.Size = new System.Drawing.Size(267, 48);
             this.btnServerNew.TabIndex = 0;
             this.btnServerNew.Text = "Host a new document";
-            this.btnServerNew.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             this.btnServerNew.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
-            this.btnServerNew.UseVisualStyleBackColor = true;
+            this.btnServerNew.UseVisualStyleBackColor = false;
             this.btnServerNew.Click += new System.EventHandler(this.btnServerNew_Click);
             // 
             // btnClient
             // 
+            this.btnClient.Accent = ((uint)(0u));
+            this.btnClient.AccentMode = false;
             this.btnClient.FlatAppearance.BorderSize = 0;
             this.btnClient.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnClient.ImageAlign = System.Drawing.ContentAlignment.MiddleRight;
@@ -131,7 +145,6 @@
             this.btnClient.Size = new System.Drawing.Size(267, 48);
             this.btnClient.TabIndex = 2;
             this.btnClient.Text = "Edit someone else\'s document";
-            this.btnClient.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             this.btnClient.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
             this.btnClient.UseVisualStyleBackColor = true;
             this.btnClient.Click += new System.EventHandler(this.btnClient_Click);
@@ -159,8 +172,15 @@
             // 
             // btnServerTemporary
             // 
+            this.btnServerTemporary.Accent = ((uint)(1u));
+            this.btnServerTemporary.AccentMode = false;
+            this.btnServerTemporary.BackColor = System.Drawing.SystemColors.Control;
             this.btnServerTemporary.FlatAppearance.BorderSize = 0;
+            this.btnServerTemporary.FlatAppearance.MouseDownBackColor = System.Drawing.SystemColors.Highlight;
+            this.btnServerTemporary.FlatAppearance.MouseOverBackColor = System.Drawing.SystemColors.ControlLight;
             this.btnServerTemporary.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnServerTemporary.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.btnServerTemporary.ForeColor = System.Drawing.SystemColors.ControlText;
             this.btnServerTemporary.ImageAlign = System.Drawing.ContentAlignment.MiddleRight;
             this.btnServerTemporary.Location = new System.Drawing.Point(0, 106);
             this.btnServerTemporary.Margin = new System.Windows.Forms.Padding(0, 2, 0, 0);
@@ -168,9 +188,8 @@
             this.btnServerTemporary.Size = new System.Drawing.Size(267, 48);
             this.btnServerTemporary.TabIndex = 3;
             this.btnServerTemporary.Text = "Host temporary document";
-            this.btnServerTemporary.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             this.btnServerTemporary.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
-            this.btnServerTemporary.UseVisualStyleBackColor = true;
+            this.btnServerTemporary.UseVisualStyleBackColor = false;
             this.btnServerTemporary.Click += new System.EventHandler(this.btnServerTemporary_Click);
             // 
             // lblTitle
@@ -355,6 +374,7 @@
             this.tbClientPassword.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.tbClientPassword.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.tbClientPassword.Location = new System.Drawing.Point(203, 154);
+            this.tbClientPassword.Margin = new System.Windows.Forms.Padding(0);
             this.tbClientPassword.MaxLength = 32;
             this.tbClientPassword.Name = "tbClientPassword";
             this.tbClientPassword.Size = new System.Drawing.Size(166, 20);
@@ -363,10 +383,11 @@
             // 
             // btnClientCancel
             // 
+            this.btnClientCancel.Accent = ((uint)(0u));
+            this.btnClientCancel.AccentMode = false;
             this.btnClientCancel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.btnClientCancel.FlatAppearance.BorderSize = 0;
             this.btnClientCancel.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.btnClientCancel.ImageAlign = System.Drawing.ContentAlignment.MiddleRight;
             this.btnClientCancel.Location = new System.Drawing.Point(11, 128);
             this.btnClientCancel.Margin = new System.Windows.Forms.Padding(0);
             this.btnClientCancel.Name = "btnClientCancel";
@@ -380,10 +401,11 @@
             // 
             // btnClientConnect
             // 
+            this.btnClientConnect.Accent = ((uint)(0u));
+            this.btnClientConnect.AccentMode = false;
             this.btnClientConnect.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.btnClientConnect.FlatAppearance.BorderSize = 0;
             this.btnClientConnect.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.btnClientConnect.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
             this.btnClientConnect.Location = new System.Drawing.Point(378, 128);
             this.btnClientConnect.Margin = new System.Windows.Forms.Padding(0);
             this.btnClientConnect.Name = "btnClientConnect";
@@ -400,6 +422,7 @@
             this.tbClientAddress.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.tbClientAddress.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.tbClientAddress.Location = new System.Drawing.Point(203, 126);
+            this.tbClientAddress.Margin = new System.Windows.Forms.Padding(0);
             this.tbClientAddress.MaxLength = 256;
             this.tbClientAddress.Name = "tbClientAddress";
             this.tbClientAddress.Size = new System.Drawing.Size(166, 20);
@@ -455,6 +478,7 @@
             | System.Windows.Forms.AnchorStyles.Right)));
             this.tbServerPassword.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.tbServerPassword.Location = new System.Drawing.Point(10, 25);
+            this.tbServerPassword.Margin = new System.Windows.Forms.Padding(0);
             this.tbServerPassword.MaxLength = 32;
             this.tbServerPassword.Name = "tbServerPassword";
             this.tbServerPassword.Size = new System.Drawing.Size(185, 20);
@@ -476,6 +500,7 @@
             // lblAbout
             // 
             this.lblAbout.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.lblAbout.Cursor = System.Windows.Forms.Cursors.Hand;
             this.lblAbout.Location = new System.Drawing.Point(0, 313);
             this.lblAbout.Margin = new System.Windows.Forms.Padding(0);
             this.lblAbout.Name = "lblAbout";
@@ -517,6 +542,8 @@
             // 
             // btnConnectingReconnect
             // 
+            this.btnConnectingReconnect.Accent = ((uint)(0u));
+            this.btnConnectingReconnect.AccentMode = false;
             this.btnConnectingReconnect.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.btnConnectingReconnect.FlatAppearance.BorderSize = 0;
             this.btnConnectingReconnect.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
@@ -535,6 +562,8 @@
             // 
             // btnConnectingBack
             // 
+            this.btnConnectingBack.Accent = ((uint)(0u));
+            this.btnConnectingBack.AccentMode = false;
             this.btnConnectingBack.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.btnConnectingBack.FlatAppearance.BorderSize = 0;
             this.btnConnectingBack.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
@@ -578,15 +607,27 @@
             this.label6.Text = "Visual style:";
             this.label6.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
+            // cbTheme
+            // 
+            this.cbTheme.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cbTheme.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.cbTheme.Location = new System.Drawing.Point(131, 151);
+            this.cbTheme.Margin = new System.Windows.Forms.Padding(0);
+            this.cbTheme.Name = "cbTheme";
+            this.cbTheme.Size = new System.Drawing.Size(105, 21);
+            this.cbTheme.TabIndex = 116;
+            // 
             // nudLineLength
             // 
             this.nudLineLength.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.nudLineLength.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.nudLineLength.Increment = new decimal(new int[] {
             10,
             0,
             0,
             0});
             this.nudLineLength.Location = new System.Drawing.Point(182, 117);
+            this.nudLineLength.Margin = new System.Windows.Forms.Padding(0);
             this.nudLineLength.Maximum = new decimal(new int[] {
             200,
             0,
@@ -654,7 +695,7 @@
             this.cbClientColour.Location = new System.Drawing.Point(182, 44);
             this.cbClientColour.Margin = new System.Windows.Forms.Padding(0);
             this.cbClientColour.Name = "cbClientColour";
-            this.cbClientColour.ShowNames = true;
+            this.cbClientColour.ShowNames = false;
             this.cbClientColour.Size = new System.Drawing.Size(54, 21);
             this.cbClientColour.TabIndex = 111;
             this.cbClientColour.SelectedIndexChanged += new System.EventHandler(this.cbClientColour_SelectedIndexChanged);
@@ -662,6 +703,7 @@
             // nudClientUpdateInterval
             // 
             this.nudClientUpdateInterval.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.nudClientUpdateInterval.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.nudClientUpdateInterval.DecimalPlaces = 1;
             this.nudClientUpdateInterval.Increment = new decimal(new int[] {
             5,
@@ -669,6 +711,7 @@
             0,
             65536});
             this.nudClientUpdateInterval.Location = new System.Drawing.Point(182, 12);
+            this.nudClientUpdateInterval.Margin = new System.Windows.Forms.Padding(0);
             this.nudClientUpdateInterval.Maximum = new decimal(new int[] {
             50,
             0,
@@ -699,14 +742,6 @@
             this.label3.TabIndex = 109;
             this.label3.Text = "Update interval (seconds):";
             this.label3.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            // 
-            // cbTheme
-            // 
-            this.cbTheme.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.cbTheme.Location = new System.Drawing.Point(131, 151);
-            this.cbTheme.Name = "cbTheme";
-            this.cbTheme.Size = new System.Drawing.Size(105, 21);
-            this.cbTheme.TabIndex = 116;
             // 
             // EditorForm
             // 
