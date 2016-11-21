@@ -79,5 +79,13 @@ namespace OTEX
         {
             OnThreadException?.Invoke(this, ex);
         }
+
+        /// <summary>
+        /// Clears all subscriptions to event listeners
+        /// </summary>
+        protected virtual void ClearEventListeners()
+        {
+            OnThreadException = null;
+        }
     }
 }

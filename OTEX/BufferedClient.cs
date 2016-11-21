@@ -373,7 +373,19 @@ namespace OTEX
                 return;
             isDisposed = true;
             client.Dispose();
+            ClearEventListeners();
         }
 
+        /// <summary>
+        /// Clears all subscriptions to event listeners
+        /// </summary>
+        protected override void ClearEventListeners()
+        {
+            base.ClearEventListeners();
+            OnConnected = null;
+            OnDisconnected = null;
+            OnDocumentChanged = null;
+            OnRemoteMetadata = null;
+        }
     }
 }

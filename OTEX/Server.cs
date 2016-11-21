@@ -844,6 +844,20 @@ namespace OTEX
                 return;
             isDisposed = true;
             Stop();
+            ClearEventListeners();
+        }
+
+        /// <summary>
+        /// Clears all subscriptions to event listeners
+        /// </summary>
+        protected override void ClearEventListeners()
+        {
+            base.ClearEventListeners();
+            OnClientConnected = null;
+            OnClientDisconnected = null;
+            OnFileSynchronized = null;
+            OnStarted = null;
+            OnStopped = null;
         }
     }
 }

@@ -297,5 +297,18 @@ namespace OTEX
             pingThread.Name = "OTEX ServerDescription Ping";
             pingThread.Start();
         }
+
+        /////////////////////////////////////////////////////////////////////
+        // DISPOSING
+        /////////////////////////////////////////////////////////////////////
+
+        /// <summary>
+        /// Clears all subscriptions to event listeners.
+        /// </summary>
+        internal void ClearEventListeners()
+        {
+            OnInactive = null;
+            OnUpdated = null;
+        }
     }
 }

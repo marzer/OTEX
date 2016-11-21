@@ -167,6 +167,7 @@ namespace OTEX
                         {
                             activeServers.Remove(inactive.Key);
                             inactive.Value.Active = false; //invokes event
+                            inactive.Value.ClearEventListeners();
                         }
 
                         //update pings
@@ -204,8 +205,19 @@ namespace OTEX
                 thread.Join();
                 thread = null;
             }
-            if (activeServers.Count > 0)
-                activeServers.Clear();
+            ClearEventListeners();
+            activeServers.Clear();
+        }
+
+        /// <summary>
+        /// Clears all subscriptions to event listeners
+        /// </summary>
+        protected override void ClearEventListeners()
+        {
+            base.ClearEventListeners();
+            foreach (var kvp in activeServers)
+                kvp.Value.ClearEventListeners();
+            OnServerAdded = null;
         }
     }
 }
