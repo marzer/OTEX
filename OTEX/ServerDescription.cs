@@ -102,7 +102,6 @@ namespace OTEX
 
         /// <summary>
         /// Where did the packet come from?
-        /// (not sent, set at recipient end)
         /// </summary>
         public IPEndPoint EndPoint
         {
@@ -113,7 +112,6 @@ namespace OTEX
 
         /// <summary>
         /// What is the average RTT to the server, in milliseconds?
-        /// (not serialized, set at recipient end)
         /// </summary>
         public uint Ping
         {
@@ -132,7 +130,6 @@ namespace OTEX
 
         /// <summary>
         /// Is this server active?
-        /// (not serialized, set at recipient end)
         /// </summary>
         public bool Active
         {
@@ -152,7 +149,6 @@ namespace OTEX
 
         /// <summary>
         /// Time in seconds since a server listener last recieved an update packet from this server.
-        /// (not serialized, set at recipient end)
         /// </summary>
         public double LastUpdated
         {
@@ -163,21 +159,18 @@ namespace OTEX
 
         /// <summary>
         /// Tag property for attaching additional data to this server description.
-        /// (not serialized)
         /// </summary>
         [NonSerialized]
         public object Tag = null;
 
         /// <summary>
         /// Thread responsible for pinging the server.
-        /// (not serialized)
         /// </summary>
         [NonSerialized]
         private volatile Thread pingThread = null;
 
         /// <summary>
         /// Time in seconds since this server was last updated by a server listener.
-        /// (not serialized, set at recipient end)
         /// </summary>
         internal double LastPinged
         {
