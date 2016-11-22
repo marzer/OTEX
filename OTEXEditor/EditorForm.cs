@@ -242,9 +242,10 @@ namespace OTEX
                 {
                     remoteUsers.Clear();
                 }
-                localUser.SetSelection(0,0);
                 if (!closing)
                 {
+                    localUser.SetSelection(0, 0);
+
                     this.Execute(() =>
                     {
                         //client mode (in server mode, client always disconnects first)
@@ -764,6 +765,7 @@ namespace OTEX
                 settingsForm.Dispose();
                 settingsForm = null;
             }
+            App.Config.User.Flush();
             base.OnClosed(e);
         }
 
