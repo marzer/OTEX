@@ -425,9 +425,7 @@ namespace OTEX
                                 fileContentsNoCRLF = null;
 
                                 //normalize line endings
-                                fileContents = fileContents.Replace("\r\n", "\n").Replace("\r", "\n");
-                                if (!Environment.NewLine.Equals("\n"))
-                                    fileContents = fileContents.Replace("\n", Environment.NewLine);
+                                fileContents = fileContents.NormalizeLineEndings();
                                
                                 //add initial operation
                                 masterOperations.Add(new Operation(ID, 0, fileContents));
