@@ -72,6 +72,11 @@ namespace OTEX
             }
         }
 
+        /// <summary>
+        /// List of IDs this server listener is ignoring.
+        /// </summary>
+        private readonly Guid[] excludeServers;
+
         /////////////////////////////////////////////////////////////////////
         // CONSTRUCTOR
         /////////////////////////////////////////////////////////////////////
@@ -79,9 +84,16 @@ namespace OTEX
         /// <summary>
         /// Creates an OTEX server listener.
         /// </summary>
+        /// <param name="excludes">A collection of server id's to ignore.</param>
         /// <exception cref="Exception" />
-        public ServerListener()
+        public ServerListener(params Guid[] excludes)
         {
+            //set ignore list
+            if (excludes == null || excludes.Length == 0)
+                excludeServers = null;
+            excludeServers = new Guid[excludes.Length];
+            excludes.CopyTo(excludeServers, 0);
+
             //create udp client
             UdpClient udpClient = null;
             for (int i = Server.AnnouncePorts.First; i <= Server.AnnouncePorts.Last && udpClient == null; ++i)
@@ -138,6 +150,10 @@ namespace OTEX
                         packet = packetData.Deserialize<ServerDescription>();
                         senderEndPoint = new IPEndPoint(senderAnnounceEndpoint.Address, packet.Port);
                     }))
+                        continue;
+
+                    //check against blacklist
+                    if (excludeServers != null && excludeServers.Contains(packet.ID))
                         continue;
 
                     //process
