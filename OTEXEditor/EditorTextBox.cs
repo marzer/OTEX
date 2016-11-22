@@ -37,9 +37,9 @@ namespace OTEX
 
         /// <summary>
         /// Fired when the text box contents has changed (if DiffGeneration == true).
-        /// parameters: sender, previous text, current text, diffs.
+        /// parameters: sender, diffs, offset.
         /// </summary>
-        public event Action<EditorTextBox, string, string, Diff.Item[]> DiffsGenerated;
+        public event Action<EditorTextBox, Diff.Item[], int> DiffsGenerated;
 
         /// <summary>
         /// Is the DiffsGenerated event fired when the text is changed?
@@ -96,7 +96,7 @@ namespace OTEX
         /// When an TextChanged event is triggered, this will be a cached version of the text before
         /// the changes were made.
         /// </summary>
-        private string previousText = "";
+        private List<string> previousLines = null;
 
         /// <summary>
         /// URL to download languages syntax file.
@@ -220,6 +220,22 @@ namespace OTEX
         }
         private TextStyle literalStyle = null;
 
+        /// <summary>
+        /// Style for preprocessor
+        /// </summary>
+        internal TextStyle PreprocessorStyle
+        {
+            get
+            {
+                if (IsDisposed || Disposing)
+                    throw new ObjectDisposedException(GetType().Name);
+                if (preprocessorStyle == null)
+                    preprocessorStyle = new TextStyle(new SolidBrush(Color.FromArgb(155, 155, 155)), null, FontStyle.Regular);
+                return preprocessorStyle;
+            }
+        }
+        private TextStyle preprocessorStyle = null;
+
         /////////////////////////////////////////////////////////////////////
         // CONSTRUCTOR
         /////////////////////////////////////////////////////////////////////
@@ -227,7 +243,7 @@ namespace OTEX
         public EditorTextBox()
         {
             //setup
-            ReservedCountOfLineNumberChars = 4;
+            ReservedCountOfLineNumberChars = 5;
             WordWrap = true;
             WordWrapAutoIndent = true;
             WordWrapMode = WordWrapMode.WordWrapControlWidth;
@@ -235,7 +251,11 @@ namespace OTEX
             LineInterval = 2;
             HotkeysMapping.Remove(Keys.Control | Keys.H); //remove default "replace" (CTRL + H, wtf?)
             HotkeysMapping[Keys.Control | Keys.R] = FCTBAction.ReplaceDialog; // CTRL + R for replace
-            HotkeysMapping[Keys.Control | Keys.Y] = FCTBAction.Undo; // CTRL + Y for undo
+            HotkeysMapping[Keys.Control | Keys.Y] = FCTBAction.Redo; // CTRL + Y for redo
+#if DEBUG
+            LineNumberStartValue = 0;
+#endif
+
             this.Language = Language.Custom;
 
             if (IsDesignMode)
@@ -244,26 +264,69 @@ namespace OTEX
             //cache previous text
             TextChanging += (s, e) =>
             {
-                if (!e.Cancel)
-                    previousText = Text;
+                if (Disposing || IsDisposed)
+                    return;
+
+                if (!e.Cancel && diffGeneration && DiffsGenerated != null)
+                    previousLines = Lines.ToList();
             };
 
-            //diff, highlighting
+            //diffs
             TextChanged += (s, e) =>
             {
                 if (Disposing || IsDisposed)
                     return;
 
                 //generate diffs
-                if (diffGeneration && DiffsGenerated == null)
+                if (diffGeneration && DiffsGenerated != null)
                 {
-                    var currentText = Text;
-                    var diffs = Diff.Calculate(previousText.ToCharArray(), currentText.ToCharArray());
-                    DiffsGenerated?.Invoke(this, previousText, currentText, diffs);
-                }
+                    //figure out what actually changed (don't do a diff on the whole content)
+                    Range range = e.ChangedRange.Clone();
+                    range.Normalize();
+                    char[] oldData = null, newData = null;
+                    int offset = PlaceToPosition(range.Start);
+                    var linesDelta = LinesCount - previousLines.Count;
+                    if (linesDelta == 0)
+                    {
+                        oldData = previousLines[range.FromLine].ToCharArray();
+                        newData = Lines[range.FromLine].ToCharArray();
+                    }
+                    else
+                    {
+                        //build old string
+                        StringBuilder sb = new StringBuilder();
+                        var end = linesDelta < 0 ? range.Start.iLine + Math.Abs(linesDelta) : range.End.iLine - linesDelta;
+                        for (int i = range.Start.iLine; i <= end; ++i)
+                        {
+                            if (i > range.Start.iLine)
+                                sb.AppendLine();
+                            sb.Append(previousLines[i]);
+                        }
+                        var oldValue = sb.ToString();
 
-                //update syntax highlighting
-                languages.TryLock(ApplySelectedLanguage);
+                        //build new string
+                        sb.Clear();
+                        for (int i = range.Start.iLine; i <= range.End.iLine; ++i)
+                        {
+                            if (i > range.Start.iLine)
+                                sb.AppendLine();
+                            sb.Append(Lines[i]);
+                        }
+                        var newValue = sb.ToString();
+
+                        oldData = oldValue.ToCharArray();
+                        newData = newValue.ToCharArray();
+                    }
+
+                    var diffs = Diff.Calculate(oldData, newData);
+                    DiffsGenerated?.Invoke(this, diffs, offset);
+                }
+            };
+
+            //update syntax highlighting
+            TextChangedDelayed += (s, e) =>
+            {
+                languages.TryLock(() => { ApplySelectedLanguage(Range); });
             };
 
             //themes
@@ -285,8 +348,8 @@ namespace OTEX
             private readonly HashSet<string> extensions = new HashSet<string>();
             private readonly HashSet<string> types = new HashSet<string>();
             private readonly HashSet<string> keywords = new HashSet<string>();
-            private Regex rxExtensions = null, rxTypes = null, rxKeywords = null;
-            private Regex rxCommentLine = null, rxComment = null, rxStrings = null;
+            private Regex rxExtensions = null, rxTypes = null, rxKeywords = null,
+                rxCommentLine = null, rxComment = null, rxStrings = null, rxPreprocessor = null;
             private string commentLine = null, commentStart = null, commentEnd = null;
 
             private Regex RxExtensions
@@ -363,6 +426,16 @@ namespace OTEX
                         rxStrings = new Regex(@"(?:""[^""\\]*(?:\\.[^""\\]*)*"")"
                             + @"|(?:'[^'\\]*(?:\\.[^'\\]*)*')", RegexOptions.Compiled);
                     return rxStrings;
+                }
+            }
+
+            private Regex RxPreprocessor
+            {
+                get
+                {
+                    if (rxPreprocessor == null)
+                        rxPreprocessor = new Regex(@"^\s*#.*$", RegexOptions.Compiled);
+                    return rxPreprocessor;
                 }
             }
 
@@ -559,6 +632,9 @@ namespace OTEX
                 //style single-line comments
                 ApplyStyle(ref ranges, RxCommentLine, () => { return Editor.CommentStyle; }, true);
 
+                //style preprocessor directives
+                ApplyStyle(ref ranges, RxPreprocessor, () => { return Editor.PreprocessorStyle; }, true);
+
                 //style string literals
                 ApplyStyle(ref ranges, RxStrings, () => { return Editor.LiteralStyle; }, true);
 
@@ -645,17 +721,21 @@ namespace OTEX
             }
             if (currentLang == null)
                 currentLang = languages["normal"]; //txt
-            ApplySelectedLanguage();
+            ApplySelectedLanguage(Range);
         }
 
-        private void ApplySelectedLanguage()
+        private void ApplySelectedLanguage(Range range)
         {
             if (currentLang == null)
                 throw new NullReferenceException("languages[\"normal\"] is null!");
+            if (currentLang.Name.Equals("normal"))
+                return;
             this.Execute(() =>
             {
-                ClearStyle(StyleIndex.All);
-                currentLang.Highlight(Range);
+                range = range.Clone();
+                range.Normalize();
+                range.ClearStyle(StyleIndex.All);
+                currentLang.Highlight(range);
             }, false);
         }
 
@@ -719,7 +799,7 @@ namespace OTEX
                         if (!IsDesignMode)
                             App.ThemeChanged -= ApplyTheme;
                         DiffsGenerated = null;
-                        previousText = null;
+                        previousLines = null;
                         if (commentStyle != null)
                         {
                             commentStyle.Dispose();

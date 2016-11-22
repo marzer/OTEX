@@ -312,24 +312,24 @@ namespace OTEX
 
             // CREATE TEXT EDITOR //////////////////////////////////////////////////////////////////
             tbEditor = new EditorTextBox();
-            tbEditor.DiffsGenerated += (sender, previous, current, diffs) =>
+            tbEditor.DiffsGenerated += (sender, diffs, offset) =>
             {
                 if (!otexClient.Connected)
                     return;
 
                 //convert changes into operations
-                int position = 0;
+                var current = sender.Text;
                 foreach (var diff in diffs)
                 {
                     //skip unchanged characters
-                    position = Math.Min(diff.InsertStart, current.Length);
+                    int position = Math.Min(diff.InsertStart + offset, current.Length);
 
                     //process a deletion
                     if (diff.DeleteLength > 0)
                         otexClient.Delete((uint)position, (uint)diff.DeleteLength);
 
                     //process an insertion
-                    if (position < (diff.InsertStart + diff.InsertLength))
+                    if (position < (offset + diff.InsertStart + diff.InsertLength))
                         otexClient.Insert((uint)position, current.Substring(position, diff.InsertLength));
                 }
             };
