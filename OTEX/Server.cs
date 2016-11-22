@@ -104,7 +104,8 @@ namespace OTEX
             public uint MaxClients = 10;
 
             /// <summary>
-            /// Replace tabs in loaded files with spaces?
+            /// When loading file, how many spaces should tab characters be replaced with?
+            /// Leave as 0 to skip replacement and leave them as-is.
             /// Useful if paired with a client editor which does not support \t characters
             /// (e.g. FastColoredTextBox).
             /// </summary>
