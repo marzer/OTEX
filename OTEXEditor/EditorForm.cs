@@ -21,14 +21,12 @@ namespace OTEX
         // PROPERTIES/VARIABLES
         /////////////////////////////////////////////////////////////////////
 
-        private FastColoredTextBox tbEditor = null;
+        private EditorTextBox tbEditor = null;
         private Server otexServer = null;
         private Client otexClient = null;
         private ServerListener otexServerListener = null;
         private volatile Thread clientConnectingThread = null;
         private volatile bool closing = false;
-        private volatile string previousText = null;
-        private volatile bool disableOperationGeneration = false;
         private FlyoutForm passwordForm = null, settingsForm = null;
         private volatile IPEndPoint lastConnectionEndpoint = null;
         private volatile Password lastConnectionPassword = null;
@@ -36,57 +34,10 @@ namespace OTEX
         private TitleBarButton logoutButton = null, settingsButton;
         private volatile bool settingsLoaded = false;
         private Paginator paginator = null;
-
-        [Serializable]
-        private class EditorClient
-        {
-            public int SelectionStart = 0;
-            public int SelectionEnd = 0;
-            public int Colour = unchecked((int)0xFFFFFFFF);
-        }
-        private readonly Dictionary<Guid, EditorClient> remoteClients
-            = new Dictionary<Guid, EditorClient>();
-        private readonly EditorClient localClient = new EditorClient();
-
-        private Color ClientColour
-        {
-            get { return localClient.Colour.ToColour(); }
-            set
-            {
-                //check value
-                var newVal = value;
-                if (newVal.A != 255)
-                    newVal = Color.FromArgb(255, newVal);
-                var intVal = newVal.ToArgb();
-                if (localClient.Colour == intVal)
-                    return;
-                localClient.Colour = intVal;
-
-                //push to server
-                otexClient.Metadata = localClient.Serialize();
-
-                //update locally
-                this.Execute(() =>
-                {
-                    tbEditor.SelectionColor
-                        = tbEditor.CurrentLineColor
-                        = tbEditor.LineNumberColor
-                        = localClient.Colour.ToColour();
-                    tbEditor.CaretColor = localClient.Colour.ToColour().Brighten(0.3f);
-                    if (tbEditor.Visible)
-                        tbEditor.Refresh();
-                });
-
-                //update in settings file
-                if (settingsLoaded)
-                {
-                    App.Config.User.Set("user.colour", newVal);
-                    App.Config.User.Flush();
-                }
-            }
-        }
-
-
+        private readonly User localUser;
+        private readonly Dictionary<Guid, User> remoteUsers
+            = new Dictionary<Guid, User>();
+        
         /////////////////////////////////////////////////////////////////////
         // CONSTRUCTOR
         /////////////////////////////////////////////////////////////////////
@@ -115,7 +66,7 @@ namespace OTEX
             filterFactory.Add("C# files", "cs");
             filterFactory.Add("C/C++ files", "cpp", "h", "hpp", "cxx", "cc", "c", "inl", "inc", "rc", "hxx");
             filterFactory.Add("Log files", "log");
-            filterFactory.Add("Javacode files", "java");
+            filterFactory.Add("Java files", "java");
             filterFactory.Add("Javascript files", "js");
             filterFactory.Add("Visual Basic files", "vb", "vbs");
             filterFactory.Add("Web files", "htm", "html", "xml", "css", "htaccess", "php");
@@ -202,9 +153,9 @@ namespace OTEX
                 Logger.I("Client: connected to {0}:{1}.", c.ServerAddress, c.ServerPort);
                 this.Execute(() =>
                 {
-                    disableOperationGeneration = true;
+                    tbEditor.DiffGeneration = false;
                     tbEditor.Text = "";
-                    disableOperationGeneration = false;
+                    tbEditor.DiffGeneration = true;
 
                     string ext = Path.GetExtension(c.ServerFilePath).ToLower();
                     if (ext.Length > 0 && (ext = ext.Substring(1)).Length > 0)
@@ -236,52 +187,67 @@ namespace OTEX
             {
                 this.Execute(() =>
                 {
-                    disableOperationGeneration = true;
-                    
+                    tbEditor.DiffGeneration = false;
+
                     foreach (var operation in operations)
                     {
                         if (operation.IsInsertion)
                         {
-                            InsertTextAndRestoreSelection(
+                            tbEditor.InsertTextAndRestoreSelection(
                                 new Range(tbEditor, tbEditor.PositionToPlace(operation.Offset),
                                     tbEditor.PositionToPlace(operation.Offset)),
-                                operation.Text, null);
+                                operation.Text, null, false);
                         }
                         else if (operation.IsDeletion)
                         {
-                            InsertTextAndRestoreSelection(
+                            tbEditor.InsertTextAndRestoreSelection(
                                 new Range(tbEditor, tbEditor.PositionToPlace(operation.Offset),
                                     tbEditor.PositionToPlace(operation.Offset + operation.Length)),
-                                "", null);
+                                "", null, false);
                         }
                     }
 
-                    disableOperationGeneration = false;
+                    tbEditor.DiffGeneration = true;
                 }, false);
             };
             otexClient.OnRemoteMetadata += (c, id, md) =>
             {
-                lock (remoteClients)
+                if (md != null)
                 {
-                    if (md != null)
-                        remoteClients[id] = md.Deserialize<EditorClient>();
+                    lock (remoteUsers)
+                    {
+                        User remoteUser = null;
+                        if (remoteUsers.TryGetValue(id, out remoteUser))
+                            remoteUser.Update(md);
+                        else
+                        {
+                            remoteUsers[id] = remoteUser = new User(id, md);
+                            remoteUser.OnColourChanged += (u) =>
+                            {
+                                this.Execute(() => { tbEditor.Refresh(); });
+                            };
+                            remoteUser.OnSelectionChanged += (u) =>
+                            {
+                                this.Execute(() => { tbEditor.Refresh(); });
+                            };
+                            this.Execute(() => { tbEditor.Refresh(); });
+                        }
+                    }   
                 }
-                this.Execute(() => { tbEditor.Refresh(); });
             };
             otexClient.OnDisconnected += (c, serverSide) =>
             {
                 Logger.I("Client: disconnected{0}.", serverSide ? " (connection closed by server)" : "");
-                lock (remoteClients)
+                lock (remoteUsers)
                 {
-                    remoteClients.Clear();
+                    remoteUsers.Clear();
                 }
-                localClient.SelectionStart = 0;
-                localClient.SelectionEnd = 0;
+                localUser.SetSelection(0,0);
                 if (!closing)
                 {
                     this.Execute(() =>
                     {
-                        //non-host
+                        //client mode (in server mode, client always disconnects first)
                         if (serverSide)
                         {
                             if (lastConnectionEndpoint != null)
@@ -358,42 +324,18 @@ namespace OTEX
             }
 
             // CREATE TEXT EDITOR //////////////////////////////////////////////////////////////////
-            tbEditor = new FastColoredTextBox();
-            tbEditor.Parent = this;
-            tbEditor.Dock = DockStyle.Fill;
-            tbEditor.ReservedCountOfLineNumberChars = 4;
-            tbEditor.WordWrap = true;
-            tbEditor.WordWrapAutoIndent = true;
-            tbEditor.WordWrapMode = WordWrapMode.WordWrapControlWidth;
-            tbEditor.TabLength = 4;
-            tbEditor.LineInterval = 2;
-            tbEditor.HotkeysMapping.Remove(Keys.Control | Keys.H); //remove default "replace" (CTRL + H, wtf?)
-            tbEditor.HotkeysMapping[Keys.Control | Keys.R] = FCTBAction.ReplaceDialog; // CTRL + R for replace
-            tbEditor.HotkeysMapping[Keys.Control | Keys.Y] = FCTBAction.Undo; // CTRL + Y for undo
-            tbEditor.HighlightingRangeType = HighlightingRangeType.AllTextRange;
-            tbEditor.TextChanging += (sender, args) =>
+            tbEditor = new EditorTextBox();
+            tbEditor.DiffsGenerated += (sender, previous, current, diffs) =>
             {
-                if (disableOperationGeneration || !otexClient.Connected)
+                if (!otexClient.Connected)
                     return;
-
-                //cache previous version of the text
-                previousText = tbEditor.Text;
-            };
-            tbEditor.TextChanged += (sender, args) =>
-            {
-                if (disableOperationGeneration || !otexClient.Connected)
-                    return;
-
-                //do diff on two versions of text
-                var currentText = tbEditor.Text;
-                var diffs = Diff.Calculate(previousText.ToCharArray(), currentText.ToCharArray());
 
                 //convert changes into operations
                 int position = 0;
                 foreach (var diff in diffs)
                 {
                     //skip unchanged characters
-                    position = Math.Min(diff.InsertStart, currentText.Length);
+                    position = Math.Min(diff.InsertStart, current.Length);
 
                     //process a deletion
                     if (diff.DeleteLength > 0)
@@ -401,7 +343,7 @@ namespace OTEX
 
                     //process an insertion
                     if (position < (diff.InsertStart + diff.InsertLength))
-                        otexClient.Insert((uint)position, currentText.Substring(position, diff.InsertLength));
+                        otexClient.Insert((uint)position, current.Substring(position, diff.InsertLength));
                 }
             };
             tbEditor.SelectionChanged += (s, e) =>
@@ -409,20 +351,18 @@ namespace OTEX
                 if (!otexClient.Connected)
                     return;
                 var sel = tbEditor.Selection;
-                localClient.SelectionStart = tbEditor.PlaceToPosition(sel.Start);
-                localClient.SelectionEnd = tbEditor.PlaceToPosition(sel.End);
-                otexClient.Metadata = localClient.Serialize();
+                localUser.SetSelection(tbEditor.PlaceToPosition(sel.Start), tbEditor.PlaceToPosition(sel.End));
             };
             tbEditor.PaintLine += (s, e) =>
             {
-                if (!otexClient.Connected || remoteClients.Count == 0)
+                if (!otexClient.Connected || remoteUsers.Count == 0)
                     return;
 
                 Range lineRange = new Range(tbEditor, e.LineIndex);
-                lock (remoteClients)
+                lock (remoteUsers)
                 {
                     var len = tbEditor.TextLength;
-                    foreach (var kvp in remoteClients)
+                    foreach (var kvp in remoteUsers)
                     {
                         //check range
                         var selStart = tbEditor.PositionToPlace(kvp.Value.SelectionStart.Clamp(0, len));
@@ -435,18 +375,18 @@ namespace OTEX
                         var ptStart = tbEditor.PlaceToPoint(range.Start);
                         var ptEnd = tbEditor.PlaceToPoint(range.End);
                         var caret = lineRange.Contains(selStart);
-                        int colour = kvp.Value.Colour & 0x00FFFFFF;
+                        var colour = kvp.Value.Colour;
 
                         //draw "current line" fill
                         if (caret && selRange.Length == 0)
                         {
-                            using (SolidBrush b = new SolidBrush((colour | 0x09000000).ToColour()))
+                            using (SolidBrush b = new SolidBrush(Color.FromArgb(12, colour)))
                                 e.Graphics.FillRectangle(b, e.LineRect);
                         }
                         //draw highlight
                         if (range.Length > 0)
                         {
-                            using (SolidBrush b = new SolidBrush((colour | 0x20000000).ToColour()))
+                            using (SolidBrush b = new SolidBrush(Color.FromArgb(32, colour)))
                                 e.Graphics.FillRectangle(b, new Rectangle(ptStart.X, e.LineRect.Y,
                                     ptEnd.X - ptStart.X, e.LineRect.Height));
                         }
@@ -454,7 +394,7 @@ namespace OTEX
                         if (caret)
                         {
                             ptStart = tbEditor.PlaceToPoint(selStart);
-                            using (Pen p = new Pen((colour | 0xBB000000).ToColour()))
+                            using (Pen p = new Pen(Color.FromArgb(190, colour)))
                             {
                                 p.Width = 2;
                                 e.Graphics.DrawLine(p, ptEnd.X, e.LineRect.Top,
@@ -469,7 +409,7 @@ namespace OTEX
                 if (cbLineLength.Checked)
                 {
                     var pt = tbEditor.PlaceToPoint(new Place(((int)nudLineLength.Value).Clamp(60,200), 0));
-                    using (Pen p = new Pen(((localClient.Colour & 0x00FFFFFF) | 0x30000000).ToColour()))
+                    using (Pen p = new Pen(Color.FromArgb(32, localUser.Colour)))
                     {
                         p.Width = 2;
                         p.DashStyle = System.Drawing.Drawing2D.DashStyle.Dash;
@@ -478,7 +418,10 @@ namespace OTEX
                 }
             };
 
-            // CLIENT SETTINGS /////////////////////////////////////////////////////////////////////
+            // CREATE LOCAL USER ///////////////////////////////////////////////////////////////////
+            //create local user (handles settings file)
+            localUser = new User(otexClient.ID);
+            //generate list of allowed user colours via colour combo box
             cbClientColour.RegenerateItems(
                 false, //darks
                 true, //mids
@@ -486,53 +429,49 @@ namespace OTEX
                 false, //transparents
                 false, //monochromatics
                 0.15f, //similarity threshold
-                new Color[] { Color.Blue, Color.MediumBlue, Color.Red, Color.Fuchsia, Color.Magenta } //exlude (colours that contrast poorly with the app theme)
+                new Color[] { Color.Blue, Color.MediumBlue, Color.Red, Color.Fuchsia, Color.Magenta } //exludes
             );
-            //read user colour
+            var allowedColours = cbClientColour.Items.OfType<Color>().ToList();
+            //user colour
+            var selectedColourIndex = allowedColours.FindIndex(c => c.ToArgb() == localUser.ColourInteger );
+            if (selectedColourIndex < 0)
             {
-                var colours = cbClientColour.Items.OfType<Color>().ToList();
-                Color colour = App.Config.User.Get("user.colour", Color.Transparent);
-                if (colour == Color.Transparent)
-                    colour = otexClient.ID.ToColour(colours.ToArray());
-                if (colour.A != 255)
-                    colour = Color.FromArgb(255, colour);
-                var colourIndex = colours.FindIndex((c) => { return c.ToArgb() == colour.ToArgb(); });
-                if (colourIndex >= 0)
-                    cbClientColour.SelectedIndex = colourIndex;
-                ClientColour = colour;
-                App.Config.User.Set("user.colour", colour);
+                cbClientColour.SelectedIndex = App.Random.Next(cbClientColour.Items.Count);
+                localUser.Colour = cbClientColour.SelectedColour;
             }
-            //read update interval
-            otexClient.UpdateInterval = App.Config.User.Get("client.interval", 1.0f);
-            nudClientUpdateInterval.Value = (decimal)otexClient.UpdateInterval;
-            App.Config.User.Set("client.interval", otexClient.UpdateInterval);
-            //read line length ruler
-            cbLineLength.Checked = App.Config.User.Get("user.ruler", true);
-            App.Config.User.Set("user.ruler", cbLineLength.Checked);
-            nudLineLength.Value = App.Config.User.Get("user.ruler_width", 100);
-            App.Config.User.Set("user.ruler_width", ((int)nudLineLength.Value).Clamp(60, 200));
-            //read last direct connection address
-            tbClientAddress.Text = App.Config.User.Get("user.last_direct_connection", "").Trim();
-            if (tbClientAddress.Text.Length == 0)
-                tbClientAddress.Text = "127.0.0.1";
-            //read theme
-            cbTheme.Items.Add("Dark");
-            cbTheme.Items.Add("Light");
-            cbTheme.Items.Add("Coffee");
-            App.Config.User.Default("user.theme", 0, "dark");
-            for (int i = 0; i < cbTheme.Items.Count; ++i)
+            else
+                cbClientColour.SelectedIndex = selectedColourIndex;
+            tbEditor.UserColour = localUser.Colour;
+            localUser.OnColourChanged += (u) =>
             {
-                if ((cbTheme.Items[i] as string).Trim().ToLower().Equals(App.Config.User.Get("user.theme", "dark").Trim().ToLower()))
-                {
-                    cbTheme.SelectedIndex = i;
-                    break;
-                }
-            }
-            if (cbTheme.SelectedIndex == -1)
+                otexClient.Metadata = u.Serialize();
+                this.Execute(() => { tbEditor.UserColour = u.Colour; });
+            };
+            //selection changed
+            localUser.OnSelectionChanged += (u) => { otexClient.Metadata = u.Serialize(); };
+            //update interval
+            nudClientUpdateInterval.Value = (decimal)(otexClient.UpdateInterval = localUser.UpdateInterval);
+            localUser.OnUpdateIntervalChanged += (u) => { otexClient.UpdateInterval = u.UpdateInterval; };
+            //line length ruler
+            cbLineLength.Checked = localUser.Ruler;
+            nudLineLength.Value = localUser.RulerOffset;
+            localUser.OnRulerChanged += (u) => { this.Execute(() => { if (tbEditor.Visible) tbEditor.Refresh(); }); };
+            //last direct connection address
+            tbClientAddress.Text = localUser.LastDirectConnection;
+            //theme
+            var allowedThemes = App.Themes.Keys.ToList();
+            foreach (var theme in allowedThemes)
+                cbTheme.Items.Add(theme.Nameify());
+            var selectedTheme = localUser.Theme;
+            var selectedThemeIndex = allowedThemes.FindIndex(s => s.Equals(selectedTheme));
+            if (selectedThemeIndex < 0)
             {
                 cbTheme.SelectedIndex = 0;
-                App.Config.User.Set("user.theme", "dark");
+                localUser.Theme = allowedThemes[0];
             }
+            else
+                cbTheme.SelectedIndex = selectedThemeIndex;
+            localUser.OnThemeChanged += (u) => { this.Execute(() => { App.Theme = App.Themes[u.Theme]; }); };
             //save settings
             settingsLoaded = true;
             App.Config.User.Flush();
@@ -556,28 +495,11 @@ namespace OTEX
 
                     settingsButton.Colour = t.Accent(1).Colour;
 
-                    tbEditor.ForeColor = t.Foreground.Colour;
-                    tbEditor.BackBrush = t.Workspace.Brush;
-                    tbEditor.IndentBackColor = t.Workspace.Colour;
-                    tbEditor.ServiceLinesColor = t.Workspace.HighContrast.Colour;
-                    tbEditor.Font = t.Monospaced.Regular;
-                    if (tbEditor.Language != Language.Custom)
-                    {
-                        tbEditor.ClearStyle(StyleIndex.All);
-                        tbEditor.SyntaxHighlighter.HighlightSyntax(tbEditor.Language, tbEditor.Range);
-                    }
-
                     settingsButton.Image = App.Images.Resource("cog" + (t.IsDark ? "" : "_black"), App.Assembly, "OTEX");
                     logoutButton.Image = App.Images.Resource("logout" + (t.IsDark ? "" : "_black"), App.Assembly, "OTEX");
                 }, false);
             };
-            App.Theme = App.Themes[App.Config.User.Get("user.theme", "dark")];
-            cbTheme.SelectedIndexChanged += (s, e) =>
-            {
-                App.Config.User.Set("user.theme", cbTheme.Items[cbTheme.SelectedIndex] as string);
-                App.Config.User.Flush();
-                App.Theme = App.Themes[App.Config.User.Get("user.theme", "dark")];
-            };
+            App.Theme = App.Themes[localUser.Theme];
 
             // CONFIGURE PAGINATOR /////////////////////////////////////////////////////////////////
             paginator = new Paginator(this);
@@ -626,7 +548,7 @@ namespace OTEX
             //start client
             try
             {
-                otexClient.Metadata = localClient.Serialize();
+                otexClient.Metadata = localUser.Serialize();
                 otexClient.Connect(IPAddress.Loopback, startParams.Port, null);
             }
             catch (Exception exc)
@@ -650,125 +572,6 @@ namespace OTEX
         /////////////////////////////////////////////////////////////////////
         // CLIENT MODE
         /////////////////////////////////////////////////////////////////////
-
-        private static readonly Regex REGEX_IPV4_AND_PORT = new Regex(
-            @"^\s*"
-            //ipv4 octets
-            + @"(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?[.]"
-            + @"25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?[.]"
-            + @"25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?[.]"
-            + @"25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)"
-            //port (optional)
-            + @"(?:[:]\s*([0-9]*))?"
-            //
-            + @"\s*$"
-            , RegexOptions.Compiled);
-
-        private static readonly Regex REGEX_IPV6 = new Regex(
-            @"^\s*("
-            //ipv6 octets
-            + @"[a-fA-F0-9:]+"
-            //ipv4 suffix (optional)
-            + @"(?:[:]25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?[.]"
-            + @"25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?[.]"
-            + @"25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?[.]"
-            + @"25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)?"
-            //
-            + @")\s*$"
-            , RegexOptions.Compiled);
-
-        private static readonly Regex REGEX_IPV6_AND_PORT = new Regex(
-            @"^\s*\[\s*("
-            //ipv6 octets
-            + @"[a-fA-F0-9:]+"
-            //ipv4 suffix (optional)
-            + @"(?:[:]25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?[.]"
-            + @"25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?[.]"
-            + @"25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?[.]"
-            + @"25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)?"
-            //port (optional)
-            + @")\s*\](?:[:]\s*([0-9]*))?\s*$"
-            , RegexOptions.Compiled);
-
-        private static readonly Regex REGEX_PORT = new Regex(@"\s*(?:[:]\s*([0-9]*))\s*$",
-            RegexOptions.Compiled);
-
-        private bool StartClientMode(string addressString, string passwordString)
-        {
-            //sanity check
-            if (addressString.Length == 0)
-            {
-                Logger.ErrorMessage("Server address cannot be blank.");
-                return false;
-            }
-
-            string originalAddressString = addressString;
-            long port = Server.DefaultPort;
-            IPAddress address = null;
-            IPHostEntry hostEntry = null;
-
-            //parse address
-            try
-            {
-                //check for ipv4 address
-                Match m = null; bool success = false;
-                if (success = (m = REGEX_IPV4_AND_PORT.Match(addressString)).Success)
-                {
-                    address = IPAddress.Parse(m.Groups[1].Value);
-                    if (m.Groups.Count >= 2 && m.Groups[2].Value != null)
-                        port = long.Parse(m.Groups[2].Value);
-                }
-
-                //check for ipv6 address (without port)
-                if (!success && (success = (m = REGEX_IPV6.Match(addressString)).Success))
-                    address = IPAddress.Parse(m.Groups[1].Value);
-
-                //check for ipv6 address in bracket notation (possibly with port)
-                if (!success && (success = (m = REGEX_IPV6_AND_PORT.Match(addressString)).Success))
-                {
-                    address = IPAddress.Parse(m.Groups[1].Value);
-                    if (m.Groups.Count >= 2 && m.Groups[2].Value != null)
-                        port = long.Parse(m.Groups[2].Value);
-                }
-
-                //check hostnames
-                if (!success)
-                {
-                    //remove port first
-                    if ((m = REGEX_PORT.Match(addressString)).Success)
-                    {
-                        port = long.Parse(m.Groups[1].Value);
-                        addressString = REGEX_PORT.Replace(addressString, "").Trim();
-                    }
-
-                    //try to resolve a hostname
-                    success = (address = ((hostEntry = Dns.GetHostEntry(addressString)) != null
-                        && hostEntry.AddressList.Length > 0) ? hostEntry.AddressList[0] : null) != null;
-                }
-            }
-            catch (Exception exc)
-            {
-                Logger.ErrorMessage("An error occurred while parsing address:\n\n{0}", exc.Message);
-                return false;
-            }
-
-            //all failed
-            if (address == null)
-            {
-                Logger.ErrorMessage("Failed to parse a valid address from {0}.", originalAddressString);
-                return false;
-            }
-
-            //validate port
-            if (port < 1024 || port > 65535 || Server.AnnouncePorts.Contains(port))
-            {
-                Logger.ErrorMessage("Port must be between 1024-{0} or {1}-65535.",
-                                    Server.AnnouncePorts.First - 1, Server.AnnouncePorts.Last + 1);
-                return false;
-            }
-
-            return StartClientMode(new IPEndPoint(address, (int)port), passwordString);
-        }
 
         private bool StartClientMode(IPEndPoint endPoint, string passwordString)
         {
@@ -820,7 +623,7 @@ namespace OTEX
             {
                 try
                 {
-                    otexClient.Metadata = localClient.Serialize();
+                    otexClient.Metadata = localUser.Serialize();
                     otexClient.Connect(lastConnectionEndpoint, lastConnectionPassword);
                 }
                 catch (Exception exc)
@@ -898,9 +701,21 @@ namespace OTEX
 
         private void btnClientConnect_Click(object sender, EventArgs e)
         {
+            IPEndPoint endpoint = null;
+            try
+            {
+                endpoint = tbClientAddress.EndPoint;
+                if (endpoint.Port == 0)
+                    endpoint.Port = Server.DefaultPort;
+            }
+            catch (Exception exc)
+            {
+                Logger.ErrorMessage(exc.Message);
+                return;
+            }
             lastConnectionReturnToServerBrowser = true;
-            if (StartClientMode(tbClientAddress.Text.Trim(), tbClientPassword.Text.Trim()))
-                App.Config.User.Set("user.last_direct_connection", tbClientAddress.Text.Trim());
+            if (StartClientMode(endpoint, tbClientPassword.Text.Trim()))
+                localUser.LastDirectConnection = tbClientAddress.Text;
         }
 
         private void EditorForm_FormClosing(object sender, FormClosingEventArgs e)
@@ -1033,62 +848,33 @@ namespace OTEX
 
         private void cbClientColour_SelectedIndexChanged(object sender, EventArgs e)
         {
-            ClientColour = (Color)cbClientColour.Items[cbClientColour.SelectedIndex];
+            if (settingsLoaded)
+                localUser.Colour = cbClientColour.SelectedColour;
         }
 
         private void cbLineLength_CheckedChanged(object sender, EventArgs e)
         {
             nudLineLength.Enabled = cbLineLength.Checked;
-            if (tbEditor.Visible)
-                tbEditor.Refresh();
             if (settingsLoaded)
-            {
-                App.Config.User.Set("user.ruler", cbLineLength.Checked);
-                App.Config.User.Flush();
-            }
+                localUser.Ruler = cbLineLength.Checked;
         }
 
         private void nudLineLength_ValueChanged(object sender, EventArgs e)
         {
-            if (tbEditor.Visible)
-                tbEditor.Refresh();
             if (settingsLoaded)
-            {
-                App.Config.User.Set("user.ruler_width", ((int)nudLineLength.Value).Clamp(60, 200));
-                App.Config.User.Flush();
-            }
+                localUser.RulerOffset = (uint)nudLineLength.Value;
         }
 
         private void nudClientUpdateInterval_ValueChanged(object sender, EventArgs e)
         {
-            otexClient.UpdateInterval = (float)nudClientUpdateInterval.Value;
             if (settingsLoaded)
-            {
-                App.Config.User.Set("client.interval", otexClient.UpdateInterval);
-                App.Config.User.Flush();
-            }
+                localUser.UpdateInterval = (float)nudClientUpdateInterval.Value;
         }
 
-        //this is a version of FCTB's InsertTextAndRestoreSelection that does not move the bloody scroll window
-        private Range InsertTextAndRestoreSelection(Range replaceRange, string text, Style style)
+        private void cbTheme_SelectedIndexChanged(object sender, EventArgs e)
         {
-            if (text == null)
-                return null;
-
-            var oldStart = tbEditor.PlaceToPosition(tbEditor.Selection.Start);
-            var oldEnd = tbEditor.PlaceToPosition(tbEditor.Selection.End);
-            var count = replaceRange.Text.Length;
-            var pos = tbEditor.PlaceToPosition(replaceRange.Start);
-            //
-            tbEditor.Selection.BeginUpdate();
-            tbEditor.Selection = replaceRange;
-            var range = tbEditor.InsertText(text, style, false);
-            //
-            count = range.Text.Length - count;
-            tbEditor.Selection.Start = tbEditor.PositionToPlace(oldStart + (oldStart >= pos ? count : 0));
-            tbEditor.Selection.End = tbEditor.PositionToPlace(oldEnd + (oldEnd >= pos ? count : 0));
-            tbEditor.Selection.EndUpdate();
-            return range;
+            if (settingsLoaded)
+                localUser.Theme = cbTheme.Items[cbTheme.SelectedIndex] as string;
         }
 
         private void PositionConnectingPageControls()

@@ -51,7 +51,7 @@
             this.tbClientPassword = new Marzersoft.Themes.ThemedTextBox();
             this.btnClientCancel = new Marzersoft.Themes.ThemedButton();
             this.btnClientConnect = new Marzersoft.Themes.ThemedButton();
-            this.tbClientAddress = new Marzersoft.Themes.ThemedTextBox();
+            this.tbClientAddress = new Marzersoft.Controls.IPEndPointTextBox();
             this.dlgServerOpenExisting = new System.Windows.Forms.OpenFileDialog();
             this.dlgServerCreateNew = new System.Windows.Forms.SaveFileDialog();
             this.lblConnectingStatus = new System.Windows.Forms.Label();
@@ -106,6 +106,7 @@
             this.btnServerExisting.Size = new System.Drawing.Size(267, 48);
             this.btnServerExisting.TabIndex = 1;
             this.btnServerExisting.Text = "Host an existing document";
+            this.btnServerExisting.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             this.btnServerExisting.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
             this.btnServerExisting.UseVisualStyleBackColor = false;
             this.btnServerExisting.Click += new System.EventHandler(this.btnServerExisting_Click);
@@ -128,6 +129,7 @@
             this.btnServerNew.Size = new System.Drawing.Size(267, 48);
             this.btnServerNew.TabIndex = 0;
             this.btnServerNew.Text = "Host a new document";
+            this.btnServerNew.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             this.btnServerNew.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
             this.btnServerNew.UseVisualStyleBackColor = false;
             this.btnServerNew.Click += new System.EventHandler(this.btnServerNew_Click);
@@ -145,6 +147,7 @@
             this.btnClient.Size = new System.Drawing.Size(267, 48);
             this.btnClient.TabIndex = 2;
             this.btnClient.Text = "Edit someone else\'s document";
+            this.btnClient.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             this.btnClient.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
             this.btnClient.UseVisualStyleBackColor = true;
             this.btnClient.Click += new System.EventHandler(this.btnClient_Click);
@@ -188,6 +191,7 @@
             this.btnServerTemporary.Size = new System.Drawing.Size(267, 48);
             this.btnServerTemporary.TabIndex = 3;
             this.btnServerTemporary.Text = "Host temporary document";
+            this.btnServerTemporary.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             this.btnServerTemporary.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
             this.btnServerTemporary.UseVisualStyleBackColor = false;
             this.btnServerTemporary.Click += new System.EventHandler(this.btnServerTemporary_Click);
@@ -388,6 +392,7 @@
             this.btnClientCancel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.btnClientCancel.FlatAppearance.BorderSize = 0;
             this.btnClientCancel.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnClientCancel.ImageAlign = System.Drawing.ContentAlignment.MiddleRight;
             this.btnClientCancel.Location = new System.Drawing.Point(11, 128);
             this.btnClientCancel.Margin = new System.Windows.Forms.Padding(0);
             this.btnClientCancel.Name = "btnClientCancel";
@@ -406,6 +411,7 @@
             this.btnClientConnect.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.btnClientConnect.FlatAppearance.BorderSize = 0;
             this.btnClientConnect.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnClientConnect.ImageAlign = System.Drawing.ContentAlignment.MiddleRight;
             this.btnClientConnect.Location = new System.Drawing.Point(378, 128);
             this.btnClientConnect.Margin = new System.Windows.Forms.Padding(0);
             this.btnClientConnect.Name = "btnClientConnect";
@@ -420,10 +426,7 @@
             // tbClientAddress
             // 
             this.tbClientAddress.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.tbClientAddress.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.tbClientAddress.Location = new System.Drawing.Point(203, 126);
-            this.tbClientAddress.Margin = new System.Windows.Forms.Padding(0);
-            this.tbClientAddress.MaxLength = 256;
             this.tbClientAddress.Name = "tbClientAddress";
             this.tbClientAddress.Size = new System.Drawing.Size(166, 20);
             this.tbClientAddress.TabIndex = 2001;
@@ -616,6 +619,7 @@
             this.cbTheme.Name = "cbTheme";
             this.cbTheme.Size = new System.Drawing.Size(105, 21);
             this.cbTheme.TabIndex = 116;
+            this.cbTheme.SelectedIndexChanged += new System.EventHandler(this.cbTheme_SelectedIndexChanged);
             // 
             // nudLineLength
             // 
@@ -783,7 +787,7 @@
         private System.Windows.Forms.Panel panMenu;
         private System.Windows.Forms.Label lblTitle;
         private System.Windows.Forms.Panel panServerBrowserPage;
-        private Marzersoft.Themes.ThemedTextBox tbClientAddress;
+        private Marzersoft.Controls.IPEndPointTextBox tbClientAddress;
         private Marzersoft.Themes.ThemedButton btnClientCancel;
         private Marzersoft.Themes.ThemedButton btnClientConnect;
         private System.Windows.Forms.OpenFileDialog dlgServerOpenExisting;
