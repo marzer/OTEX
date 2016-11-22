@@ -423,7 +423,7 @@ namespace OTEX
 
                         //fire events
                         OnConnected?.Invoke(this);
-                        InvokeRemoteOperations(response.Operations);
+                        InvokeRemoteOperations(response.Operations, true);
                         if (response.Metadata != null && response.Metadata.Count > 0 && OnRemoteMetadata != null)
                         {
                             foreach (var md in response.Metadata)
@@ -584,12 +584,13 @@ namespace OTEX
         // INVOKE REMOTE OPERATIONS
         /////////////////////////////////////////////////////////////////////
 
-        private void InvokeRemoteOperations(List<Operation> ops)
+        private void InvokeRemoteOperations(List<Operation> ops, bool forced = false)
         {
-            if (ops != null && ops.Count() > 0)
+            if ((ops != null && ops.Count() > 0) || forced)
             {
-                OnRemoteOperations.Invoke(this, ops);
-                ops.Clear();
+                OnRemoteOperations.Invoke(this, ops ?? new List<Operation>());
+                if (ops != null)
+                    ops.Clear();
             }
         }
 
