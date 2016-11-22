@@ -26,7 +26,7 @@ namespace OTEX
         private Client otexClient = null;
         private ServerListener otexServerListener = null;
         private volatile Thread clientConnectingThread = null;
-        private volatile bool closing = false;
+        private volatile bool closing = false, firstOperationsSinceConnecting = false;
         private FlyoutForm passwordForm = null, settingsForm = null;
         private volatile IPEndPoint lastConnectionEndpoint = null;
         private volatile Password lastConnectionPassword = null;
@@ -107,7 +107,7 @@ namespace OTEX
             logoutButton.Click += (b) =>
             {
                 if (otexServer.Running && otexServer.ClientCount > 1 &&
-                    !Logger.WarningQuestion("You are currently running in server mode. "
+                    !Logger.WarningQuestion(this,"You are currently running in server mode. "
                     + "Leaving the session will disconnect the other {0} connected users.\n\nLeave session?", otexServer.ClientCount - 1))
                     return;
 
@@ -153,30 +153,13 @@ namespace OTEX
                 Logger.I("Client: connected to {0}:{1}.", c.ServerAddress, c.ServerPort);
                 this.Execute(() =>
                 {
+                    firstOperationsSinceConnecting = true;
+
                     tbEditor.DiffGeneration = false;
                     tbEditor.Text = "";
+                    tbEditor.ClearUndo();
                     tbEditor.DiffGeneration = true;
-
-                    string ext = Path.GetExtension(c.ServerFilePath).ToLower();
-                    if (ext.Length > 0 && (ext = ext.Substring(1)).Length > 0)
-                    {
-                        switch (ext)
-                        {
-                            case "cs": tbEditor.Language = Language.CSharp; break;
-                            case "htm": tbEditor.Language = Language.HTML; break;
-                            case "html": tbEditor.Language = Language.HTML; break;
-                            case "js": tbEditor.Language = Language.JS; break;
-                            case "lua": tbEditor.Language = Language.Lua; break;
-                            case "php": tbEditor.Language = Language.PHP; break;
-                            case "sql": tbEditor.Language = Language.SQL; break;
-                            case "vb": tbEditor.Language = Language.VB; break;
-                            case "vbs": tbEditor.Language = Language.VB; break;
-                            case "xml": tbEditor.Language = Language.XML; break;
-                            default: tbEditor.Language = Language.Custom; break;
-                        }
-                    }
-                    else
-                        tbEditor.Language = Language.Custom;
+                    tbEditor.LanguageFileExtension = Path.GetExtension(c.ServerFilePath);
 
                     logoutButton.Visible = true;
                     paginator.ActivePageKey = "editor";
@@ -188,7 +171,6 @@ namespace OTEX
                 this.Execute(() =>
                 {
                     tbEditor.DiffGeneration = false;
-
                     foreach (var operation in operations)
                     {
                         if (operation.IsInsertion)
@@ -205,6 +187,12 @@ namespace OTEX
                                     tbEditor.PositionToPlace(operation.Offset + operation.Length)),
                                 "", null, false);
                         }
+                    }
+
+                    if (firstOperationsSinceConnecting)
+                    {
+                        tbEditor.ClearUndo();
+                        firstOperationsSinceConnecting = false;
                     }
 
                     tbEditor.DiffGeneration = true;
@@ -268,6 +256,7 @@ namespace OTEX
                         Text = App.Name;
                         logoutButton.Visible = false;
                         tbEditor.Text = "";
+                        tbEditor.ClearUndo();
                     });
                 }
             };
@@ -275,16 +264,13 @@ namespace OTEX
             // CREATE OTEX SERVER LISTENER /////////////////////////////////////////////////////////
             try
             {
-                otexServerListener = new ServerListener();
+                otexServerListener = new ServerListener(otexServer.ID);
                 otexServerListener.OnThreadException += (sl, e) =>
                 {
                     Logger.W("ServerListener: {0}: {1}", e.InnerException.GetType().FullName, e.InnerException.Message);
                 };
                 otexServerListener.OnServerAdded += (sl, s) =>
                 {
-                    if (s.ID.Equals(otexServer.ID)) //ignore self
-                        return;
-
                     Logger.I("ServerListener: new server {0}: {1}", s.ID, s.EndPoint);
                     this.Execute(() =>
                     {
@@ -319,7 +305,7 @@ namespace OTEX
             }
             catch (Exception exc)
             {
-                Logger.ErrorMessage("An error occurred while creating the server listener:\n\n{0}"
+                Logger.ErrorMessage(this, "An error occurred while creating the server listener:\n\n{0}"
                     + "\n\nYou can still use OTEX Editor, but the \"Public Documents\" list will be empty.",
                     exc.Message);
             }
@@ -541,7 +527,7 @@ namespace OTEX
             }
             catch (Exception exc)
             {
-                Logger.ErrorMessage("An error occurred while starting the server:\n\n{0}",
+                Logger.ErrorMessage(this, "An error occurred while starting the server:\n\n{0}",
                     exc.Message);
                 return;
             }
@@ -554,7 +540,7 @@ namespace OTEX
             }
             catch (Exception exc)
             {
-                Logger.ErrorMessage("An error occurred while connecting:\n\n{0}",
+                Logger.ErrorMessage(this, "An error occurred while connecting:\n\n{0}",
                     exc.Message);
                 return;
             }
@@ -579,7 +565,7 @@ namespace OTEX
             //validate port
             if (endPoint.Port < 1024 || endPoint.Port > 65535 || Server.AnnouncePorts.Contains(endPoint.Port))
             {
-                Logger.ErrorMessage("Port must be between 1024-{0} or {1}-65535.",
+                Logger.ErrorMessage(this, "Port must be between 1024-{0} or {1}-65535.",
                                     Server.AnnouncePorts.First - 1, Server.AnnouncePorts.Last + 1);
                 return false;
             }
@@ -589,7 +575,7 @@ namespace OTEX
             passwordString = (passwordString ?? "").Trim();
             if (originalPasswordLength > 0 && passwordString.Length == 0)
             {
-                Logger.ErrorMessage("Passwords cannot be entirely whitespace.");
+                Logger.ErrorMessage(this, "Passwords cannot be entirely whitespace.");
                 return false;
             }
             Password password = null;
@@ -601,7 +587,7 @@ namespace OTEX
                 }
                 catch (Exception exc)
                 {
-                    Logger.ErrorMessage("An error occurred while parsing password:\n\n{0}", exc.Message);
+                    Logger.ErrorMessage(this, "An error occurred while parsing password:\n\n{0}", exc.Message);
                     return false;
                 }
             }
@@ -667,6 +653,7 @@ namespace OTEX
             base.OnFirstShown(e);
             if (IsDesignMode)
                 return;
+            tbEditor.LoadLanguages();
             paginator.ActivePageKey = "menu";
             Refresh();
         }
@@ -711,7 +698,7 @@ namespace OTEX
             }
             catch (Exception exc)
             {
-                Logger.ErrorMessage(exc.Message);
+                Logger.ErrorMessage(this, exc.Message);
                 return;
             }
             lastConnectionReturnToServerBrowser = true;
@@ -722,7 +709,7 @@ namespace OTEX
         private void EditorForm_FormClosing(object sender, FormClosingEventArgs e)
         {
             if (otexServer.Running && otexServer.ClientCount > 1 &&
-                !Logger.WarningQuestion("You are currently running in server mode. "
+                !Logger.WarningQuestion(this, "You are currently running in server mode. "
                 + "Closing the application will disconnect the other {0} connected users.\n\nClose OTEX Editor?", otexServer.ClientCount-1))
                 e.Cancel = true;
         }
