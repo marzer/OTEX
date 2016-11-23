@@ -21,7 +21,8 @@ namespace OTEX
         // PROPERTIES/VARIABLES
         /////////////////////////////////////////////////////////////////////
 
-        private EditorTextBox tbEditor = null;
+        private IEditorTextBox tbEditor = null;
+        private LanguageManager languageManager = null;
         private Server otexServer = null;
         private Client otexClient = null;
         private ServerListener otexServerListener = null;
@@ -155,38 +156,28 @@ namespace OTEX
                 {
                     firstOperationsSinceConnecting = true;
 
-                    tbEditor.DiffGeneration = false;
+                    tbEditor.DiffEvents = false;
                     tbEditor.Text = "";
                     tbEditor.ClearUndo();
-                    tbEditor.DiffGeneration = true;
-                    tbEditor.LanguageFileExtension = Path.GetExtension(c.ServerFilePath);
+                    tbEditor.DiffEvents = true;
+                    tbEditor.Language = languageManager[c.ServerFilePath];
 
                     logoutButton.Visible = true;
                     paginator.ActivePageKey = "editor";
-                    tbEditor.Focus();
+                    (tbEditor as Control).Focus();
                 }, false);
             };
             otexClient.OnRemoteOperations += (c,operations) =>
             {
                 this.Execute(() =>
                 {
-                    tbEditor.DiffGeneration = false;
+                    tbEditor.DiffEvents = false;
                     foreach (var operation in operations)
                     {
                         if (operation.IsInsertion)
-                        {
-                            tbEditor.InsertTextAndRestoreSelection(
-                                new Range(tbEditor, tbEditor.PositionToPlace(operation.Offset),
-                                    tbEditor.PositionToPlace(operation.Offset)),
-                                operation.Text, null, false);
-                        }
+                            tbEditor.InsertText(operation.Offset, operation.Text);
                         else if (operation.IsDeletion)
-                        {
-                            tbEditor.InsertTextAndRestoreSelection(
-                                new Range(tbEditor, tbEditor.PositionToPlace(operation.Offset),
-                                    tbEditor.PositionToPlace(operation.Offset + operation.Length)),
-                                "", null, false);
-                        }
+                            tbEditor.DeleteText(operation.Offset, operation.Length);
                     }
 
                     if (firstOperationsSinceConnecting)
@@ -195,7 +186,7 @@ namespace OTEX
                         firstOperationsSinceConnecting = false;
                     }
 
-                    tbEditor.DiffGeneration = true;
+                    tbEditor.DiffEvents = true;
                 }, false);
             };
             otexClient.OnRemoteMetadata += (c, id, md) =>
@@ -212,13 +203,13 @@ namespace OTEX
                             remoteUsers[id] = remoteUser = new User(id, md);
                             remoteUser.OnColourChanged += (u) =>
                             {
-                                this.Execute(() => { tbEditor.Refresh(); });
+                                this.Execute(() => { (tbEditor as Control).Refresh(); });
                             };
                             remoteUser.OnSelectionChanged += (u) =>
                             {
-                                this.Execute(() => { tbEditor.Refresh(); });
+                                this.Execute(() => { (tbEditor as Control).Refresh(); });
                             };
-                            this.Execute(() => { tbEditor.Refresh(); });
+                            this.Execute(() => { (tbEditor as Control).Refresh(); });
                         }
                     }   
                 }
@@ -311,8 +302,21 @@ namespace OTEX
             }
 
             // CREATE TEXT EDITOR //////////////////////////////////////////////////////////////////
-            tbEditor = new EditorTextBox();
-            tbEditor.DiffsGenerated += (sender, diffs, offset) =>
+            bool scintilla = false;
+            App.Arguments.Boolean("scintilla", "fctb", ref scintilla);
+            tbEditor = (scintilla ? new ScintillaTextBox() as IEditorTextBox : new FCTBTextBox());
+            tbEditor.OnInsertion += (tb, offset, text) =>
+            {
+                if (otexClient.Connected)
+                    otexClient.Insert((uint)offset, text);
+            };
+            tbEditor.OnDeletion += (tb, offset, length) =>
+            {
+                if (otexClient.Connected)
+                    otexClient.Delete((uint)offset, (uint)length);
+            };
+            /*
+            tbEditor.OnDiffsGenerated += (sender, diffs, offset) =>
             {
                 if (!otexClient.Connected)
                     return;
@@ -333,6 +337,8 @@ namespace OTEX
                         otexClient.Insert((uint)position, current.Substring(position, diff.InsertLength));
                 }
             };
+            */
+            /*
             tbEditor.SelectionChanged += (s, e) =>
             {
                 if (!otexClient.Connected)
@@ -404,6 +410,22 @@ namespace OTEX
                     }
                 }
             };
+            */
+
+            // CREATE LANGUAGE MANAGER /////////////////////////////////////////////////////////////
+            languageManager = new LanguageManager();
+            languageManager.OnThreadException += (lm, e) =>
+            {
+                Logger.E("LanguageManager: {0}: {1}", e.InnerException.GetType().FullName, e.InnerException.Message);
+            };
+            languageManager.OnLoaded += (lm, c) =>
+            {
+                Logger.I("LanguageManager: loaded {0} languages.", c);
+                if (otexClient.Connected)
+                {
+                    this.Execute(() => { tbEditor.Language = lm[otexClient.ServerFilePath]; });
+                }
+            };
 
             // CREATE LOCAL USER ///////////////////////////////////////////////////////////////////
             //create local user (handles settings file)
@@ -442,7 +464,14 @@ namespace OTEX
             //line length ruler
             cbLineLength.Checked = localUser.Ruler;
             nudLineLength.Value = localUser.RulerOffset;
-            localUser.OnRulerChanged += (u) => { this.Execute(() => { if (tbEditor.Visible) tbEditor.Refresh(); }); };
+            localUser.OnRulerChanged += (u) =>
+            {
+                this.Execute(() =>
+                {
+                    if ((tbEditor as Control).Visible)
+                        (tbEditor as Control).Refresh();
+                });
+            };
             //last direct connection address
             tbClientAddress.Text = localUser.LastDirectConnection;
             //theme
@@ -493,7 +522,7 @@ namespace OTEX
             paginator.Add("menu", panMenuPage);
             paginator.Add("connecting", panConnectingPage);
             paginator.Add("servers", panServerBrowserPage);
-            paginator.Add("editor", tbEditor);
+            paginator.Add("editor", tbEditor as Control);
             paginator.PageActivated += (s, k, p) =>
             {
                 switch (k)
@@ -521,8 +550,6 @@ namespace OTEX
             try
             {
                 startParams.ReplaceTabsWithSpaces = 4;
-                startParams.Port = Server.DefaultPort + 1;
-                startParams.Public = true;
                 otexServer.Start(startParams);
             }
             catch (Exception exc)
@@ -542,6 +569,7 @@ namespace OTEX
             {
                 Logger.ErrorMessage(this, "An error occurred while connecting:\n\n{0}",
                     exc.Message);
+                otexServer.Stop();
                 return;
             }
 
@@ -653,9 +681,25 @@ namespace OTEX
             base.OnFirstShown(e);
             if (IsDesignMode)
                 return;
-            tbEditor.LoadLanguages();
-            paginator.ActivePageKey = "menu";
-            Refresh();
+            languageManager.Load();
+
+            var path = App.Arguments.OrphanedValues.LastOrDefault();
+            if (path != null && File.Exists(path.Value))
+            {
+                Server.StartParams startParams = new Server.StartParams();
+                startParams.FilePath = path.Value;
+
+                App.Arguments.Key("port", ref startParams.Port);
+                App.Arguments.Key("name", ref startParams.Name);
+                App.Arguments.Key("maxclients", ref startParams.MaxClients);
+                string pw = null;
+                if (App.Arguments.Key("password", ref pw))
+                    startParams.Password = new Password(pw);
+                startParams.Public = App.Arguments.Key("public");
+                StartServerMode(startParams);
+            }
+            else
+                paginator.ActivePageKey = "menu";
         }
 
         private void btnClient_Click(object sender, EventArgs e)
@@ -672,14 +716,24 @@ namespace OTEX
         {
             if (dlgServerCreateNew.ShowDialog() == DialogResult.OK)
                 StartServerMode(new Server.StartParams()
-                    { FilePath = dlgServerCreateNew.FileName, EditMode = false });
+                    {
+                        FilePath = dlgServerCreateNew.FileName,
+                        EditMode = false,
+                        Port = Server.DefaultPort + 1,
+                        Public = true
+                    });
         }
 
         private void btnServerExisting_Click(object sender, EventArgs e)
         {
             if (dlgServerOpenExisting.ShowDialog() == DialogResult.OK)
                 StartServerMode(new Server.StartParams()
-                    { FilePath = dlgServerOpenExisting.FileName, EditMode = true });
+                    {
+                        FilePath = dlgServerOpenExisting.FileName,
+                        EditMode = true,
+                        Port = Server.DefaultPort + 1,
+                        Public = true
+                    });
         }
 
         private void btnServerTemporary_Click(object sender, EventArgs e)
@@ -751,6 +805,11 @@ namespace OTEX
             {
                 settingsForm.Dispose();
                 settingsForm = null;
+            }
+            if (languageManager != null)
+            {
+                languageManager.Dispose();
+                languageManager = null;
             }
             App.Config.User.Flush();
             base.OnClosed(e);

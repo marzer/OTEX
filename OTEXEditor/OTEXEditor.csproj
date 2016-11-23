@@ -61,6 +61,10 @@
       <HintPath>..\packages\FCTB.2.16.21.0\lib\FastColoredTextBox.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="ScintillaNET, Version=3.5.10.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\jacobslusser.ScintillaNET.3.5.10\lib\net40\ScintillaNET.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -74,9 +78,15 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="EditorTextBox.cs">
+    <Compile Include="FCTBTextBox.cs">
       <SubType>UserControl</SubType>
     </Compile>
+    <Compile Include="IEditorTextBox.cs" />
+    <Compile Include="ScintillaTextBox.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="LanguageManager.cs" />
+    <Compile Include="SyntaxColours.cs" />
     <Compile Include="User.cs" />
     <Compile Include="EditorForm.cs">
       <SubType>Form</SubType>

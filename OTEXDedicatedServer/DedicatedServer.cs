@@ -2,6 +2,7 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Threading;
 
@@ -125,85 +126,34 @@ namespace OTEX
         // MAIN
         /////////////////////////////////////////////////////////////////////
 
-        static int Main(string[] args)
+        static int Main(string[] argsArr)
         {
             //handle command line arguments
             var startParams = new Server.StartParams()
             {
                 ReplaceTabsWithSpaces = 4
             };
-            try
+
+            //parse command line
+            Arguments args = new Arguments(argsArr);
+            if (args.Key("?"))
             {
-                var arguments = App.ProcessArguments(args);
-
-                //help
-                if (arguments.Find((a) => { return a.Flag && a.Value.CompareTo("?") == 0; }) != null)
-                {
-                    Print(Console.Out, ConsoleColor.Cyan, Splash);
-                    Console.Out.WriteLine();
-                    Out(Help);
-                    return 0;
-                }
-
-                //key value pairs
-                for (int i = 0; i < arguments.Count - 1; ++i)
-                {
-                    if (!arguments[i].Flag || arguments[i + 1].Flag)
-                        continue;
-
-                    bool match = false;
-                    if (match = (arguments[i].Value.CompareTo("port") == 0))
-                        startParams.Port = ushort.Parse(arguments[i + 1].Value);
-                    else if (match = (arguments[i].Value.CompareTo("password") == 0))
-                        startParams.Password = new Password(arguments[i + 1].Value);
-                    else if (match = (arguments[i].Value.CompareTo("name") == 0))
-                        startParams.Name = arguments[i + 1].Value;
-                    else if (match = (arguments[i].Value.CompareTo("maxclients") == 0))
-                        startParams.MaxClients = uint.Parse(arguments[i + 1].Value);
-
-                    if (match)
-                        arguments[i].Handled = arguments[i + 1].Handled = true;
-                }
-
-                //single flag arguments
-                for (int i = 0; i < arguments.Count; ++i)
-                {
-                    if (!arguments[i].Flag || arguments[i].Handled)
-                        continue;
-
-                    bool match = false;
-                    if (match = (arguments[i].Value.CompareTo("edit") == 0))
-                        startParams.EditMode = true;
-                    else if (match = (arguments[i].Value.CompareTo("new") == 0))
-                        startParams.EditMode = false;
-                    else if (match = (arguments[i].Value.CompareTo("public") == 0))
-                        startParams.Public = true;
-
-                    if (match)
-                        arguments[i].Handled = true;
-                }
-
-                //single non-flag arguments
-                for (int i = 0; i < arguments.Count; ++i)
-                {
-                    if (arguments[i].Flag || arguments[i].Handled)
-                        continue;
-                    startParams.FilePath = arguments[i].Value;
-                }
+                Print(Console.Out, ConsoleColor.Cyan, Splash);
+                Console.Out.WriteLine();
+                Out(Help);
+                return 0;
             }
-            catch (Exception exc)
-            {
-#if DEBUG
-                if (System.Diagnostics.Debugger.IsAttached)
-                {
-                    Error("{0}: {1}", exc.GetType().FullName, exc.Message);
-                    throw;
-                }
-#endif
-                Error("Error: {0}", exc.Message);
-                Warning("usage:{0}{1}", Environment.NewLine, Usage);
-                return 1;
-            }
+            args.Key("port", ref startParams.Port);
+            args.Key("name", ref startParams.Name);
+            args.Key("maxclients", ref startParams.MaxClients);
+            string pw = null;
+            if (args.Key("password", ref pw))
+                startParams.Password = new Password(pw);
+            args.Boolean("edit", "new", ref startParams.EditMode);
+            startParams.Public = args.Key("public");
+            var path = args.OrphanedValues.LastOrDefault();
+            if (path != null)
+                startParams.FilePath = path.Value;
 
             //create server
             server = new Server();
