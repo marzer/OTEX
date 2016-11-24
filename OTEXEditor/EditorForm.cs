@@ -3,7 +3,6 @@ using Marzersoft.Forms;
 using System;
 using System.Drawing;
 using System.Windows.Forms;
-using FastColoredTextBoxNS;
 using System.Net;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -13,7 +12,7 @@ using System.Collections.Generic;
 using Marzersoft.Themes;
 using Marzersoft.Controls;
 
-namespace OTEX
+namespace OTEX.Editor
 {
     public partial class EditorForm : MainForm
     {
@@ -38,16 +37,20 @@ namespace OTEX
         private readonly User localUser;
         private readonly Dictionary<Guid, User> remoteUsers
             = new Dictionary<Guid, User>();
-        
+        private readonly PluginFactory plugins;
+
+       
         /////////////////////////////////////////////////////////////////////
         // CONSTRUCTOR
         /////////////////////////////////////////////////////////////////////
 
-        public EditorForm()
+        public EditorForm(params object[] plf)
         {
             InitializeComponent();
             if (IsDesignMode)
                 return;
+
+            plugins = plf[0] as PluginFactory;
 
             // CONFIGURE MAIN MENU /////////////////////////////////////////////////////////////////
             //button text alignment
@@ -157,8 +160,8 @@ namespace OTEX
                     firstOperationsSinceConnecting = true;
 
                     tbEditor.DiffEvents = false;
-                    tbEditor.Text = "";
-                    tbEditor.ClearUndo();
+                    tbEditor.ClearText();
+                    tbEditor.ClearUndoHistory();
                     tbEditor.DiffEvents = true;
                     tbEditor.Language = languageManager[c.ServerFilePath];
 
@@ -175,14 +178,14 @@ namespace OTEX
                     foreach (var operation in operations)
                     {
                         if (operation.IsInsertion)
-                            tbEditor.InsertText(operation.Offset, operation.Text);
+                            tbEditor.InsertText((uint)operation.Offset, operation.Text);
                         else if (operation.IsDeletion)
-                            tbEditor.DeleteText(operation.Offset, operation.Length);
+                            tbEditor.DeleteText((uint)operation.Offset, (uint)operation.Length);
                     }
 
                     if (firstOperationsSinceConnecting)
                     {
-                        tbEditor.ClearUndo();
+                        tbEditor.ClearUndoHistory();
                         firstOperationsSinceConnecting = false;
                     }
 
@@ -203,14 +206,15 @@ namespace OTEX
                             remoteUsers[id] = remoteUser = new User(id, md);
                             remoteUser.OnColourChanged += (u) =>
                             {
-                                this.Execute(() => { (tbEditor as Control).Refresh(); });
+                                this.Execute(() => { tbEditor.SetHighlightRange(u.ID, u.SelectionStart, u.SelectionEnd, u.Colour); });
                             };
                             remoteUser.OnSelectionChanged += (u) =>
                             {
-                                this.Execute(() => { (tbEditor as Control).Refresh(); });
+                                this.Execute(() => { tbEditor.SetHighlightRange(u.ID, u.SelectionStart, u.SelectionEnd, u.Colour); });
                             };
-                            this.Execute(() => { (tbEditor as Control).Refresh(); });
                         }
+                        this.Execute(() => { tbEditor.SetHighlightRange(remoteUser.ID, remoteUser.SelectionStart,
+                            remoteUser.SelectionEnd, remoteUser.Colour); });
                     }   
                 }
             };
@@ -221,10 +225,11 @@ namespace OTEX
                 {
                     remoteUsers.Clear();
                 }
+                tbEditor.ClearHighlightRanges();
                 if (!closing)
                 {
                     localUser.SetSelection(0, 0);
-
+                    tbEditor.ClearHighlightRanges();
                     this.Execute(() =>
                     {
                         //client mode (in server mode, client always disconnects first)
@@ -246,8 +251,8 @@ namespace OTEX
 
                         Text = App.Name;
                         logoutButton.Visible = false;
-                        tbEditor.Text = "";
-                        tbEditor.ClearUndo();
+                        tbEditor.ClearText();
+                        tbEditor.ClearUndoHistory();
                     });
                 }
             };
@@ -302,9 +307,15 @@ namespace OTEX
             }
 
             // CREATE TEXT EDITOR //////////////////////////////////////////////////////////////////
-            bool scintilla = false;
-            App.Arguments.Boolean("scintilla", "fctb", ref scintilla);
-            tbEditor = (scintilla ? new ScintillaTextBox() as IEditorTextBox : new FCTBTextBox());
+            string editorPlugin = "";
+            if (App.Arguments.Key("editor", ref editorPlugin))
+                tbEditor = plugins.CreateByName<IEditorTextBox>(editorPlugin);
+            if (tbEditor == null)
+                tbEditor = plugins.CreateByName<IEditorTextBox>(App.Config.User.Get("plugins.editor", 0, ""));
+            if (tbEditor == null)
+                tbEditor = plugins.CreateByName<IEditorTextBox>("scintilla");
+            if (tbEditor == null)
+                tbEditor = plugins.CreateFirst<IEditorTextBox>();
             tbEditor.OnInsertion += (tb, offset, text) =>
             {
                 if (otexClient.Connected)
@@ -315,102 +326,10 @@ namespace OTEX
                 if (otexClient.Connected)
                     otexClient.Delete((uint)offset, (uint)length);
             };
-            /*
-            tbEditor.OnDiffsGenerated += (sender, diffs, offset) =>
+            tbEditor.OnSelection += (tb, start, end) =>
             {
-                if (!otexClient.Connected)
-                    return;
-
-                //convert changes into operations
-                var current = sender.Text;
-                foreach (var diff in diffs)
-                {
-                    //skip unchanged characters
-                    int position = Math.Min(diff.InsertStart + offset, current.Length);
-
-                    //process a deletion
-                    if (diff.DeleteLength > 0)
-                        otexClient.Delete((uint)position, (uint)diff.DeleteLength);
-
-                    //process an insertion
-                    if (position < (offset + diff.InsertStart + diff.InsertLength))
-                        otexClient.Insert((uint)position, current.Substring(position, diff.InsertLength));
-                }
+                localUser.SetSelection(start, end);
             };
-            */
-            /*
-            tbEditor.SelectionChanged += (s, e) =>
-            {
-                if (!otexClient.Connected)
-                    return;
-                var sel = tbEditor.Selection;
-                localUser.SetSelection(tbEditor.PlaceToPosition(sel.Start), tbEditor.PlaceToPosition(sel.End));
-            };
-            tbEditor.PaintLine += (s, e) =>
-            {
-                if (!otexClient.Connected || remoteUsers.Count == 0)
-                    return;
-
-                Range lineRange = new Range(tbEditor, e.LineIndex);
-                lock (remoteUsers)
-                {
-                    var len = tbEditor.TextLength;
-                    foreach (var kvp in remoteUsers)
-                    {
-                        //check range
-                        var selStart = tbEditor.PositionToPlace(kvp.Value.SelectionStart.Clamp(0, len));
-                        var selEnd = tbEditor.PositionToPlace(kvp.Value.SelectionEnd.Clamp(0, len));
-                        var selRange = new Range(tbEditor, selStart, selEnd);
-                        var range = lineRange.GetIntersectionWith(selRange);
-                        if (range.Length == 0 && !lineRange.Contains(selStart))
-                            continue;
-
-                        var ptStart = tbEditor.PlaceToPoint(range.Start);
-                        var ptEnd = tbEditor.PlaceToPoint(range.End);
-                        var caret = lineRange.Contains(selStart);
-                        var colour = kvp.Value.Colour;
-
-                        //draw "current line" fill
-                        if (caret && selRange.Length == 0)
-                        {
-                            using (SolidBrush b = new SolidBrush(Color.FromArgb(12, colour)))
-                                e.Graphics.FillRectangle(b, e.LineRect);
-                        }
-                        //draw highlight
-                        if (range.Length > 0)
-                        {
-                            using (SolidBrush b = new SolidBrush(Color.FromArgb(32, colour)))
-                                e.Graphics.FillRectangle(b, new Rectangle(ptStart.X, e.LineRect.Y,
-                                    ptEnd.X - ptStart.X, e.LineRect.Height));
-                        }
-                        //draw caret
-                        if (caret)
-                        {
-                            ptStart = tbEditor.PlaceToPoint(selStart);
-                            using (Pen p = new Pen(Color.FromArgb(190, colour)))
-                            {
-                                p.Width = 2;
-                                e.Graphics.DrawLine(p, ptEnd.X, e.LineRect.Top,
-                                    ptEnd.X, e.LineRect.Bottom);
-                            }
-                        }
-                    }
-                }
-            };
-            tbEditor.Paint += (s, e) =>
-            {
-                if (cbLineLength.Checked)
-                {
-                    var pt = tbEditor.PlaceToPoint(new Place(((int)nudLineLength.Value).Clamp(60,200), 0));
-                    using (Pen p = new Pen(Color.FromArgb(32, localUser.Colour)))
-                    {
-                        p.Width = 2;
-                        p.DashStyle = System.Drawing.Drawing2D.DashStyle.Dash;
-                        e.Graphics.DrawLine(p, new Point(pt.X, e.ClipRectangle.Top), new Point(pt.X, e.ClipRectangle.Bottom));
-                    }
-                }
-            };
-            */
 
             // CREATE LANGUAGE MANAGER /////////////////////////////////////////////////////////////
             languageManager = new LanguageManager();
@@ -464,13 +383,10 @@ namespace OTEX
             //line length ruler
             cbLineLength.Checked = localUser.Ruler;
             nudLineLength.Value = localUser.RulerOffset;
+            tbEditor.SetRuler(localUser.Ruler, localUser.RulerOffset);
             localUser.OnRulerChanged += (u) =>
             {
-                this.Execute(() =>
-                {
-                    if ((tbEditor as Control).Visible)
-                        (tbEditor as Control).Refresh();
-                });
+                tbEditor.SetRuler(localUser.Ruler, localUser.RulerOffset);
             };
             //last direct connection address
             tbClientAddress.Text = localUser.LastDirectConnection;
@@ -511,8 +427,8 @@ namespace OTEX
 
                     settingsButton.Colour = t.Accent(1).Colour;
 
-                    settingsButton.Image = App.Images.Resource("cog" + (t.IsDark ? "" : "_black"), App.Assembly, "OTEX");
-                    logoutButton.Image = App.Images.Resource("logout" + (t.IsDark ? "" : "_black"), App.Assembly, "OTEX");
+                    settingsButton.Image = App.Images.Resource("cog" + (t.IsDark ? "" : "_black"), App.Assembly, "OTEX.Editor");
+                    logoutButton.Image = App.Images.Resource("logout" + (t.IsDark ? "" : "_black"), App.Assembly, "OTEX.Editor");
                 }, false);
             };
             App.Theme = App.Themes[localUser.Theme];

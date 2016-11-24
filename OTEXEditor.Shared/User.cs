@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Marzersoft;
 
-namespace OTEX
+namespace OTEX.Editor
 {
     /// <summary>
     /// An editor user. Handles the storing/loading of settings for local users.
@@ -73,22 +73,22 @@ namespace OTEX
         /// <summary>
         /// The start index of this user's selection.
         /// </summary>
-        public int SelectionStart
+        public uint SelectionStart
         {
             get { return selectionStart; }
             set { SetSelection(value, selectionEnd); }
         }
-        private int selectionStart = 0;
+        private uint selectionStart = 0;
 
         /// <summary>
         /// The end index of this user's selection.
         /// </summary>
-        public int SelectionEnd
+        public uint SelectionEnd
         {
             get { return selectionEnd; }
             set { SetSelection(selectionStart, value); }
         }
-        private int selectionEnd = 0;
+        private uint selectionEnd = 0;
 
         /// <summary>
         /// Internal setter for colour integer (to prevent manual setting on remote clients).
@@ -297,7 +297,7 @@ namespace OTEX
         /// </summary>
         /// <param name="start">The start index of this user's selection.</param>
         /// <param name="end">The end index of this user's selection.</param>
-        public void SetSelection(int start, int end)
+        public void SetSelection(uint start, uint end)
         {
             if (!IsLocal)
                 throw new InvalidOperationException("You cannot manually set values for remote users (use Update() instead).");
@@ -307,10 +307,8 @@ namespace OTEX
         /// <summary>
         /// Internal setter for selection range (to prevent manual setting on remote clients).
         /// </summary>
-        private void SetSelectionInternal(int start, int end)
+        private void SetSelectionInternal(uint start, uint end)
         {
-            if (start > end)
-                start = end;
             if (start == selectionStart && end == selectionEnd)
                 return;
 

@@ -45,7 +45,9 @@ IF NOT EXIST "%CURRENT_DIR%" (
 	EXIT /B 1
 )
 
-DEL /F /Q "%CURRENT_DIR%\*.xml" "%CURRENT_DIR%\*.pdb" "%CURRENT_DIR%\*.log" "%CURRENT_DIR%\*.vshost*" "%CURRENT_DIR%\*.config" "%CURRENT_DIR%\*.txt"
+DEL /F /Q "%CURRENT_DIR%\*.xml" "%CURRENT_DIR%\*.pdb" "%CURRENT_DIR%\*.log" "%CURRENT_DIR%\*.vshost*" ^
+	"%CURRENT_DIR%\*.config" "%CURRENT_DIR%\*.txt" "%CURRENT_DIR%\plugins\*.xml" "%CURRENT_DIR%\plugins\*.pdb" ^
+	"%CURRENT_DIR%\plugins\*.log" "%CURRENT_DIR%\plugins\*.vshost*" "%CURRENT_DIR%\plugins\*.config" "%CURRENT_DIR%\plugins\*.txt"
 IF %ERRORLEVEL% NEQ 0 (
 	ECHO DISTRIBUTE: Deleting files failed ^(error %ERRORLEVEL%^)
 	pause

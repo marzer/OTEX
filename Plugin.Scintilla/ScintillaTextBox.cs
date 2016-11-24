@@ -8,11 +8,34 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Drawing;
+using System.Windows.Forms;
 
-namespace OTEX
+namespace OTEX.Editor
 {
-    public class ScintillaTextBox : Scintilla, IThemeable, IEditorTextBox
+    public class Scintilla : ScintillaNET.Scintilla, IThemeable, IEditorTextBox
     {
+        /////////////////////////////////////////////////////////////////////
+        // EVENTS
+        /////////////////////////////////////////////////////////////////////
+
+        /// <summary>
+        /// Fired when text is inserted into the document (if DiffEvents == true).
+        /// parameters: sender, starting index, inserted text.
+        /// </summary>
+        public event Action<IEditorTextBox, uint, string> OnInsertion;
+
+        /// <summary>
+        /// Fired when text is deleted from the document (if DiffEvents == true).
+        /// parameters: sender, starting index, length of deleted text.
+        /// </summary>
+        public event Action<IEditorTextBox, uint, uint> OnDeletion;
+
+        /// <summary>
+        /// Fired when the user's current selection changes.
+        /// parameters: sender, starting index, length of selection.
+        /// </summary>
+        public event Action<IEditorTextBox, uint, uint> OnSelection;
+
         /////////////////////////////////////////////////////////////////////
         // PROPERTIES/VARIABLES
         /////////////////////////////////////////////////////////////////////
@@ -25,18 +48,6 @@ namespace OTEX
         {
             get { return DesignMode || this.IsDesignMode(); }
         }
-
-        /// <summary>
-        /// Fired when text is inserted into the document (if DiffEvents == true).
-        /// parameters: sender, starting index, inserted text.
-        /// </summary>
-        public event Action<IEditorTextBox, int, string> OnInsertion;
-
-        /// <summary>
-        /// Fired when text is deleted from the document (if DiffEvents == true).
-        /// parameters: sender, starting index, length of deleted text.
-        /// </summary>
-        public event Action<IEditorTextBox, int, int> OnDeletion;
 
         /// <summary>
         /// Are the OnInsertion/OnDeletion events fired when the text is changed?
@@ -80,9 +91,13 @@ namespace OTEX
                 if (userColour.Equals(value))
                     return;
 
+                //apply user colour
+                //(alpha values match those of FCTB)
                 userColour = value;
-                SetSelectionBackColor(true, userColour);
+                SetSelectionBackColor(true, Styles[Style.Default].BackColor.Blend(userColour, 60));
                 CaretLineBackColor = userColour;
+                CaretLineBackColorAlpha = 50;
+                EdgeColor = Styles[Style.Default].BackColor.Blend(userColour, 32);
                 CaretForeColor = userColour.Brighten(0.3f);
                 Styles[Style.LineNumber].ForeColor = userColour;
                 for (int i = Marker.FolderEnd; i <= Marker.FolderOpen; i++)
@@ -122,11 +137,16 @@ namespace OTEX
         private LanguageManager.Language currentLanguage = null;
         private readonly object currentLanguageLock = new object();
 
+        /// <summary>
+        /// Highlight ranges object.
+        /// </summary>
+        private readonly HighlightRanges ranges = new HighlightRanges();
+
         /////////////////////////////////////////////////////////////////////
         // CONSTRUCTOR
         /////////////////////////////////////////////////////////////////////
 
-        public ScintillaTextBox()
+        public Scintilla()
         {
             //setup
             WrapMode = WrapMode.Word;
@@ -144,6 +164,7 @@ namespace OTEX
             Margins[2].Mask = Marker.MaskFolders;
             Margins[2].Sensitive = true;
             Margins[2].Width = 0;
+            CaretLineVisible = true;
             AutomaticFold = (AutomaticFold.Show | AutomaticFold.Click | AutomaticFold.Change);
             Markers[Marker.Folder].Symbol = MarkerSymbol.BoxPlus;
             Markers[Marker.FolderOpen].Symbol = MarkerSymbol.BoxMinus;
@@ -155,6 +176,15 @@ namespace OTEX
             FontQuality = FontQuality.LcdOptimized;
             Technology = Technology.DirectWrite;
             BufferedDraw = false; //don't need it with directwrite
+            EdgeMode = EdgeMode.Line;
+            EdgeColumn = 100;
+            for (int i = 8; i <= 31; ++i)
+            {
+                Indicators[i].Style = IndicatorStyle.Hidden;
+                Indicators[i].Under = true;
+                Indicators[i].OutlineAlpha = 64;
+                Indicators[i].Alpha = 32;
+            }
 
             /*
             HotkeysMapping.Remove(Keys.Control | Keys.H); //remove default "replace" (CTRL + H, wtf?)
@@ -164,25 +194,57 @@ namespace OTEX
             if (IsDesignMode)
                 return;
 
+            //insert diff
+            Insert += (s, e) =>
+            {
+                if (diffGeneration)
+                    OnInsertion?.Invoke(this, (uint)e.Position, e.Text);
+            };
+
+            //delete diff
+            Delete += (s, e) =>
+            {
+                if (diffGeneration)
+                    OnDeletion?.Invoke(this, (uint)e.Position, (uint)e.Text.Length);
+            };
+
+            //selection changes
+            UpdateUI += (s, e) =>
+            {
+                if ((e.Change & UpdateChange.Selection) != 0)
+                {
+                    CaretLineVisible = (AnchorPosition == CurrentPosition);
+                    OnSelection?.Invoke(this, (uint)CurrentPosition, (uint)AnchorPosition);
+                }
+            };
+
+            //zoom changes
             ZoomChanged += (s, e) =>
             {
                 Margins[0].Width = TextWidth(Style.LineNumber, "00000") + 2;
             };
 
-            Insert += (s, e) =>
+            //highlight ranges
+            ranges.OnAdded += (hr, r) =>
             {
-                Logger.I("inserted {0} characters at {1}", e.Text.Length, e.Position);
-                if (Disposing || IsDisposed || !diffGeneration)
-                    return;
-                OnInsertion?.Invoke(this, e.Position, e.Text);
+                Show(r);
             };
-
-            Delete += (s, e) =>
+            ranges.OnColourChanged += (hr, r) =>
             {
-                Logger.I("deleted {0} characters at {1}", e.Text.Length, e.Position);
-                if (Disposing || IsDisposed || !diffGeneration)
-                    return;
-                OnDeletion?.Invoke(this, e.Position, e.Text.Length);
+                Update(r, true, false);
+            };
+            ranges.OnSelectionChanged += (hr, r) =>
+            {
+                Update(r, false, true);
+            };
+            ranges.OnRemoved += (hr, r) =>
+            {
+                Hide(r);
+            };
+            ranges.OnCleared += (hr) =>
+            {
+                for (int i = 8; i <= 31; ++i)
+                    Indicators[i].Style = IndicatorStyle.Hidden;
             };
 
             //themes
@@ -229,6 +291,15 @@ namespace OTEX
                 Styles[Style.LineNumber].BackColor = App.Theme.Workspace.Colour;
                 Styles[Style.LineNumber].ForeColor = userColour;
                 Margins[0].Width = TextWidth(Style.LineNumber, "00000") + 2;
+
+                //indentation guides
+                Styles[Style.IndentGuide].ForeColor = App.Theme.Workspace.HighContrast.Colour;
+
+                //selection colour
+                SetSelectionBackColor(true, Styles[Style.Default].BackColor.Blend(userColour, 60));
+
+                //line length indicator
+                EdgeColor = Styles[Style.Default].BackColor.Blend(userColour, 32);
             }
 
             if (currentLanguage != null)
@@ -285,6 +356,7 @@ namespace OTEX
                         = Styles[Style.Cpp.Word2].ForeColor
                         = SyntaxColours.Keywords;
 
+                    IndentationGuides = IndentView.LookBoth;                   
                     newLexer = Lexer.Cpp;
                 }
 
@@ -317,7 +389,7 @@ namespace OTEX
                     Styles[Style.Python.Decorator].ForeColor
                         = SyntaxColours.PreprocessorDirectives;
 
-
+                    IndentationGuides = IndentView.LookForward;
                     newLexer = Lexer.Python;
                 }
             }
@@ -329,9 +401,14 @@ namespace OTEX
             {
                 Lexer = newLexer;
                 if (newLexer == Lexer.Null)
+                {
+                    Margins[1].Width = 4;
                     Margins[2].Width = 0;
+                    IndentationGuides = IndentView.None;
+                }
                 else
                 {
+                    Margins[1].Width = 16;
                     Margins[2].Width = 20;
                     SetProperty("fold", "1");
                     SetProperty("fold.compact", "1");
@@ -348,13 +425,37 @@ namespace OTEX
         /////////////////////////////////////////////////////////////////////
 
         /// <summary>
+        /// Insert text without altering the current user's caret position or selection range.
+        /// </summary>
+        /// <param name="offset">Insert postion</param>
+        /// <param name="text">New text</param>
+        void IEditorTextBox.InsertText(uint offset, string text)
+        {
+            if (IsDisposed || Disposing)
+                throw new ObjectDisposedException(GetType().Name);
+            InsertText((int)offset, text);
+        }
+
+        /// <summary>
         /// Delete text without altering the current user's caret position or selection range.
         /// </summary>
         /// <param name="offset">Deletion start position</param>
         /// <param name="length">Deletion length</param>
-        void IEditorTextBox.DeleteText(int offset, int length)
+        void IEditorTextBox.DeleteText(uint offset, uint length)
         {
-            DeleteRange(offset, length);
+            if (IsDisposed || Disposing)
+                throw new ObjectDisposedException(GetType().Name);
+            DeleteRange((int)offset, (int)length);
+        }
+
+        /// <summary>
+        /// Clear the contents of the text box.
+        /// </summary>
+        void IEditorTextBox.ClearText()
+        {
+            if (IsDisposed || Disposing)
+                throw new ObjectDisposedException(GetType().Name);
+            ClearAll();
         }
 
         /////////////////////////////////////////////////////////////////////
@@ -362,11 +463,85 @@ namespace OTEX
         /////////////////////////////////////////////////////////////////////
 
         /// <summary>
-        /// Calls Scintilla's EmptyUndoBuffer().
+        /// Clear the undo history stack.
         /// </summary>
-        public void ClearUndo()
+        void IEditorTextBox.ClearUndoHistory()
         {
+            if (IsDisposed || Disposing)
+                throw new ObjectDisposedException(GetType().Name);
             EmptyUndoBuffer();
+        }
+
+        /////////////////////////////////////////////////////////////////////
+        // RULER
+        /////////////////////////////////////////////////////////////////////
+
+        void IEditorTextBox.SetRuler(bool visible, uint offset)
+        {
+            if (IsDisposed || Disposing)
+                throw new ObjectDisposedException(GetType().Name);
+            EdgeMode = visible ? EdgeMode.Line : EdgeMode.None;
+            EdgeColumn = (int)offset;
+        }
+
+        /////////////////////////////////////////////////////////////////////
+        // HIGHLIGHT RANGES
+        /////////////////////////////////////////////////////////////////////
+
+        /// <summary>
+        /// Set/update a custom highlight range for a specific id.
+        /// </summary>
+        /// <param name="id">Unique id of range.</param>
+        /// <param name="start">Range start index</param>
+        /// <param name="end">Range end index</param>
+        /// <param name="colour">Colour to use for highlighting</param>
+        void IEditorTextBox.SetHighlightRange(Guid id, uint start, uint end, Color colour)
+        {
+            if (IsDisposed || Disposing)
+                throw new ObjectDisposedException(GetType().Name);
+            ranges.Set(id, start, end, colour);
+        }
+
+        /// <summary>
+        /// Clears all custom highlight ranges.
+        /// </summary>
+        void IEditorTextBox.ClearHighlightRanges()
+        {
+            if (IsDisposed || Disposing)
+                throw new ObjectDisposedException(GetType().Name);
+            ranges.Clear();
+        }
+
+        private void Show(HighlightRanges.Range range)
+        {
+            int ind = range.Index + 8;
+            if (ind > 31)
+                return;
+            Indicators[ind].Style = IndicatorStyle.StraightBox;
+            Update(range,true,true);
+        }
+
+        private void Update(HighlightRanges.Range range, bool colour, bool selection)
+        {
+            int ind = range.Index + 8;
+            if (ind > 31)
+                return;
+            if (colour)
+                Indicators[ind].ForeColor = range.Colour;
+            if (selection)
+            {
+                IndicatorCurrent = ind;
+                IndicatorClearRange(0, TextLength);
+                IndicatorFillRange((int)range.Low, (int)range.Length);
+            }
+        }
+
+        private void Hide(HighlightRanges.Range range)
+        {
+            int ind = range.Index + 8;
+            if (ind > 31)
+                return;
+            Indicators[ind].Style = IndicatorStyle.Hidden;
         }
 
         /////////////////////////////////////////////////////////////////////
@@ -385,10 +560,12 @@ namespace OTEX
                             App.ThemeChanged -= ApplyTheme;
                         OnInsertion = null;
                         OnDeletion = null;
+                        OnSelection = null;
                         lock (currentLanguageLock)
                         {
                             currentLanguage = null;
                         }
+                        ranges.Clear();
                     }
                 }
             }

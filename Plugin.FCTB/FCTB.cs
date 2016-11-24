@@ -2,26 +2,44 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using FastColoredTextBoxNS;
 using System.Windows.Forms;
 using System.ComponentModel;
 using Marzersoft;
 using Marzersoft.Themes;
 using System.Drawing;
-using System.IO;
-using System.Threading;
-using System.Xml.Linq;
-using System.Text.RegularExpressions;
 
-namespace OTEX
+
+namespace OTEX.Editor.Plugins
 {
     /// <summary>
     /// OTEX Editor subclass of the FastColoredTextBox. Implements Marzersoft.IThemeable and handles
     /// refresh logic, text version caching, etc.
     /// </summary>
-    public class FCTBTextBox : FastColoredTextBox, IThemeable, IEditorTextBox
+    public class FCTB : FastColoredTextBox, IThemeable, IEditorTextBox
     {
+        /////////////////////////////////////////////////////////////////////
+        // EVENTS
+        /////////////////////////////////////////////////////////////////////
+
+        /// <summary>
+        /// Fired when text is inserted into the document (if DiffEvents == true).
+        /// parameters: sender, starting index, inserted text.
+        /// </summary>
+        public event Action<IEditorTextBox, uint, string> OnInsertion;
+
+        /// <summary>
+        /// Fired when text is deleted from the document (if DiffEvents == true).
+        /// parameters: sender, starting index, length of deleted text.
+        /// </summary>
+        public event Action<IEditorTextBox, uint, uint> OnDeletion;
+
+        /// <summary>
+        /// Fired when the user's current selection changes.
+        /// parameters: sender, starting index, length of selection.
+        /// </summary>
+        public event Action<IEditorTextBox, uint, uint> OnSelection;
+
         /////////////////////////////////////////////////////////////////////
         // PROPERTIES/VARIABLES
         /////////////////////////////////////////////////////////////////////
@@ -34,18 +52,6 @@ namespace OTEX
         {
             get { return DesignMode || this.IsDesignMode(); }
         }
-
-        /// <summary>
-        /// Fired when text is inserted into the document (if DiffEvents == true).
-        /// parameters: sender, starting index, inserted text.
-        /// </summary>
-        public event Action<IEditorTextBox, int, string> OnInsertion;
-
-        /// <summary>
-        /// Fired when text is deleted from the document (if DiffEvents == true).
-        /// parameters: sender, starting index, length of deleted text.
-        /// </summary>
-        public event Action<IEditorTextBox, int, int> OnDeletion;
 
         /// <summary>
         /// Are the OnInsertion/OnDeletion events fired when the text is changed?
@@ -85,7 +91,7 @@ namespace OTEX
                 if (IsDisposed || Disposing)
                     throw new ObjectDisposedException(GetType().Name);
                 if (value.A < 255)
-                    value = Color.FromArgb(255,value);
+                    value = Color.FromArgb(255, value);
                 if (userColour.Equals(value))
                     return;
                 SelectionColor
@@ -149,11 +155,22 @@ namespace OTEX
         private LanguageManager.Language currentLanguage = null;
         private readonly object currentLanguageLock = new object();
 
+        /// <summary>
+        /// Ruler rendering.
+        /// </summary>
+        private bool ruler = true;
+        private uint rulerOffset = 100;
+
+        /// <summary>
+        /// Highlight ranges object.
+        /// </summary>
+        private readonly HighlightRanges ranges = new HighlightRanges();
+
         /////////////////////////////////////////////////////////////////////
         // CONSTRUCTOR
         /////////////////////////////////////////////////////////////////////
 
-        public FCTBTextBox()
+        public FCTB()
         {
             //setup
             ReservedCountOfLineNumberChars = 5;
@@ -235,21 +252,35 @@ namespace OTEX
 
                     //process a deletion
                     if (diff.DeleteLength > 0)
-                        OnDeletion?.Invoke(this, position, diff.DeleteLength);
+                        OnDeletion?.Invoke(this, (uint)position, (uint)diff.DeleteLength);
 
                     //process an insertion
                     if (position < (offset + diff.InsertStart + diff.InsertLength))
-                        OnInsertion?.Invoke(this, position, newDataString.Substring(diff.InsertStart, diff.InsertLength));
+                        OnInsertion?.Invoke(this, (uint)position, newDataString.Substring(diff.InsertStart, diff.InsertLength));
                 }
             };
+
+            //selection
+            SelectionChanged += (s, e) =>
+            {
+                var sel = Selection;
+                OnSelection?.Invoke(this, (uint)PlaceToPosition(sel.Start), (uint)PlaceToPosition(sel.End));
+            };
+
+            //highlight ranges
+            ranges.OnAdded += (hr, r) => { this.Execute(Refresh); };
+            ranges.OnChanged += (hr, r) => { this.Execute(Refresh); };
+            ranges.OnRemoved += (hr, r) => { this.Execute(Refresh); };
+            ranges.OnCleared += (hr) => { this.Execute(Refresh); };
 
             //themes
             ApplyTheme(App.Theme);
             App.ThemeChanged += ApplyTheme;
         }
 
+
         /////////////////////////////////////////////////////////////////////
-        // APPLY THEME
+        // THEMES AND STYLES
         /////////////////////////////////////////////////////////////////////
 
         public virtual void ApplyTheme(Theme t)
@@ -274,6 +305,8 @@ namespace OTEX
         /// </summary>
         public virtual Range InsertTextAndRestoreSelection(Range replaceRange, string text, Style style, bool jumpToCaret)
         {
+            if (IsDisposed || Disposing)
+                throw new ObjectDisposedException(GetType().Name);
             if (text == null)
                 return null;
 
@@ -298,10 +331,12 @@ namespace OTEX
         /// </summary>
         /// <param name="offset">Insert postion</param>
         /// <param name="text">New text</param>
-        void IEditorTextBox.InsertText(int offset, string text)
+        void IEditorTextBox.InsertText(uint offset, string text)
         {
+            if (IsDisposed || Disposing)
+                throw new ObjectDisposedException(GetType().Name);
             InsertTextAndRestoreSelection(
-                new Range(this, PositionToPlace(offset), PositionToPlace(offset)),
+                new Range(this, PositionToPlace((int)offset), PositionToPlace((int)offset)),
                     text, null, false);
         }
 
@@ -310,11 +345,158 @@ namespace OTEX
         /// </summary>
         /// <param name="offset">Deletion start position</param>
         /// <param name="length">Deletion length</param>
-        void IEditorTextBox.DeleteText(int offset, int length)
+        void IEditorTextBox.DeleteText(uint offset, uint length)
         {
+            if (IsDisposed || Disposing)
+                throw new ObjectDisposedException(GetType().Name);
             InsertTextAndRestoreSelection(
-                new Range(this, PositionToPlace(offset), PositionToPlace(offset + length)),
+                new Range(this, PositionToPlace((int)offset), PositionToPlace((int)(offset + length))),
                     "", null, false);
+        }
+
+        /// <summary>
+        /// Clear the contents of the text box.
+        /// </summary>
+        void IEditorTextBox.ClearText()
+        {
+            if (IsDisposed || Disposing)
+                throw new ObjectDisposedException(GetType().Name);
+            Text = "";
+        }
+
+        /////////////////////////////////////////////////////////////////////
+        // CLEAR UNDO
+        /////////////////////////////////////////////////////////////////////
+
+        /// <summary>
+        /// Clear the undo history stack.
+        /// </summary>
+        void IEditorTextBox.ClearUndoHistory()
+        {
+            if (IsDisposed || Disposing)
+                throw new ObjectDisposedException(GetType().Name);
+            ClearUndo();
+        }
+
+        /////////////////////////////////////////////////////////////////////
+        // RULER
+        /////////////////////////////////////////////////////////////////////
+
+        void IEditorTextBox.SetRuler(bool visible, uint offset)
+        {
+            if (IsDisposed || Disposing)
+                throw new ObjectDisposedException(GetType().Name);
+            if (ruler != visible || rulerOffset != offset)
+            {
+                ruler = visible;
+                rulerOffset = offset;
+                this.Execute(Refresh);
+            }
+        }
+
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            base.OnPaint(e);
+            if (IsDesignMode)
+                return;
+
+            if (ruler)
+            {
+                e.Graphics.AsQuality(GraphicsQuality.High, (g) =>
+                {
+                    var pt = PlaceToPoint(new Place((int)rulerOffset, 0));
+                    using (Pen p = new Pen(Color.FromArgb(32, userColour)))
+                    {
+                        p.Width = 2;
+                        p.DashStyle = System.Drawing.Drawing2D.DashStyle.Dash;
+                        e.Graphics.DrawLine(p, new Point(pt.X, e.ClipRectangle.Top), new Point(pt.X, e.ClipRectangle.Bottom));
+                    }
+                });
+            }
+        }
+
+        /////////////////////////////////////////////////////////////////////
+        // HIGHLIGHT RANGES
+        /////////////////////////////////////////////////////////////////////
+
+        /// <summary>
+        /// Set/update a custom highlight range for a specific id.
+        /// </summary>
+        /// <param name="id">Unique id of range.</param>
+        /// <param name="start">Range start index</param>
+        /// <param name="end">Range end index</param>
+        /// <param name="colour">Colour to use for highlighting</param>
+        void IEditorTextBox.SetHighlightRange(Guid id, uint start, uint end, Color colour)
+        {
+            if (IsDisposed || Disposing)
+                throw new ObjectDisposedException(GetType().Name);
+            ranges.Set(id, start, end, colour);
+        }
+
+        /// <summary>
+        /// Clears all custom highlight ranges.
+        /// </summary>
+        void IEditorTextBox.ClearHighlightRanges()
+        {
+            if (IsDisposed || Disposing)
+                throw new ObjectDisposedException(GetType().Name);
+            ranges.Clear();
+        }
+
+        protected override void OnPaintLine(PaintLineEventArgs e)
+        {
+            base.OnPaintLine(e);
+            if (IsDesignMode)
+                return;
+
+            var highlightRanges = ranges.Ranges;
+            if (highlightRanges == null || highlightRanges.Length == 0)
+                return;
+
+            Range lineRange = new Range(this, e.LineIndex);
+            var len = (uint)TextLength;
+            foreach (var highlightRange in highlightRanges)
+            {
+                if (highlightRange == null)
+                    continue;
+                
+                //check range
+                var selStart = PositionToPlace((int)highlightRange.Start.Clamp(0, len));
+                var selEnd = PositionToPlace((int)highlightRange.End.Clamp(0, len));
+                var selRange = new Range(this, selStart, selEnd);
+                var hlRange = lineRange.GetIntersectionWith(selRange);
+                if (hlRange.Length == 0 && !lineRange.Contains(selStart))
+                    continue;
+
+                var ptStart = PlaceToPoint(hlRange.Start);
+                var ptEnd = PlaceToPoint(hlRange.End);
+                var caret = lineRange.Contains(selStart);
+
+                //draw "current line" fill
+                if (caret && selRange.Length == 0)
+                {
+                    using (SolidBrush b = new SolidBrush(Color.FromArgb(12, highlightRange.Colour)))
+                        e.Graphics.FillRectangle(b, e.LineRect);
+                }
+                //draw highlight
+                if (hlRange.Length > 0)
+                {
+                    using (SolidBrush b = new SolidBrush(Color.FromArgb(32, highlightRange.Colour)))
+                        e.Graphics.FillRectangle(b, new Rectangle(ptStart.X, e.LineRect.Y,
+                            ptEnd.X - ptStart.X, e.LineRect.Height));
+                }
+                //draw caret
+                if (caret)
+                {
+                    ptStart = PlaceToPoint(selStart);
+                    using (Pen p = new Pen(Color.FromArgb(190, highlightRange.Colour)))
+                    {
+                        p.Width = 2;
+                        e.Graphics.DrawLine(p, ptEnd.X, e.LineRect.Top,
+                            ptEnd.X, e.LineRect.Bottom);
+                    }
+                }
+            }
         }
 
         /////////////////////////////////////////////////////////////////////
@@ -333,11 +515,13 @@ namespace OTEX
                             App.ThemeChanged -= ApplyTheme;
                         OnInsertion = null;
                         OnDeletion = null;
+                        OnSelection = null;
                         lock (currentLanguageLock)
                         {
                             currentLanguage = null;
                         }
                         previousLines = null;
+                        ranges.Clear();
                     }
                 }
             }

@@ -10,7 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 
-namespace OTEX
+namespace OTEX.Editor
 {
     /// <summary>
     /// Class for managing programming language definitions for parsers.
@@ -39,14 +39,6 @@ namespace OTEX
             get { return disposed; }
         }
         private volatile bool disposed = false;
-
-        /// <summary>
-        /// Path to local languages syntax file.
-        /// </summary>
-        private static string LanguagesPath
-        {
-            get { return Path.Combine(App.ExecutableDirectoryPath, "..\\languages.xml"); }
-        }
 
         /// <summary>
         /// URL to download languages syntax file.
@@ -134,13 +126,13 @@ namespace OTEX
                 {
                     //download langs file if necessary
                     byte[] fileData = null;
-                    if (!File.Exists(LanguagesPath)
-                        || (DateTime.UtcNow - File.GetCreationTimeUtc(LanguagesPath)).TotalDays >= 14.0)
-                        File.WriteAllBytes(LanguagesPath, fileData = LanguagesURL.DownloadData());
+                    if (!File.Exists(Paths.LanguagesFile)
+                        || (DateTime.UtcNow - File.GetCreationTimeUtc(Paths.LanguagesFile)).TotalDays >= 14.0)
+                        File.WriteAllBytes(Paths.LanguagesFile, fileData = LanguagesURL.DownloadData());
 
                     //read file
                     if (fileData == null)
-                        fileData = File.ReadAllBytes(LanguagesPath);
+                        fileData = File.ReadAllBytes(Paths.LanguagesFile);
 
                     //parse file
                     using (MemoryStream stream = new MemoryStream(fileData, false))

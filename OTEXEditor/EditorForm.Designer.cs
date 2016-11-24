@@ -1,4 +1,4 @@
-﻿namespace OTEX
+﻿namespace OTEX.Editor
 {
     partial class EditorForm
     {

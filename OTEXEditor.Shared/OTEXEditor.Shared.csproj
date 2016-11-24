@@ -4,14 +4,13 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{07537181-A5D7-40A2-B7FC-AB6457A3175A}</ProjectGuid>
-    <OutputType>WinExe</OutputType>
+    <ProjectGuid>{41811DD7-5E4F-424B-BED4-B6B369E6D990}</ProjectGuid>
+    <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>OTEX.Editor</RootNamespace>
-    <AssemblyName>OTEXEditor</AssemblyName>
+    <AssemblyName>OTEXEditor.Shared</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
-    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
   </PropertyGroup>
   <PropertyGroup>
     <OutputPath>..\bin\$(Platform)\$(Configuration)\</OutputPath>
@@ -53,72 +52,31 @@
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
     <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
-  <PropertyGroup>
-    <ApplicationIcon>OTEX.ico</ApplicationIcon>
-  </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
-    <Reference Include="System.Deployment" />
-    <Reference Include="System.Drawing" />
     <Reference Include="System.Net.Http" />
-    <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="EditorForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="EditorForm.Designer.cs">
-      <DependentUpon>EditorForm.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Program.cs" />
+    <Compile Include="HighlightRanges.cs" />
+    <Compile Include="IEditorTextBox.cs" />
+    <Compile Include="LanguageManager.cs" />
+    <Compile Include="Paths.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <EmbeddedResource Include="EditorForm.resx">
-      <DependentUpon>EditorForm.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Properties\Resources.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
-      <SubType>Designer</SubType>
-    </EmbeddedResource>
-    <Compile Include="Properties\Resources.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DependentUpon>Resources.resx</DependentUpon>
-      <DesignTime>True</DesignTime>
-    </Compile>
-    <None Include="Properties\Settings.settings">
-      <Generator>SettingsSingleFileGenerator</Generator>
-      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
-    </None>
-    <Compile Include="Properties\Settings.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DependentUpon>Settings.settings</DependentUpon>
-      <DesignTimeSharedInput>True</DesignTimeSharedInput>
-    </Compile>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="App.config" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="OTEX.ico" />
-    <None Include="Resources\logout_black.png" />
-    <None Include="Resources\cog_black.png" />
-    <None Include="Resources\logout.png" />
-    <None Include="Resources\cog.png" />
+    <Compile Include="SyntaxColours.cs" />
+    <Compile Include="User.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\marzersoft-lib\Marzersoft\Marzersoft.csproj">
       <Project>{73858149-a09b-41b4-a64c-c6a78cbfaf2d}</Project>
       <Name>Marzersoft</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\OTEXEditor.Shared\OTEXEditor.Shared.csproj">
-      <Project>{41811dd7-5e4f-424b-bed4-b6b369e6d990}</Project>
-      <Name>OTEXEditor.Shared</Name>
     </ProjectReference>
     <ProjectReference Include="..\OTEX\OTEX.csproj">
       <Project>{732a23bd-fada-4d41-b61d-e786c1100ed8}</Project>
