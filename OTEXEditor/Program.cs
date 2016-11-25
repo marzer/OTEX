@@ -29,7 +29,7 @@ namespace OTEX.Editor
             {
                 //create plugin factory
                 PluginFactory pluginFactory = new PluginFactory(
-                    new Type[] { typeof(IEditorTextBox) }, Paths.PluginsDirectory);
+                    new Type[] { typeof(IEditorTextBox) }, Paths.PluginsDirectory, true);
                 
                 //check critical types that must have at least 1 plugin
                 if (pluginFactory.Count<IEditorTextBox>() == 0)
