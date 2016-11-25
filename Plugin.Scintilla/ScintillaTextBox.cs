@@ -143,7 +143,7 @@ namespace OTEX.Editor
         /// <summary>
         /// Highlight ranges object.
         /// </summary>
-        private readonly HighlightRanges ranges = new HighlightRanges();
+        private readonly HighlightRanges ranges = new HighlightRanges(24);
 
         /// <summary>
         /// custom key bindings
@@ -268,8 +268,7 @@ namespace OTEX.Editor
             customKeyBindings[Keys.Control | Keys.F2] = () => { ToggleBookmark(CurrentLine); };
             customKeyBindings[Keys.F2] = () => { GoToNextBookmark(CurrentLine);  };
             customKeyBindings[Keys.Shift | Keys.F2] = () => { GoToPreviousBookmark(CurrentLine); };
-            customKeyBindings[Keys.Control | Keys.Q] = () => { CommentSelection(); };
-            customKeyBindings[Keys.Control | Keys.Shift | Keys.Q] = () => { UncommentSelection(); };
+            customKeyBindings[Keys.Control | Keys.Q] = () => { ToggleCommentSelection(); };
             AssignCmdKey(Keys.Alt | Keys.Up, Command.MoveSelectedLinesUp);
             AssignCmdKey(Keys.Alt | Keys.Down, Command.MoveSelectedLinesDown);
             customKeyBindings[Keys.Control | Keys.W] = () => { ViewEol = !ViewEol; };
@@ -734,14 +733,17 @@ namespace OTEX.Editor
         // COMMENTING LINES
         /////////////////////////////////////////////////////////////////////
 
-        private bool CommentRegion(int start, int end, bool insert,
+        private bool CommentRegion(int start, int end, int mode,
             out int firstCommentLine, out int firstCommentOffset,
-            out int lastCommentLine, out int lastCommentOffset)
+            out int lastCommentLine, out int lastCommentOffset,
+            out int actualMode)
         {
             start = start.Clamp(0, TextLength);
             end = end.Clamp(0, TextLength);
             firstCommentLine = firstCommentOffset = -1;
             lastCommentLine = lastCommentOffset = -1;
+            mode = mode.Clamp(-1, 1);
+            actualMode = mode;
 
             //get line numbers
             int firstLine = LineFromPosition(start > end ? end : start);
@@ -751,20 +753,34 @@ namespace OTEX.Editor
             if (lastLine == -1)
                 lastLine = firstLine;
 
-            //enumerate lines to modify
-            int insertIndex = int.MaxValue;
-            List<int> lines = new List<int>();
+            //enumerate commentable lines
+            List<int> allLines = new List<int>();
             for (int l = firstLine; l <= lastLine; ++l)
             {
+                if (Lines[l].Length == 0 || Lines[l].Text.IsWhitespace())
+                    continue;
+                allLines.Add(l);
+            }
+            if (allLines.Count == 0)
+                return false;
+
+            //"automatic mode"
+            if (mode == 0)
+                actualMode = mode = currentLanguage.IsCommented(Lines[allLines[0]].Text) ? -1 : 1;
+            bool insert = mode == 1;
+
+            //enumerate modifiable lines
+            int insertIndex = int.MaxValue;
+            List<int> lines = new List<int>();
+            foreach (var l in allLines)
+            {
                 var line = Lines[l].Text;
-                if (line.Length == 0 || line.IsWhitespace()
-                    || currentLanguage.IsCommented(line) == insert)
+                if (currentLanguage.IsCommented(line) == insert)
                     continue;
                 lines.Add(l);
                 if (insert)
                     insertIndex = Math.Min(insertIndex, line.FirstNonWhitespaceIndex());
             }
-
             if (lines.Count == 0)
                 return false;
 
@@ -792,9 +808,9 @@ namespace OTEX.Editor
             return true;
         }
 
-        private void CommentSelection(bool insert)
+        private void CommentSelection(int mode)
         {
-            lock (currentLanguage)
+            lock (currentLanguageLock)
             {
                 if (currentLanguage == null || currentLanguage.CommentLine.Length == 0)
                     return;
@@ -807,16 +823,17 @@ namespace OTEX.Editor
                 int anchorLine = LineFromPosition(anchor);
                 int anchorOffset = anchor - Lines[anchorLine].Position;
                 int firstLine, lastLine, firstOffset, lastOffset;
-                if (CommentRegion(caret, anchor, insert, out firstLine, out firstOffset,
-                    out lastLine, out lastOffset))
+                int actualMode;
+                if (CommentRegion(caret, anchor, mode, out firstLine, out firstOffset,
+                    out lastLine, out lastOffset, out actualMode))
                 {
                     if ((caretLine == firstLine && caretOffset >= firstOffset)
                         || (caretLine == lastLine && caretOffset >= lastOffset))
-                        caretOffset += insert ? delta : -delta;
+                        caretOffset += delta * actualMode;
                     CurrentPosition = Lines[caretLine].Position + caretOffset;
                     if ((anchorLine == firstLine && anchorOffset >= firstOffset)
                         || (anchorLine == lastLine && anchorOffset >= lastOffset))
-                        anchorOffset += insert ? delta : -delta;
+                        anchorOffset += delta * actualMode;
                     AnchorPosition = Lines[anchorLine].Position + anchorOffset;
                 }
             }
@@ -824,12 +841,17 @@ namespace OTEX.Editor
 
         public void CommentSelection()
         {
-            CommentSelection(true);
+            CommentSelection(1);
+        }
+
+        public void ToggleCommentSelection()
+        {
+            CommentSelection(0);
         }
 
         public void UncommentSelection()
         {
-            CommentSelection(false);
+            CommentSelection(-1);
         }
 
         /////////////////////////////////////////////////////////////////////
@@ -865,3 +887,4 @@ namespace OTEX.Editor
         }
     }
 }
+ 

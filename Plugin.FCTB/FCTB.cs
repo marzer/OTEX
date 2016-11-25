@@ -242,8 +242,7 @@ namespace OTEX.Editor.Plugins
             customKeyBindings[Keys.Control | Keys.F2] = () => { ToggleBookmark(Selection.Start.iLine); };
             HotkeysMapping[Keys.F2] = FCTBAction.GoNextBookmark;
             HotkeysMapping[Keys.Shift | Keys.F2] = FCTBAction.GoPrevBookmark;
-            customKeyBindings[Keys.Control | Keys.Q] = () => { CommentSelection(); };
-            customKeyBindings[Keys.Control | Keys.Shift | Keys.Q] = () => { UncommentSelection(); };
+            customKeyBindings[Keys.Control | Keys.Q] = () => { ToggleCommentSelection(); };
             HotkeysMapping[Keys.Alt | Keys.Up] = FCTBAction.MoveSelectedLinesUp;
             HotkeysMapping[Keys.Alt | Keys.Down] = FCTBAction.MoveSelectedLinesDown;
 
@@ -599,16 +598,20 @@ namespace OTEX.Editor.Plugins
         // COMMENTING LINES
         /////////////////////////////////////////////////////////////////////
 
-        private bool CommentRegion(int start, int end, bool insert,
+        private bool CommentRegion(int start, int end, int mode,
             out int firstCommentLine, out int firstCommentOffset,
-            out int lastCommentLine, out int lastCommentOffset)
+            out int lastCommentLine, out int lastCommentOffset,
+            out int actualMode)
         {
             start = start.Clamp(0, TextLength);
             end = end.Clamp(0, TextLength);
             firstCommentLine = firstCommentOffset = -1;
             lastCommentLine = lastCommentOffset = -1;
+            mode = mode.Clamp(-1, 1);
+            actualMode = mode;
             Range range = new Range(this, PositionToPlace(start), PositionToPlace(end));
             range.Normalize();
+
             //get line numbers
             int firstLine = range.Start.iLine;
             if (firstLine == -1)
@@ -617,20 +620,35 @@ namespace OTEX.Editor.Plugins
             if (lastLine == -1)
                 lastLine = firstLine;
 
-            //enumerate lines to modify
-            int insertIndex = int.MaxValue;
-            List<int> lines = new List<int>();
+            //enumerate commentable lines
+            List<int> allLines = new List<int>();
             for (int l = firstLine; l <= lastLine; ++l)
             {
                 var line = Lines[l];
-                if (line.Length == 0 || line.IsWhitespace()
-                    || currentLanguage.IsCommented(line) == insert)
+                if (line.Length == 0 || line.IsWhitespace())
+                    continue;
+                allLines.Add(l);
+            }
+            if (allLines.Count == 0)
+                return false;
+
+            //"automatic mode"
+            if (mode == 0)
+                actualMode = mode = currentLanguage.IsCommented(Lines[allLines[0]]) ? -1 : 1;
+            bool insert = mode == 1;
+
+            //enumerate modifiable lines
+            int insertIndex = int.MaxValue;
+            List<int> lines = new List<int>();
+            foreach (var l in allLines)
+            {
+                var line = Lines[l];
+                if (currentLanguage.IsCommented(line) == insert)
                     continue;
                 lines.Add(l);
                 if (insert)
                     insertIndex = Math.Min(insertIndex, line.FirstNonWhitespaceIndex());
             }
-
             if (lines.Count == 0)
                 return false;
 
@@ -661,9 +679,9 @@ namespace OTEX.Editor.Plugins
             return true;
         }
 
-        private void CommentSelection(bool insert)
+        private void CommentSelection(int mode)
         {
-            lock (currentLanguage)
+            lock (currentLanguageLock)
             {
                 if (currentLanguage == null || currentLanguage.CommentLine.Length == 0)
                     return;
@@ -671,15 +689,32 @@ namespace OTEX.Editor.Plugins
                 int delta = currentLanguage.CommentLine.Length;
                 var selection = Selection.Clone();
                 int firstLine, lastLine, firstOffset, lastOffset;
-                if (CommentRegion(PlaceToPosition(Selection.Start), PlaceToPosition(Selection.End),
-                    insert, out firstLine, out firstOffset, out lastLine, out lastOffset))
+                int actualMode;
+                int selLength = SelectionLength;
+                if (CommentRegion(PlaceToPosition(selection.Start), PlaceToPosition(selection.End),
+                    mode, out firstLine, out firstOffset, out lastLine, out lastOffset, out actualMode))
                 {
                     if ((selection.Start.iLine == firstLine && selection.Start.iChar >= firstOffset)
                         || (selection.Start.iLine == lastLine && selection.Start.iChar >= lastOffset))
-                        selection.Start = new Place(selection.Start.iChar + (insert ? delta : -delta), selection.Start.iLine);
-                    if ((selection.End.iLine == firstLine && selection.End.iChar >= firstOffset)
-                        || (selection.End.iLine == lastLine && selection.End.iChar >= lastOffset))
-                        selection.End = new Place(selection.End.iChar + (insert ? delta : -delta), selection.End.iLine);
+                        selection.Start = new Place(selection.Start.iChar + (actualMode * delta), selection.Start.iLine);
+                    if (selLength > 0)
+                    {
+                        if ((selection.End.iLine == firstLine && selection.End.iChar >= firstOffset)
+                            || (selection.End.iLine == lastLine && selection.End.iChar >= lastOffset))
+                            selection.End = new Place(selection.End.iChar + (actualMode * delta), selection.End.iLine);
+
+                        bool reversed = selection.End < selection.Start;
+                        selection.Normalize();
+                        var range = Range;
+                        if (selection.Start < range.Start)
+                            selection.Start = range.Start;
+                        if (selection.End > range.End)
+                            selection.End = range.End;
+                        if (reversed)
+                            selection.Inverse();
+                    }
+                    else
+                        selection.End = selection.Start;
 
                     Selection = selection;
                 }
@@ -688,12 +723,17 @@ namespace OTEX.Editor.Plugins
 
         public void CommentSelection()
         {
-            CommentSelection(true);
+            CommentSelection(1);
+        }
+
+        public void ToggleCommentSelection()
+        {
+            CommentSelection(0);
         }
 
         public void UncommentSelection()
         {
-            CommentSelection(false);
+            CommentSelection(-1);
         }
 
         /////////////////////////////////////////////////////////////////////
