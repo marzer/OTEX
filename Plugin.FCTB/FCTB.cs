@@ -635,6 +635,7 @@ namespace OTEX.Editor.Plugins
                 return false;
 
             //modify lines
+            BeginAutoUndo();
             firstCommentLine = lines[0];
             lastCommentLine = lines[lines.Count - 1];
             if (insert)
@@ -656,7 +657,7 @@ namespace OTEX.Editor.Plugins
                         lastCommentOffset = offset;
                 }
             }
-
+            EndAutoUndo();
             return true;
         }
 
