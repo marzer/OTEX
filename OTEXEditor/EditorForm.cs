@@ -307,15 +307,7 @@ namespace OTEX.Editor
             }
 
             // CREATE TEXT EDITOR //////////////////////////////////////////////////////////////////
-            string editorPlugin = "";
-            if (App.Arguments.Key("editor", ref editorPlugin))
-                tbEditor = plugins.CreateByName<IEditorTextBox>(editorPlugin);
-            if (tbEditor == null)
-                tbEditor = plugins.CreateByName<IEditorTextBox>(App.Config.User.Get("plugins.editor", 0, ""));
-            if (tbEditor == null)
-                tbEditor = plugins.CreateByName<IEditorTextBox>("scintilla");
-            if (tbEditor == null)
-                tbEditor = plugins.CreateFirst<IEditorTextBox>();
+            tbEditor = plugins.CreateByConfig<IEditorTextBox>("editor", "plugins.editor", "", "scintilla", true);
             tbEditor.OnInsertion += (tb, offset, text) =>
             {
                 if (otexClient.Connected)
