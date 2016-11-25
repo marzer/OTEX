@@ -254,9 +254,9 @@ namespace OTEX.Editor
                     extensions.AddRange(tokens);
 
                 //comments
-                CommentLine = (string)node.Attribute("commentLine");
-                CommentStart = (string)node.Attribute("commentStart");
-                CommentEnd = (string)node.Attribute("commentEnd");
+                CommentLine = ((string)node.Attribute("commentLine") ?? "").Trim();
+                CommentStart = ((string)node.Attribute("commentStart") ?? "").Trim();
+                CommentEnd = ((string)node.Attribute("commentEnd") ?? "").Trim();
 
                 //keywords
                 var keywordNodes = from k in node.Descendants("Keywords")
@@ -288,6 +288,37 @@ namespace OTEX.Editor
                 if (rxExtensions == null)
                     rxExtensions = extensions.RegexSelector();
                 return rxExtensions.IsMatch(ext);
+            }
+
+            /// <summary>
+            /// Is a line of text entirely commented?
+            /// </summary>
+            /// <param name="line">The line to test</param>
+            /// <returns>true if the language has a single-line comment delimiter and it is
+            /// the first non-whitespace text to appear in the string</returns>
+            /// <exception cref="ArgumentNullException" />
+            public bool IsCommented(string line)
+            {
+                if (line == null)
+                    throw new ArgumentNullException("line");
+                if (CommentLine.Length == 0)
+                    return false;
+                if (rxCommentLine == null)
+                    rxCommentLine = new Regex(@"^\s*(" + Regex.Escape(CommentLine) + @")", RegexOptions.Compiled);
+                return rxCommentLine.IsMatch(line);
+            }
+            private Regex rxCommentLine = null;
+
+            public string Comment(string line, int insertionIndex = -1)
+            {
+                if (line == null)
+                    throw new ArgumentNullException("line");
+                if (CommentLine.Length == 0 || line.Length == 0 || line.IsWhitespace())
+                    return line;
+                int idx = line.FirstNonWhitespaceIndex();
+                if (insertionIndex >= 0)
+                    idx = Math.Min(idx, insertionIndex);
+                return line.Insert(idx, CommentLine);
             }
         }
 
