@@ -94,13 +94,13 @@ namespace OTEX.Editor
                 //apply user colour
                 //(alpha values match those of FCTB)
                 userColour = value;
-                SetSelectionBackColor(true, App.Theme == null || App.Theme.IsDark ? Styles[Style.Default].BackColor.Blend(userColour, 60)
+                SetSelectionBackColor(true, App.Theme == null || App.Theme.IsDark
+                    ? Styles[Style.Default].BackColor.Blend(userColour, 60)
                     : userColour.Blend(Styles[Style.Default].BackColor, 60));
                 CaretLineBackColor = userColour;
-                CaretLineBackColorAlpha = 50;
-                EdgeColor = App.Theme == null || App.Theme.IsDark ? Styles[Style.Default].BackColor.Blend(userColour, 32)
+                EdgeColor = App.Theme == null || App.Theme.IsDark
+                    ? Styles[Style.Default].BackColor.Blend(userColour, 32)
                     : userColour.Blend(Styles[Style.Default].BackColor, 32);
-                CaretForeColor = userColour.Brighten(0.3f);
                 Styles[Style.LineNumber].ForeColor = userColour;
                 Markers[BookmarkMarker].SetBackColor(userColour);
                 for (int i = Marker.FolderEnd; i <= Marker.FolderOpen; i++)
@@ -199,6 +199,7 @@ namespace OTEX.Editor
             BufferedDraw = false; //don't need it with directwrite
             EdgeMode = EdgeMode.Line;
             EdgeColumn = 100;
+            CaretLineBackColorAlpha = 50;
             for (int i = 8; i <= 31; ++i)
             {
                 Indicators[i].Style = IndicatorStyle.Hidden;
@@ -206,7 +207,13 @@ namespace OTEX.Editor
                 Indicators[i].OutlineAlpha = 64;
                 Indicators[i].Alpha = 32;
             }
-
+            switch (Environment.NewLine)
+            {
+                case "\r": EolMode = Eol.Cr; break;
+                case "\r\n": EolMode = Eol.CrLf; break;
+                case "\n": EolMode = Eol.Lf; break;
+            }
+            PasteConvertEndings = true;
 
             if (IsDesignMode)
                 return;
@@ -265,6 +272,7 @@ namespace OTEX.Editor
             customKeyBindings[Keys.Control | Keys.Shift | Keys.Q] = () => { UncommentSelection(); };
             AssignCmdKey(Keys.Alt | Keys.Up, Command.MoveSelectedLinesUp);
             AssignCmdKey(Keys.Alt | Keys.Down, Command.MoveSelectedLinesDown);
+            customKeyBindings[Keys.Control | Keys.W] = () => { ViewEol = !ViewEol; };
 
             //explicitly disable some unused combinations so scintilla doesn't insert weird characters
             NullControlCmdKey(Keys.B); NullControlCmdKey(Keys.D); NullControlCmdKey(Keys.E);
@@ -361,6 +369,7 @@ namespace OTEX.Editor
                 Markers[i].SetForeColor(t.Workspace.Colour);
             SetFoldMarginHighlightColor(true, t.Workspace.Colour);
             SetFoldMarginColor(true, t.Workspace.Colour);
+            CaretForeColor = t == null || !t.IsDark ? Color.Black : Color.White;
         }
 
         private void UpdateStyles(bool updateDefaults)
