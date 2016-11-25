@@ -214,19 +214,18 @@ namespace OTEX
                     var diffs = Diff.Calculate(document.ToCharArray(), input.ToCharArray());
 
                     //convert changes into operations
-                    int position = 0;
                     foreach (var diff in diffs)
                     {
                         //skip unchanged characters
-                        position = Math.Min(diff.InsertStart, document.Length);
+                        uint position = (uint)Math.Min(diff.InsertStart, document.Length);
 
                         //process a deletion
                         if (diff.DeleteLength > 0)
-                            client.Delete((uint)position, (uint)diff.DeleteLength);
+                            client.Delete(position, diff.DeleteLength);
 
                         //process an insertion
                         if (position < (diff.InsertStart + diff.InsertLength))
-                            client.Insert((uint)position, document.Substring(position, diff.InsertLength));
+                            client.Insert(position, document.Substring((int)position, (int)diff.InsertLength));
                     }
 
                     //update value fire event

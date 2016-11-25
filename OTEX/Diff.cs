@@ -19,29 +19,28 @@ namespace OTEX
             /// <summary>
             /// Index of deletion range.
             /// </summary>
-            public int DeleteStart { get; internal set; }
+            public uint DeleteStart { get; internal set; }
 
             /// <summary>
             /// Length of deletion range (0 == no deletion).
             /// </summary>
-            public int DeleteLength { get; internal set; }
+            public uint DeleteLength { get; internal set; }
 
             /// <summary>
             /// Index of insertion range.
             /// </summary>
-            public int InsertStart { get; internal set; }
+            public uint InsertStart { get; internal set; }
 
             /// <summary>
             /// Length of insertion range (0 == no insertion).
             /// </summary>
-            public int InsertLength { get; internal set; }
+            public uint InsertLength { get; internal set; }
         }
 
         private class Data<T> where T : IEquatable<T>
         {
-
             /// <summary>Number of elements (lines).</summary>
-            public readonly int Length;
+            public readonly long Length;
 
             /// <summary>Buffer of numbers that will be compared.</summary>
             public readonly T[] data;
@@ -60,7 +59,7 @@ namespace OTEX
             public Data(T[] initData)
             {
                 data = initData;
-                Length = initData.Count();
+                Length = initData.LongLength;
                 modified = new bool[Length + 2];
             }
 
@@ -78,11 +77,11 @@ namespace OTEX
             Data<T> DataA = new Data<T>(oldValues);
             Data<T> DataB = new Data<T>(newValues);
 
-            int MAX = DataA.Length + DataB.Length + 1;
+            long MAX = DataA.Length + DataB.Length + 1;
             //vector for the (0,0) to (x,y) search
-            int[] DownVector = new int[2 * MAX + 2];
+            long[] DownVector = new long[2 * MAX + 2];
             //vector for the (u,v) to (N,M) search
-            int[] UpVector = new int[2 * MAX + 2];
+            long[] UpVector = new long[2 * MAX + 2];
 
             LongestCommonSubsequence(DataA, 0, DataA.Length, DataB, 0, DataB.Length, DownVector, UpVector);
             return CreateDiffs(DataA, DataB);
@@ -102,30 +101,30 @@ namespace OTEX
         /// <param name="UpVector">a vector for the (u,v) to (N,M) search.</param>
         /// <param name="retX">X value of the middle snake</param>
         /// <param name="retY">Y value of the middle snake</param>
-        private static void ShortestMiddleSnake<T>(Data<T> DataA, int LowerA, int UpperA, Data<T> DataB, int LowerB, int UpperB,
-          int[] DownVector, int[] UpVector, out int retX, out int retY) where T : IEquatable<T>
+        private static void ShortestMiddleSnake<T>(Data<T> DataA, long LowerA, long UpperA, Data<T> DataB, long LowerB, long UpperB,
+          long[] DownVector, long[] UpVector, out long retX, out long retY) where T : IEquatable<T>
         {
-            int MAX = DataA.Length + DataB.Length + 1;
-            int DownK = LowerA - LowerB; // the k-line to start the forward search
-            int UpK = UpperA - UpperB; // the k-line to start the reverse search
-            int Delta = (UpperA - LowerA) - (UpperB - LowerB);
+            long MAX = DataA.Length + DataB.Length + 1;
+            long DownK = LowerA - LowerB; // the k-line to start the forward search
+            long UpK = UpperA - UpperB; // the k-line to start the reverse search
+            long Delta = (UpperA - LowerA) - (UpperB - LowerB);
             bool oddDelta = (Delta & 1) != 0;
-            int DownOffset = MAX - DownK;
-            int UpOffset = MAX - UpK;
-            int MaxD = ((UpperA - LowerA + UpperB - LowerB) / 2) + 1;
+            long DownOffset = MAX - DownK;
+            long UpOffset = MAX - UpK;
+            long MaxD = ((UpperA - LowerA + UpperB - LowerB) / 2) + 1;
 
             // init vectors
             DownVector[DownOffset + DownK + 1] = LowerA;
             UpVector[UpOffset + UpK - 1] = UpperA;
 
-            for (int D = 0; D <= MaxD; ++D)
+            for (long D = 0; D <= MaxD; ++D)
             {
 
                 // Extend the forward path.
-                for (int k = DownK - D; k <= DownK + D; k += 2)
+                for (long k = DownK - D; k <= DownK + D; k += 2)
                 {
                     // find the only or better starting point
-                    int x, y;
+                    long x, y;
                     if (k == DownK - D)
                     {
                         x = DownVector[DownOffset + k + 1]; // down
@@ -160,10 +159,10 @@ namespace OTEX
                 }
 
                 // Extend the reverse path.
-                for (int k = UpK - D; k <= UpK + D; k += 2)
+                for (long k = UpK - D; k <= UpK + D; k += 2)
                 {
                     // find the only or better starting point
-                    int x, y;
+                    long x, y;
                     if (k == UpK + D)
                         x = UpVector[UpOffset + k - 1]; // up
                     else
@@ -212,8 +211,8 @@ namespace OTEX
         /// <param name="UpperB">upper bound of the actual range in DataB (exclusive)</param>
         /// <param name="DownVector">a vector for the (0,0) to (x,y) search. Passed as a parameter for speed reasons.</param>
         /// <param name="UpVector">a vector for the (u,v) to (N,M) search. Passed as a parameter for speed reasons.</param>
-        private static void LongestCommonSubsequence<T>(Data<T> DataA, int LowerA, int UpperA, Data<T> DataB, int LowerB,
-            int UpperB, int[] DownVector, int[] UpVector)
+        private static void LongestCommonSubsequence<T>(Data<T> DataA, long LowerA, long UpperA, Data<T> DataB, long LowerB,
+            long UpperB, long[] DownVector, long[] UpVector)
              where T : IEquatable<T>
         {
             // Fast walkthrough equal lines at the start
@@ -247,7 +246,7 @@ namespace OTEX
             else
             {
                 // Find the middle snakea and length of an optimal path for A and B
-                int smsrdX, smsrdY;
+                long smsrdX, smsrdY;
                 ShortestMiddleSnake(DataA, LowerA, UpperA, DataB, LowerB, UpperB, DownVector, UpVector, out smsrdX, out smsrdY);
 
                 // The path is from LowerX to (x,y) and (x,y) to UpperX
@@ -264,8 +263,8 @@ namespace OTEX
             where T : IEquatable<T>
         {
             List<Item> items = new List<Item>();
-            int StartA, StartB;
-            int LineA, LineB;
+            uint StartA, StartB;
+            uint LineA, LineB;
 
             LineA = 0;
             LineB = 0;
