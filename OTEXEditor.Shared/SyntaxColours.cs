@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Marzersoft;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
@@ -14,7 +15,11 @@ namespace OTEX.Editor
         /// </summary>
         public static Color Comments
         {
-            get { return Color.FromArgb(87, 166, 74); }
+            get
+            {
+                return App.Theme != null && !App.Theme.IsDark
+                    ? Color.FromArgb(0, 128, 0) : Color.FromArgb(87, 166, 74);
+            }
         }
 
         /// <summary>
@@ -22,7 +27,11 @@ namespace OTEX.Editor
         /// </summary>
         public static Color Keywords
         {
-            get { return Color.FromArgb(86, 156, 214); }
+            get
+            {
+                return App.Theme != null && !App.Theme.IsDark
+                    ? Color.FromArgb(0, 0, 255) : Color.FromArgb(86, 156, 214);
+            }
         }
 
         /// <summary>
@@ -30,7 +39,11 @@ namespace OTEX.Editor
         /// </summary>
         public static Color Types
         {
-            get { return Color.FromArgb(78, 201, 176); }
+            get
+            {
+                return App.Theme != null && !App.Theme.IsDark
+                    ? Color.FromArgb(43, 145, 175) : Color.FromArgb(78, 201, 176);
+            }
         }
 
         /// <summary>
@@ -38,7 +51,11 @@ namespace OTEX.Editor
         /// </summary>
         public static Color Strings
         {
-            get { return Color.FromArgb(214, 157, 133); }
+            get
+            {
+                return App.Theme != null && !App.Theme.IsDark
+                    ? Color.FromArgb(163, 21, 21) : Color.FromArgb(214, 157, 133);
+            }
         }
 
         /// <summary>
@@ -46,7 +63,11 @@ namespace OTEX.Editor
         /// </summary>
         public static Color Numbers
         {
-            get { return Color.FromArgb(181, 206, 168); }
+            get
+            {
+                return App.Theme != null && !App.Theme.IsDark
+                    ? Color.FromArgb(0, 0, 0) : Color.FromArgb(181, 206, 168);
+            }
         }
 
         /// <summary>
@@ -54,7 +75,11 @@ namespace OTEX.Editor
         /// </summary>
         public static Color PreprocessorDirectives
         {
-            get { return Color.FromArgb(155, 155, 155); }
+            get
+            {
+                return App.Theme != null && !App.Theme.IsDark
+                    ? Color.FromArgb(128,128,128) : Color.FromArgb(155, 155, 155);
+            }
         }
 
         /// <summary>
@@ -62,7 +87,10 @@ namespace OTEX.Editor
         /// </summary>
         public static Color Documentation
         {
-            get { return Color.FromArgb(0, 100, 0); }
+            get
+            {
+                return PreprocessorDirectives.Darken(0.4f).Blend(Comments, 100);
+            }
         }
     }
 }

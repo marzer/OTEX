@@ -94,10 +94,12 @@ namespace OTEX.Editor
                 //apply user colour
                 //(alpha values match those of FCTB)
                 userColour = value;
-                SetSelectionBackColor(true, Styles[Style.Default].BackColor.Blend(userColour, 60));
+                SetSelectionBackColor(true, App.Theme == null || App.Theme.IsDark ? Styles[Style.Default].BackColor.Blend(userColour, 60)
+                    : userColour.Blend(Styles[Style.Default].BackColor, 60));
                 CaretLineBackColor = userColour;
                 CaretLineBackColorAlpha = 50;
-                EdgeColor = Styles[Style.Default].BackColor.Blend(userColour, 32);
+                EdgeColor = App.Theme == null || App.Theme.IsDark ? Styles[Style.Default].BackColor.Blend(userColour, 32)
+                    : userColour.Blend(Styles[Style.Default].BackColor, 32);
                 CaretForeColor = userColour.Brighten(0.3f);
                 Styles[Style.LineNumber].ForeColor = userColour;
                 Markers[BookmarkMarker].SetBackColor(userColour);
@@ -385,10 +387,12 @@ namespace OTEX.Editor
                 Styles[Style.IndentGuide].ForeColor = App.Theme.Workspace.HighContrast.Colour;
 
                 //selection colour
-                SetSelectionBackColor(true, Styles[Style.Default].BackColor.Blend(userColour, 60));
+                SetSelectionBackColor(true, App.Theme == null || App.Theme.IsDark ? Styles[Style.Default].BackColor.Blend(userColour, 60)
+                    : userColour.Blend(Styles[Style.Default].BackColor, 60));
 
                 //line length indicator
-                EdgeColor = Styles[Style.Default].BackColor.Blend(userColour, 32);
+                EdgeColor = App.Theme == null || App.Theme.IsDark ? Styles[Style.Default].BackColor.Blend(userColour, 32)
+                    : userColour.Blend(Styles[Style.Default].BackColor, 32);
             }
 
             if (currentLanguage != null)
