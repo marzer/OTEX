@@ -100,6 +100,7 @@ namespace OTEX.Editor
                 EdgeColor = Styles[Style.Default].BackColor.Blend(userColour, 32);
                 CaretForeColor = userColour.Brighten(0.3f);
                 Styles[Style.LineNumber].ForeColor = userColour;
+                Markers[BookmarkMarker].SetBackColor(userColour);
                 for (int i = Marker.FolderEnd; i <= Marker.FolderOpen; i++)
                     Markers[i].SetBackColor(userColour);
             }
@@ -142,6 +143,18 @@ namespace OTEX.Editor
         /// </summary>
         private readonly HighlightRanges ranges = new HighlightRanges();
 
+        /// <summary>
+        /// custom key bindings
+        /// </summary>
+        private readonly Dictionary<Keys, Action> customKeyBindings
+            = new Dictionary<Keys, Action>();
+
+        /// <summary>
+        /// Bookmark marker mask.
+        /// </summary>
+        private const int BookmarkMarker = 1;
+        private const uint BookmarkMask = (1 << BookmarkMarker);
+
         /////////////////////////////////////////////////////////////////////
         // CONSTRUCTOR
         /////////////////////////////////////////////////////////////////////
@@ -153,19 +166,25 @@ namespace OTEX.Editor
             WrapStartIndent = 4;
             WrapIndentMode = WrapIndentMode.Indent;
             TabWidth = 4;
-            BorderStyle = System.Windows.Forms.BorderStyle.None;
+            BorderStyle = BorderStyle.None;
             ExtraAscent = 1;
             ExtraDescent = 1;
             MultipleSelection = false;
             MouseSelectionRectangularSwitch = false;
             AdditionalSelectionTyping = false;
             VirtualSpaceOptions = VirtualSpace.None;
+            Margins[1].Width = 16;
+            Margins[1].Type = MarginType.Symbol;
+            Margins[1].Mask = BookmarkMask;
+            Margins[1].Sensitive = true;
+            Margins[1].Cursor = MarginCursor.Arrow;
+            Margins[2].Width = 0;
             Margins[2].Type = MarginType.Symbol;
             Margins[2].Mask = Marker.MaskFolders;
             Margins[2].Sensitive = true;
-            Margins[2].Width = 0;
             CaretLineVisible = true;
             AutomaticFold = (AutomaticFold.Show | AutomaticFold.Click | AutomaticFold.Change);
+            Markers[BookmarkMarker].Symbol = MarkerSymbol.Bookmark;
             Markers[Marker.Folder].Symbol = MarkerSymbol.BoxPlus;
             Markers[Marker.FolderOpen].Symbol = MarkerSymbol.BoxMinus;
             Markers[Marker.FolderEnd].Symbol = MarkerSymbol.BoxPlusConnected;
@@ -186,13 +205,75 @@ namespace OTEX.Editor
                 Indicators[i].Alpha = 32;
             }
 
-            /*
-            HotkeysMapping.Remove(Keys.Control | Keys.H); //remove default "replace" (CTRL + H, wtf?)
-            HotkeysMapping[Keys.Control | Keys.R] = FCTBAction.ReplaceDialog; // CTRL + R for replace
-            */
 
             if (IsDesignMode)
                 return;
+
+            //hotkeys
+            ClearAllCmdKeys();
+            AssignCmdKey(Keys.Left, Command.CharLeft);
+            AssignCmdKey(Keys.Right, Command.CharRight);
+            AssignCmdKey(Keys.Up, Command.LineUp);
+            AssignCmdKey(Keys.Down, Command.LineDown);
+            AssignCmdKey(Keys.Home, Command.Home);
+            AssignCmdKey(Keys.End, Command.LineEnd);
+            AssignCmdKey(Keys.PageDown, Command.PageDown);
+            AssignCmdKey(Keys.PageUp, Command.PageUp);
+            AssignCmdKey(Keys.Shift | Keys.Left, Command.CharLeftExtend);
+            AssignCmdKey(Keys.Shift | Keys.Right, Command.CharRightExtend);
+            AssignCmdKey(Keys.Shift | Keys.Up, Command.LineUpExtend);
+            AssignCmdKey(Keys.Shift | Keys.Down, Command.LineDownExtend);
+            AssignCmdKey(Keys.Shift | Keys.Home, Command.HomeExtend);
+            AssignCmdKey(Keys.Shift | Keys.End, Command.LineEndExtend);
+            AssignCmdKey(Keys.Shift | Keys.PageDown, Command.PageDownExtend);
+            AssignCmdKey(Keys.Shift | Keys.PageUp, Command.PageUpExtend);
+            AssignCmdKey(Keys.Control | Keys.X, MissingCommands.Cut);
+            AssignCmdKey(Keys.Control | Keys.C, MissingCommands.Copy);
+            AssignCmdKey(Keys.Control | Keys.V, MissingCommands.Paste);
+            AssignCmdKey(Keys.Control | Keys.A, Command.SelectAll);
+            AssignCmdKey(Keys.Control | Keys.Z, Command.Undo);
+            AssignCmdKey(Keys.Control | Keys.Y, Command.Redo);
+            AssignCmdKey(Keys.Tab, Command.Tab);
+            AssignCmdKey(Keys.Shift | Keys.Tab, Command.BackTab);
+            AssignCmdKey(Keys.Control | Keys.Home, Command.DocumentStart);
+            AssignCmdKey(Keys.Control | Keys.End, Command.DocumentEnd);
+            AssignCmdKey(Keys.Control | Keys.Shift | Keys.Home, Command.DocumentStartExtend);
+            AssignCmdKey(Keys.Control | Keys.Shift | Keys.End, Command.DocumentEndExtend);
+            AssignCmdKey(Keys.Control | Keys.Left, Command.WordLeft);
+            AssignCmdKey(Keys.Control | Keys.Right, Command.WordRight);
+            AssignCmdKey(Keys.Control | Keys.Shift | Keys.Left, Command.WordLeftExtend);
+            AssignCmdKey(Keys.Control | Keys.Shift | Keys.Right, Command.WordRightExtend);
+            AssignCmdKey(Keys.Control | Keys.Subtract, Command.ZoomOut);
+            AssignCmdKey(Keys.Control | Keys.Add, Command.ZoomIn);
+            customKeyBindings[Keys.Control | Keys.NumPad0] = () => { Zoom = 0; };
+            AssignCmdKey(Keys.Control | Keys.U, Command.Uppercase);
+            AssignCmdKey(Keys.Control | Keys.Shift | Keys.U, Command.Lowercase);
+            AssignCmdKey(Keys.Insert, Command.EditToggleOvertype);
+            AssignCmdKey(Keys.Control | Keys.Back, Command.DelWordLeft);
+            AssignCmdKey(Keys.Control | Keys.Delete, Command.DelWordRight);
+            AssignCmdKey(Keys.Control | Keys.Up, Command.LineScrollUp);
+            AssignCmdKey(Keys.Control | Keys.Down, Command.LineScrollDown);
+            AssignCmdKey(Keys.Back, Command.DeleteBack);
+            AssignCmdKey(Keys.Delete, MissingCommands.Clear);
+            AssignCmdKey(Keys.Shift | Keys.Delete, Command.LineDelete);
+            customKeyBindings[Keys.Control | Keys.F2] = () => { ToggleBookmark(CurrentLine); };
+            customKeyBindings[Keys.F2] = () => { GoToNextBookmark(CurrentLine);  };
+            customKeyBindings[Keys.Shift | Keys.F2] = () => { GoToPreviousBookmark(CurrentLine); };
+            customKeyBindings[Keys.Control | Keys.Q] = () => { CommentSelection(); };
+            customKeyBindings[Keys.Control | Keys.Shift | Keys.Q] = () => { UncommentSelection(); };
+            AssignCmdKey(Keys.Alt | Keys.Up, Command.MoveSelectedLinesUp);
+            AssignCmdKey(Keys.Alt | Keys.Down, Command.MoveSelectedLinesDown);
+
+            //explicitly disable some unused combinations so scintilla doesn't insert weird characters
+            NullControlCmdKey(Keys.B); NullControlCmdKey(Keys.D); NullControlCmdKey(Keys.E);
+            NullControlCmdKey(Keys.F); NullControlCmdKey(Keys.G); NullControlCmdKey(Keys.H);
+            NullControlCmdKey(Keys.I); NullControlCmdKey(Keys.J); NullControlCmdKey(Keys.K);
+            NullControlCmdKey(Keys.L); NullControlCmdKey(Keys.M); NullControlCmdKey(Keys.N);
+            NullControlCmdKey(Keys.O); NullControlCmdKey(Keys.P); NullControlCmdKey(Keys.Q);
+            NullControlCmdKey(Keys.R); NullControlCmdKey(Keys.S); NullControlCmdKey(Keys.T);
+            NullControlCmdKey(Keys.W);
+            foreach (var kvp in customKeyBindings)
+                AssignCmdKey(kvp.Key, Command.Null);
 
             //insert diff
             Insert += (s, e) =>
@@ -247,6 +328,13 @@ namespace OTEX.Editor
                     Indicators[i].Style = IndicatorStyle.Hidden;
             };
 
+            //margin click events
+            MarginClick += (s, e) =>
+            {
+                if (e.Margin == 1)
+                    ToggleBookmark(LineFromPosition(e.Position));
+            };
+
             //themes
             ApplyTheme(App.Theme);
             App.ThemeChanged += ApplyTheme;
@@ -266,6 +354,7 @@ namespace OTEX.Editor
                 UpdateStyles(true);
             }
 
+            Markers[BookmarkMarker].SetForeColor(t.Workspace.Colour);
             for (int i = Marker.FolderEnd; i <= Marker.FolderOpen; i++)
                 Markers[i].SetForeColor(t.Workspace.Colour);
             SetFoldMarginHighlightColor(true, t.Workspace.Colour);
@@ -402,13 +491,11 @@ namespace OTEX.Editor
                 Lexer = newLexer;
                 if (newLexer == Lexer.Null)
                 {
-                    Margins[1].Width = 4;
                     Margins[2].Width = 0;
                     IndentationGuides = IndentView.None;
                 }
                 else
                 {
-                    Margins[1].Width = 16;
                     Margins[2].Width = 20;
                     SetProperty("fold", "1");
                     SetProperty("fold.compact", "1");
@@ -545,6 +632,194 @@ namespace OTEX.Editor
         }
 
         /////////////////////////////////////////////////////////////////////
+        // HOTKEYS
+        /////////////////////////////////////////////////////////////////////
+
+        /// <summary>
+        /// Scintilla command identifiers missing from ScintillaNET's Commands enum.
+        /// </summary>
+        public enum MissingCommands : int
+        {
+            Cut = 2177,
+            Copy = 2178,
+            Paste = 2179,
+            Clear = 2180
+        }
+
+        public void AssignCmdKey(Keys keyDefinition, MissingCommands sciCommand)
+        {
+            AssignCmdKey(keyDefinition, (Command)((int)sciCommand));
+        }
+
+        public void NullControlCmdKey(Keys keyDefinition)
+        {
+            AssignCmdKey(Keys.Control | keyDefinition, Command.Null);
+            AssignCmdKey(Keys.Control | Keys.Alt | keyDefinition, Command.Null);
+            AssignCmdKey(Keys.Control | Keys.Shift | keyDefinition, Command.Null);
+        }
+
+        protected override void OnKeyDown(KeyEventArgs e)
+        {
+            Action customBinding = null;
+            if (customKeyBindings.TryGetValue(e.KeyData, out customBinding))
+                customBinding();
+            base.OnKeyDown(e);
+        }
+
+        /////////////////////////////////////////////////////////////////////
+        // BOOKMARKS
+        /////////////////////////////////////////////////////////////////////
+
+        public void ToggleBookmark(int atLine)
+        {
+            var line = Lines[atLine];
+            if ((line.MarkerGet() & BookmarkMask) == 0u)
+                line.MarkerAdd(BookmarkMarker);
+            else
+                line.MarkerDelete(BookmarkMarker);
+        }
+
+        public bool GoToPreviousBookmark(int fromLine, bool wrap = true)
+        {
+            if (fromLine <= 0)
+                fromLine = Lines.Count;
+            --fromLine;
+            if (fromLine < 0 || fromLine >= Lines.Count)
+                return false;
+
+            var prevLine = Lines[fromLine].MarkerPrevious(BookmarkMask);
+            if (prevLine != -1)
+            {
+                Lines[prevLine].Goto();
+                return true;
+            }
+            else if (wrap)
+                return GoToPreviousBookmark(-1, false);
+            return false;
+        }
+
+        public bool GoToNextBookmark(int fromLine, bool wrap = true)
+        {
+            if (fromLine >= Lines.Count - 1)
+                fromLine = -1;
+            ++fromLine;
+            if (fromLine < 0 || fromLine >= Lines.Count)
+                return false;
+
+            var nextLine = Lines[fromLine].MarkerNext(BookmarkMask);
+            if (nextLine != -1)
+            {
+                Lines[nextLine].Goto();
+                return true;
+            }
+            else if (wrap)
+                return GoToNextBookmark(Lines.Count, false);
+            return false;
+        }
+
+        /////////////////////////////////////////////////////////////////////
+        // COMMENTING LINES
+        /////////////////////////////////////////////////////////////////////
+
+        private bool CommentRegion(int start, int end, bool insert,
+            out int firstCommentLine, out int firstCommentOffset,
+            out int lastCommentLine, out int lastCommentOffset)
+        {
+            start = start.Clamp(0, TextLength);
+            end = end.Clamp(0, TextLength);
+            firstCommentLine = firstCommentOffset = -1;
+            lastCommentLine = lastCommentOffset = -1;
+
+            //get line numbers
+            int firstLine = LineFromPosition(start > end ? end : start);
+            if (firstLine == -1)
+                return false;
+            int lastLine = LineFromPosition(start > end ? start : end);
+            if (lastLine == -1)
+                lastLine = firstLine;
+
+            //enumerate lines to modify
+            int insertIndex = int.MaxValue;
+            List<int> lines = new List<int>();
+            for (int l = firstLine; l <= lastLine; ++l)
+            {
+                var line = Lines[l].Text;
+                if (line.Length == 0 || line.IsWhitespace()
+                    || currentLanguage.IsCommented(line) == insert)
+                    continue;
+                lines.Add(l);
+                if (insert)
+                    insertIndex = Math.Min(insertIndex, line.FirstNonWhitespaceIndex());
+            }
+
+            if (lines.Count == 0)
+                return false;
+
+            //modify lines
+            BeginUndoAction();
+            firstCommentLine = lines[0];
+            lastCommentLine = lines[lines.Count-1];
+            if (insert)
+                firstCommentOffset = lastCommentOffset = insertIndex;
+            for (int i = 0; i < lines.Count; ++i)
+            {
+                if (insert)
+                    InsertText(Lines[lines[i]].Position + insertIndex, currentLanguage.CommentLine);
+                else
+                {
+                    int offset = Lines[lines[i]].Text.FirstNonWhitespaceIndex();
+                    DeleteRange(Lines[lines[i]].Position + offset, currentLanguage.CommentLine.Length);
+                    if (i == 0)
+                        firstCommentOffset = offset;
+                    if (i == lines.Count - 1)
+                        lastCommentOffset = offset;
+                }
+            }
+            EndUndoAction();
+            return true;
+        }
+
+        private void CommentSelection(bool insert)
+        {
+            lock (currentLanguage)
+            {
+                if (currentLanguage == null || currentLanguage.CommentLine.Length == 0)
+                    return;
+
+                int delta = currentLanguage.CommentLine.Length;
+                int caret = CurrentPosition;
+                int caretLine = LineFromPosition(caret);
+                int caretOffset = caret - Lines[caretLine].Position;
+                int anchor = AnchorPosition;
+                int anchorLine = LineFromPosition(anchor);
+                int anchorOffset = anchor - Lines[anchorLine].Position;
+                int firstLine, lastLine, firstOffset, lastOffset;
+                if (CommentRegion(caret, anchor, insert, out firstLine, out firstOffset,
+                    out lastLine, out lastOffset))
+                {
+                    if ((caretLine == firstLine && caretOffset >= firstOffset)
+                        || (caretLine == lastLine && caretOffset >= lastOffset))
+                        caretOffset += insert ? delta : -delta;
+                    CurrentPosition = Lines[caretLine].Position + caretOffset;
+                    if ((anchorLine == firstLine && anchorOffset >= firstOffset)
+                        || (anchorLine == lastLine && anchorOffset >= lastOffset))
+                        anchorOffset += insert ? delta : -delta;
+                    AnchorPosition = Lines[anchorLine].Position + anchorOffset;
+                }
+            }
+        }
+
+        public void CommentSelection()
+        {
+            CommentSelection(true);
+        }
+
+        public void UncommentSelection()
+        {
+            CommentSelection(false);
+        }
+
+        /////////////////////////////////////////////////////////////////////
         // DISPOSE
         /////////////////////////////////////////////////////////////////////
 
@@ -566,6 +841,7 @@ namespace OTEX.Editor
                             currentLanguage = null;
                         }
                         ranges.Clear();
+                        customKeyBindings.Clear();
                     }
                 }
             }

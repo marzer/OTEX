@@ -166,6 +166,12 @@ namespace OTEX.Editor.Plugins
         /// </summary>
         private readonly HighlightRanges ranges = new HighlightRanges();
 
+        /// <summary>
+        /// custom key bindings
+        /// </summary>
+        private readonly Dictionary<Keys, Action> customKeyBindings
+            = new Dictionary<Keys, Action>();
+
         /////////////////////////////////////////////////////////////////////
         // CONSTRUCTOR
         /////////////////////////////////////////////////////////////////////
@@ -179,13 +185,67 @@ namespace OTEX.Editor.Plugins
             WordWrapMode = WordWrapMode.WordWrapControlWidth;
             TabLength = 4;
             LineInterval = 2;
-            HotkeysMapping.Remove(Keys.Control | Keys.H); //remove default "replace" (CTRL + H, wtf?)
-            HotkeysMapping[Keys.Control | Keys.R] = FCTBAction.ReplaceDialog; // CTRL + R for replace
-            HotkeysMapping[Keys.Control | Keys.Y] = FCTBAction.Redo; // CTRL + Y for redo
             Language = Language.Custom;
+            BorderStyle = BorderStyle.None;
+            AllowMacroRecording = false;
 
             if (IsDesignMode)
                 return;
+
+            //hotkeys
+            HotkeysMapping.Clear();
+            HotkeysMapping[Keys.Left] = FCTBAction.GoLeft;
+            HotkeysMapping[Keys.Right] = FCTBAction.GoRight;
+            HotkeysMapping[Keys.Up] = FCTBAction.GoUp;
+            HotkeysMapping[Keys.Down] = FCTBAction.GoDown;
+            HotkeysMapping[Keys.Home] = FCTBAction.GoHome;
+            HotkeysMapping[Keys.End] = FCTBAction.GoEnd;
+            HotkeysMapping[Keys.PageDown] = FCTBAction.GoPageDown;
+            HotkeysMapping[Keys.PageUp] = FCTBAction.GoPageUp;
+            HotkeysMapping[Keys.Shift | Keys.Left] = FCTBAction.GoLeftWithSelection;
+            HotkeysMapping[Keys.Shift | Keys.Right] = FCTBAction.GoRightWithSelection;
+            HotkeysMapping[Keys.Shift | Keys.Up] = FCTBAction.GoUpWithSelection;
+            HotkeysMapping[Keys.Shift | Keys.Down] = FCTBAction.GoDownWithSelection;
+            HotkeysMapping[Keys.Shift | Keys.Home] = FCTBAction.GoHomeWithSelection;
+            HotkeysMapping[Keys.Shift | Keys.End] = FCTBAction.GoEndWithSelection;
+            HotkeysMapping[Keys.Shift | Keys.PageDown] = FCTBAction.GoPageDownWithSelection;
+            HotkeysMapping[Keys.Shift | Keys.PageUp] = FCTBAction.GoPageUpWithSelection;
+            HotkeysMapping[Keys.Control | Keys.X] = FCTBAction.Cut;
+            HotkeysMapping[Keys.Control | Keys.C] = FCTBAction.Copy;
+            HotkeysMapping[Keys.Control | Keys.V] = FCTBAction.Paste;
+            HotkeysMapping[Keys.Control | Keys.A] = FCTBAction.SelectAll;
+            HotkeysMapping[Keys.Control | Keys.Z] = FCTBAction.Undo;
+            HotkeysMapping[Keys.Control | Keys.Y] = FCTBAction.Redo;
+            HotkeysMapping[Keys.Tab] = FCTBAction.IndentIncrease;
+            HotkeysMapping[Keys.Shift | Keys.Tab] = FCTBAction.IndentDecrease;
+            HotkeysMapping[Keys.Control | Keys.Home] = FCTBAction.GoFirstLine;
+            HotkeysMapping[Keys.Control | Keys.End] = FCTBAction.GoLastLine;
+            HotkeysMapping[Keys.Control | Keys.Shift | Keys.Home] = FCTBAction.GoFirstLineWithSelection;
+            HotkeysMapping[Keys.Control | Keys.Shift | Keys.End] = FCTBAction.GoLastLineWithSelection;
+            HotkeysMapping[Keys.Control | Keys.Left] = FCTBAction.GoWordLeft;
+            HotkeysMapping[Keys.Control | Keys.Right] = FCTBAction.GoWordRight;
+            HotkeysMapping[Keys.Control | Keys.Shift | Keys.Left] = FCTBAction.GoWordLeftWithSelection;
+            HotkeysMapping[Keys.Control | Keys.Shift | Keys.Right] = FCTBAction.GoWordRightWithSelection;
+            HotkeysMapping[Keys.Control | Keys.Subtract] = FCTBAction.ZoomOut;
+            HotkeysMapping[Keys.Control | Keys.Add] = FCTBAction.ZoomIn;
+            HotkeysMapping[Keys.Control | Keys.NumPad0] = FCTBAction.ZoomNormal;
+            HotkeysMapping[Keys.Control | Keys.U] = FCTBAction.UpperCase;
+            HotkeysMapping[Keys.Control | Keys.Shift | Keys.U] = FCTBAction.LowerCase;
+            HotkeysMapping[Keys.Insert] = FCTBAction.ReplaceMode;
+            HotkeysMapping[Keys.Control | Keys.Back] = FCTBAction.ClearWordLeft;
+            HotkeysMapping[Keys.Control | Keys.Delete] = FCTBAction.ClearWordRight;
+            HotkeysMapping[Keys.Control | Keys.Up] = FCTBAction.ScrollUp;
+            HotkeysMapping[Keys.Control | Keys.Down] = FCTBAction.ScrollDown;
+            //HotkeysMapping[Keys.Back] = ; //backspace (FCTB handles this natively)
+            HotkeysMapping[Keys.Delete] = FCTBAction.DeleteCharRight;
+            customKeyBindings[Keys.Shift | Keys.Delete] = () => { ClearCurrentLine(); };
+            customKeyBindings[Keys.Control | Keys.F2] = () => { ToggleBookmark(Selection.Start.iLine); };
+            HotkeysMapping[Keys.F2] = FCTBAction.GoNextBookmark;
+            HotkeysMapping[Keys.Shift | Keys.F2] = FCTBAction.GoPrevBookmark;
+            customKeyBindings[Keys.Control | Keys.Q] = () => { CommentSelection(); };
+            customKeyBindings[Keys.Control | Keys.Shift | Keys.Q] = () => { UncommentSelection(); };
+            HotkeysMapping[Keys.Alt | Keys.Up] = FCTBAction.MoveSelectedLinesUp;
+            HotkeysMapping[Keys.Alt | Keys.Down] = FCTBAction.MoveSelectedLinesDown;
 
             //cache previous text
             TextChanging += (s, e) =>
@@ -248,15 +308,15 @@ namespace OTEX.Editor.Plugins
                 string newDataString = new string(newData);
                 foreach (var diff in diffs)
                 {
-                    int position = Math.Min(diff.InsertStart + offset, TextLength);
+                    uint position = (uint)Math.Min(diff.InsertStart + offset, TextLength);
 
                     //process a deletion
                     if (diff.DeleteLength > 0)
-                        OnDeletion?.Invoke(this, (uint)position, (uint)diff.DeleteLength);
+                        OnDeletion?.Invoke(this, position, diff.DeleteLength);
 
                     //process an insertion
                     if (position < (offset + diff.InsertStart + diff.InsertLength))
-                        OnInsertion?.Invoke(this, (uint)position, newDataString.Substring(diff.InsertStart, diff.InsertLength));
+                        OnInsertion?.Invoke(this, position, newDataString.Substring((int)diff.InsertStart, (int)diff.InsertLength));
                 }
             };
 
@@ -500,6 +560,142 @@ namespace OTEX.Editor.Plugins
         }
 
         /////////////////////////////////////////////////////////////////////
+        // HOTKEYS
+        /////////////////////////////////////////////////////////////////////
+
+        protected override void OnKeyDown(KeyEventArgs e)
+        {
+            Action customBinding = null;
+            if (customKeyBindings.TryGetValue(e.KeyData, out customBinding))
+            {
+                e.Handled = true;
+                customBinding();
+            }
+            else
+                base.OnKeyDown(e);
+        }
+
+        protected override void OnKeyUp(KeyEventArgs e)
+        {
+            if (customKeyBindings.ContainsKey(e.KeyData))
+                e.Handled = true;
+            else
+                base.OnKeyUp(e);
+        }
+
+        /////////////////////////////////////////////////////////////////////
+        // BOOKMARKS
+        /////////////////////////////////////////////////////////////////////
+
+        public void ToggleBookmark(int atLine)
+        {
+            if (Bookmarks.Contains(atLine))
+                Bookmarks.Remove(atLine);
+            else
+                Bookmarks.Add(atLine);
+        }
+
+        /////////////////////////////////////////////////////////////////////
+        // COMMENTING LINES
+        /////////////////////////////////////////////////////////////////////
+
+        private bool CommentRegion(int start, int end, bool insert,
+            out int firstCommentLine, out int firstCommentOffset,
+            out int lastCommentLine, out int lastCommentOffset)
+        {
+            start = start.Clamp(0, TextLength);
+            end = end.Clamp(0, TextLength);
+            firstCommentLine = firstCommentOffset = -1;
+            lastCommentLine = lastCommentOffset = -1;
+            Range range = new Range(this, PositionToPlace(start), PositionToPlace(end));
+            range.Normalize();
+            //get line numbers
+            int firstLine = range.Start.iLine;
+            if (firstLine == -1)
+                return false;
+            int lastLine = range.End.iLine;
+            if (lastLine == -1)
+                lastLine = firstLine;
+
+            //enumerate lines to modify
+            int insertIndex = int.MaxValue;
+            List<int> lines = new List<int>();
+            for (int l = firstLine; l <= lastLine; ++l)
+            {
+                var line = Lines[l];
+                if (line.Length == 0 || line.IsWhitespace()
+                    || currentLanguage.IsCommented(line) == insert)
+                    continue;
+                lines.Add(l);
+                if (insert)
+                    insertIndex = Math.Min(insertIndex, line.FirstNonWhitespaceIndex());
+            }
+
+            if (lines.Count == 0)
+                return false;
+
+            //modify lines
+            firstCommentLine = lines[0];
+            lastCommentLine = lines[lines.Count - 1];
+            if (insert)
+                firstCommentOffset = lastCommentOffset = insertIndex;
+            for (int i = 0; i < lines.Count; ++i)
+            {
+                int linePosition = PlaceToPosition(new Place(0, lines[i]));
+                if (insert)
+                    (this as IEditorTextBox).InsertText((uint)(linePosition + insertIndex),
+                        currentLanguage.CommentLine);
+                else
+                {
+                    int offset = Lines[lines[i]].FirstNonWhitespaceIndex();
+                    (this as IEditorTextBox).DeleteText((uint)(linePosition + offset),
+                       (uint)currentLanguage.CommentLine.Length);
+                    if (i == 0)
+                        firstCommentOffset = offset;
+                    if (i == lines.Count - 1)
+                        lastCommentOffset = offset;
+                }
+            }
+
+            return true;
+        }
+
+        private void CommentSelection(bool insert)
+        {
+            lock (currentLanguage)
+            {
+                if (currentLanguage == null || currentLanguage.CommentLine.Length == 0)
+                    return;
+
+                int delta = currentLanguage.CommentLine.Length;
+                var selection = Selection.Clone();
+                int firstLine, lastLine, firstOffset, lastOffset;
+                if (CommentRegion(PlaceToPosition(Selection.Start), PlaceToPosition(Selection.End),
+                    insert, out firstLine, out firstOffset, out lastLine, out lastOffset))
+                {
+                    if ((selection.Start.iLine == firstLine && selection.Start.iChar >= firstOffset)
+                        || (selection.Start.iLine == lastLine && selection.Start.iChar >= lastOffset))
+                        selection.Start = new Place(selection.Start.iChar + (insert ? delta : -delta), selection.Start.iLine);
+                    if ((selection.End.iLine == firstLine && selection.End.iChar >= firstOffset)
+                        || (selection.End.iLine == lastLine && selection.End.iChar >= lastOffset))
+                        selection.End = new Place(selection.End.iChar + (insert ? delta : -delta), selection.End.iLine);
+
+                    Selection = selection;
+                }
+            }
+        }
+
+        public void CommentSelection()
+        {
+            CommentSelection(true);
+        }
+
+        public void UncommentSelection()
+        {
+            CommentSelection(false);
+        }
+
+        /////////////////////////////////////////////////////////////////////
         // DISPOSE
         /////////////////////////////////////////////////////////////////////
 
@@ -522,6 +718,7 @@ namespace OTEX.Editor.Plugins
                         }
                         previousLines = null;
                         ranges.Clear();
+                        customKeyBindings.Clear();
                     }
                 }
             }
