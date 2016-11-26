@@ -209,7 +209,7 @@ namespace OTEX.Editor
                 get { return extensions.AsReadOnly(); }
             }
             private readonly List<string> extensions = new List<string>();
-            private Regex rxExtensions = null;
+            private readonly RegexCache rxExtensions;
 
             /// <summary>
             /// Collections of keywords used in this language, grouped by subgroups.
@@ -240,6 +240,8 @@ namespace OTEX.Editor
             }
             private List<string> keywordGroups = null;
 
+            private readonly RegexCache rxCommentLine;
+
             /// <summary>
             /// Creates a language from it's langs.model.xml node.
             /// </summary>
@@ -249,12 +251,19 @@ namespace OTEX.Editor
                 Name = ((string)node.Attribute("name")).Trim().ToLower();
 
                 //file extensions
-                var tokens = Text.REGEX_WHITESPACE.Split(((string)node.Attribute("ext")).Trim());
+                var tokens = ((string)node.Attribute("ext")).SplitWhitespace();
                 if (tokens.Length > 0)
+                {
                     extensions.AddRange(tokens);
+                    rxExtensions = extensions.RegexSelector();
+                }
+                else
+                    rxExtensions = null;
 
                 //comments
                 CommentLine = ((string)node.Attribute("commentLine") ?? "").Trim();
+                rxCommentLine = CommentLine.Length > 0
+                    ? new RegexCache(@"^\s*(" + Regex.Escape(CommentLine) + @")") : null;
                 CommentStart = ((string)node.Attribute("commentStart") ?? "").Trim();
                 CommentEnd = ((string)node.Attribute("commentEnd") ?? "").Trim();
 
@@ -265,7 +274,7 @@ namespace OTEX.Editor
                                    select k;
                 foreach (var k in keywordNodes)
                 {
-                    tokens = Text.REGEX_WHITESPACE.Split(k.Value.Trim());
+                    tokens = k.Value.SplitWhitespace();
                     if (tokens.Length == 0)
                         continue;
 
@@ -285,8 +294,6 @@ namespace OTEX.Editor
             {
                 if (extensions.Count == 0 || (ext = (ext ?? "")).Length == 0)
                     return false;
-                if (rxExtensions == null)
-                    rxExtensions = extensions.RegexSelector();
                 return rxExtensions.IsMatch(ext);
             }
 
@@ -303,11 +310,8 @@ namespace OTEX.Editor
                     throw new ArgumentNullException("line");
                 if (CommentLine.Length == 0)
                     return false;
-                if (rxCommentLine == null)
-                    rxCommentLine = new Regex(@"^\s*(" + Regex.Escape(CommentLine) + @")", RegexOptions.Compiled);
                 return rxCommentLine.IsMatch(line);
             }
-            private Regex rxCommentLine = null;
 
             public string Comment(string line, int insertionIndex = -1)
             {

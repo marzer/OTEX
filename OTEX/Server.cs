@@ -410,10 +410,10 @@ namespace OTEX
                                         new string(' ', (int)this.startParams.ReplaceTabsWithSpaces));
 
                                 //detect line ending type
-                                int crlfCount = Text.REGEX_CRLF.Split(fileContents).Length;
-                                string fileContentsNoCRLF = Text.REGEX_CRLF.Replace(fileContents, "");
-                                int crCount = Text.REGEX_CR.Split(fileContentsNoCRLF).Length;
-                                int lfCount = Text.REGEX_LF.Split(fileContentsNoCRLF).Length;
+                                int crlfCount = RegularExpressions.CrLf.Split(fileContents).Length;
+                                string fileContentsNoCRLF = RegularExpressions.CrLf.Replace(fileContents, "");
+                                int crCount = RegularExpressions.Cr.Split(fileContentsNoCRLF).Length;
+                                int lfCount = RegularExpressions.CrLf.Split(fileContentsNoCRLF).Length;
                                 if (crlfCount > crCount && crlfCount > lfCount)
                                     fileLineEnding = "\r\n";
                                 else if (crCount > crlfCount && crCount > lfCount)

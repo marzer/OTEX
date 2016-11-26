@@ -61,7 +61,7 @@ namespace OTEX.Editor
             lblAbout.MouseLeave += (s, e) => { lblAbout.ForeColor = App.Theme.Foreground.LowContrast.Colour; };
             lblAbout.Click += (s, e) => { App.Website.LaunchWebsite(); };
             //version label
-            lblVersion.Text = "v" + Marzersoft.Text.REGEX_VERSION_REPEATING_ZEROES.Replace(App.AssemblyVersion.ToString(),"");
+            lblVersion.Text = "v" + RegularExpressions.VersionTrailingZeroes.Replace(App.AssemblyVersion.ToString(),"");
             if (lblVersion.Text.IndexOf('.') == -1)
                 lblVersion.Text += ".0";
             //file dialog filters
@@ -307,7 +307,7 @@ namespace OTEX.Editor
             }
 
             // CREATE TEXT EDITOR //////////////////////////////////////////////////////////////////
-            tbEditor = plugins.CreateByConfig<IEditorTextBox>("editor", "plugins.editor", "", "scintilla", true);
+            tbEditor = plugins.CreateByConfig<IEditorTextBox>("editor", "plugins.editor", true, false, true, "scintilla", true);
             tbEditor.OnInsertion += (tb, offset, text) =>
             {
                 if (otexClient.Connected)
@@ -348,8 +348,12 @@ namespace OTEX.Editor
                 false, //lights
                 false, //transparents
                 false, //monochromatics
-                0.15f, //similarity threshold
-                new Color[] { Color.Blue, Color.MediumBlue, Color.Red, Color.Fuchsia, Color.Magenta } //exludes
+                0.1f, //similarity threshold
+                new Color[] //exludes
+                {
+                    Color.Blue, Color.MediumBlue, Color.Red,
+                    Color.Fuchsia, Color.Magenta, Color.Yellow, Color.Aqua
+                }
             );
             var allowedColours = cbClientColour.Items.OfType<Color>().ToList();
             //user colour
