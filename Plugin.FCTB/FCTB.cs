@@ -335,6 +335,8 @@ namespace OTEX.Editor.Plugins
             //themes
             ApplyTheme(App.Theme);
             App.ThemeChanged += ApplyTheme;
+
+            Logger.I("FCTB Editor plugin loaded.");
         }
 
 
