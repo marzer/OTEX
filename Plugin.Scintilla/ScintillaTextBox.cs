@@ -220,6 +220,13 @@ namespace OTEX.Editor
 
             //hotkeys
             ClearAllCmdKeys();
+            //explicitly disable modifiers on A-Z and 0-9 to begin with
+            //(otherwise scintilla inserts weird characters)
+            for (Keys key = Keys.A; key <= Keys.Z; ++key)
+                NullCmdKey(key);
+            for (Keys key = Keys.D0; key <= Keys.D9; ++key)
+                NullCmdKey(key);
+            //assign regular scintilla hotkeys
             AssignCmdKey(Keys.Left, Command.CharLeft);
             AssignCmdKey(Keys.Right, Command.CharRight);
             AssignCmdKey(Keys.Up, Command.LineUp);
@@ -254,7 +261,6 @@ namespace OTEX.Editor
             AssignCmdKey(Keys.Control | Keys.Shift | Keys.Right, Command.WordRightExtend);
             AssignCmdKey(Keys.Control | Keys.Subtract, Command.ZoomOut);
             AssignCmdKey(Keys.Control | Keys.Add, Command.ZoomIn);
-            customKeyBindings[Keys.Control | Keys.NumPad0] = () => { Zoom = 0; };
             AssignCmdKey(Keys.Control | Keys.U, Command.Uppercase);
             AssignCmdKey(Keys.Control | Keys.Shift | Keys.U, Command.Lowercase);
             AssignCmdKey(Keys.Insert, Command.EditToggleOvertype);
@@ -265,22 +271,15 @@ namespace OTEX.Editor
             AssignCmdKey(Keys.Back, Command.DeleteBack);
             AssignCmdKey(Keys.Delete, MissingCommands.Clear);
             AssignCmdKey(Keys.Shift | Keys.Delete, Command.LineDelete);
-            customKeyBindings[Keys.Control | Keys.F2] = () => { ToggleBookmark(CurrentLine); };
-            customKeyBindings[Keys.F2] = () => { GoToNextBookmark(CurrentLine);  };
-            customKeyBindings[Keys.Shift | Keys.F2] = () => { GoToPreviousBookmark(CurrentLine); };
-            customKeyBindings[Keys.Control | Keys.Q] = () => { ToggleCommentSelection(); };
             AssignCmdKey(Keys.Alt | Keys.Up, Command.MoveSelectedLinesUp);
             AssignCmdKey(Keys.Alt | Keys.Down, Command.MoveSelectedLinesDown);
+            customKeyBindings[Keys.Control | Keys.NumPad0] = () => { Zoom = 0; };
+            customKeyBindings[Keys.Control | Keys.F2] = () => { ToggleBookmark(CurrentLine); };
+            customKeyBindings[Keys.F2] = () => { GoToNextBookmark(CurrentLine); };
+            customKeyBindings[Keys.Shift | Keys.F2] = () => { GoToPreviousBookmark(CurrentLine); };
+            customKeyBindings[Keys.Control | Keys.Q] = () => { ToggleCommentSelection(); };
             customKeyBindings[Keys.Control | Keys.W] = () => { ViewEol = !ViewEol; };
-
-            //explicitly disable some unused combinations so scintilla doesn't insert weird characters
-            NullControlCmdKey(Keys.B); NullControlCmdKey(Keys.D); NullControlCmdKey(Keys.E);
-            NullControlCmdKey(Keys.F); NullControlCmdKey(Keys.G); NullControlCmdKey(Keys.H);
-            NullControlCmdKey(Keys.I); NullControlCmdKey(Keys.J); NullControlCmdKey(Keys.K);
-            NullControlCmdKey(Keys.L); NullControlCmdKey(Keys.M); NullControlCmdKey(Keys.N);
-            NullControlCmdKey(Keys.O); NullControlCmdKey(Keys.P); NullControlCmdKey(Keys.Q);
-            NullControlCmdKey(Keys.R); NullControlCmdKey(Keys.S); NullControlCmdKey(Keys.T);
-            NullControlCmdKey(Keys.W);
+            //disable scintilla hotkeys for our 'custom' ones
             foreach (var kvp in customKeyBindings)
                 AssignCmdKey(kvp.Key, Command.Null);
 
@@ -347,6 +346,8 @@ namespace OTEX.Editor
             //themes
             ApplyTheme(App.Theme);
             App.ThemeChanged += ApplyTheme;
+
+            Logger.I("ScintillaNET Editor plugin loaded.");
         }
 
         /////////////////////////////////////////////////////////////////////
@@ -497,10 +498,13 @@ namespace OTEX.Editor
             else
                 newLexer = Lexer.Null;
 
-
             if (oldLexer != newLexer)
             {
                 Lexer = newLexer;
+#if DEBUG
+                if (newLexer != Lexer.Null)
+                    Logger.I("Scintilla Lexer: {0}\nKeywords:\n{1}", newLexer, DescribeKeywordSets().SplitLines().Print());
+#endif
                 if (newLexer == Lexer.Null)
                 {
                     Margins[2].Width = 0;
@@ -663,11 +667,15 @@ namespace OTEX.Editor
             AssignCmdKey(keyDefinition, (Command)((int)sciCommand));
         }
 
-        public void NullControlCmdKey(Keys keyDefinition)
+        public void NullCmdKey(Keys key, bool nullBase = false)
         {
-            AssignCmdKey(Keys.Control | keyDefinition, Command.Null);
-            AssignCmdKey(Keys.Control | Keys.Alt | keyDefinition, Command.Null);
-            AssignCmdKey(Keys.Control | Keys.Shift | keyDefinition, Command.Null);
+            key &= ~(Keys.Control | Keys.Alt | Keys.Shift);
+            if (nullBase)
+                AssignCmdKey(key, Command.Null);
+            AssignCmdKey(Keys.Control | key, Command.Null);
+            AssignCmdKey(Keys.Control | Keys.Alt | key, Command.Null);
+            AssignCmdKey(Keys.Control | Keys.Shift | key, Command.Null);
+            AssignCmdKey(Keys.Control | Keys.Shift | Keys.Alt | key, Command.Null);
         }
 
         protected override void OnKeyDown(KeyEventArgs e)
@@ -887,4 +895,5 @@ namespace OTEX.Editor
         }
     }
 }
+ 
  
