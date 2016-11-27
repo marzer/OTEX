@@ -50,6 +50,11 @@ namespace OTEX.Editor
         /// </summary>
         Color UserColour { get; set; }
 
+        /// <summary>
+        /// Are line ending characters visible?
+        /// </summary>
+        bool LineEndingsVisible { get; set; }
+
         /////////////////////////////////////////////////////////////////////
         // METHODS
         /////////////////////////////////////////////////////////////////////
@@ -98,5 +103,38 @@ namespace OTEX.Editor
         /// Clears all custom highlight ranges.
         /// </summary>
         void ClearHighlightRanges();
+
+        /// <summary>
+        /// Append a "line comment" prefix to the beginning of every line in the current selection,
+        /// according to the currently selected Language.
+        /// </summary>
+        void CommentSelection();
+
+        /// <summary>
+        /// Detect the "line comment" status of the currently selected block of text and invert it,
+        /// according to the currently selected Language.
+        /// </summary>
+        void ToggleCommentSelection();
+
+        /// <summary>
+        /// Remove "line comment" prefixes from the beginning of every line in the current selection,
+        /// according to the currently selected Language.
+        /// </summary>
+        void UncommentSelection();
+
+        /// <summary>
+        /// Toggle the "bookmarked" status of the caret's line.
+        /// </summary>
+        void ToggleBookmark();
+        
+        /// <summary>
+        /// Move the caret to the next bookmark.
+        /// </summary>
+        void NextBookmark();
+
+        /// <summary>
+        /// Move the caret to the previous bookmark.
+        /// </summary>
+        void PreviousBookmark();
     }
 }

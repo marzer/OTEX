@@ -157,6 +157,15 @@ namespace OTEX.Editor
         private const int BookmarkMarker = 1;
         private const uint BookmarkMask = (1 << BookmarkMarker);
 
+        /// <summary>
+        /// Are line ending characters visible?
+        /// </summary>
+        public bool LineEndingsVisible
+        {
+            get { return ViewEol; }
+            set { ViewEol = value; }
+        }
+
         /////////////////////////////////////////////////////////////////////
         // CONSTRUCTOR
         /////////////////////////////////////////////////////////////////////
@@ -210,8 +219,8 @@ namespace OTEX.Editor
             switch (Environment.NewLine)
             {
                 case "\r": EolMode = Eol.Cr; break;
-                case "\r\n": EolMode = Eol.CrLf; break;
                 case "\n": EolMode = Eol.Lf; break;
+                default: EolMode = Eol.CrLf; break;
             }
             PasteConvertEndings = true;
 
@@ -220,12 +229,13 @@ namespace OTEX.Editor
 
             //hotkeys
             ClearAllCmdKeys();
-            //explicitly disable modifiers on A-Z and 0-9 to begin with
-            //(otherwise scintilla inserts weird characters)
+            //explicitly disable certain key combinations first
+            //(to prevent weird characters or strange behaviour)
             for (Keys key = Keys.A; key <= Keys.Z; ++key)
                 NullCmdKey(key);
             for (Keys key = Keys.D0; key <= Keys.D9; ++key)
                 NullCmdKey(key);
+            NullCmdKey(Keys.Enter);
             //assign regular scintilla hotkeys
             AssignCmdKey(Keys.Left, Command.CharLeft);
             AssignCmdKey(Keys.Right, Command.CharRight);
@@ -273,12 +283,9 @@ namespace OTEX.Editor
             AssignCmdKey(Keys.Shift | Keys.Delete, Command.LineDelete);
             AssignCmdKey(Keys.Alt | Keys.Up, Command.MoveSelectedLinesUp);
             AssignCmdKey(Keys.Alt | Keys.Down, Command.MoveSelectedLinesDown);
+            AssignCmdKey(Keys.Enter, Command.NewLine);
+            AssignCmdKey(Keys.Shift | Keys.Enter, Command.NewLine);
             customKeyBindings[Keys.Control | Keys.NumPad0] = () => { Zoom = 0; };
-            customKeyBindings[Keys.Control | Keys.F2] = () => { ToggleBookmark(CurrentLine); };
-            customKeyBindings[Keys.F2] = () => { GoToNextBookmark(CurrentLine); };
-            customKeyBindings[Keys.Shift | Keys.F2] = () => { GoToPreviousBookmark(CurrentLine); };
-            customKeyBindings[Keys.Control | Keys.Q] = () => { ToggleCommentSelection(); };
-            customKeyBindings[Keys.Control | Keys.W] = () => { ViewEol = !ViewEol; };
             //disable scintilla hotkeys for our 'custom' ones
             foreach (var kvp in customKeyBindings)
                 AssignCmdKey(kvp.Key, Command.Null);
@@ -699,6 +706,11 @@ namespace OTEX.Editor
                 line.MarkerDelete(BookmarkMarker);
         }
 
+        void IEditorTextBox.ToggleBookmark()
+        {
+            ToggleBookmark(CurrentLine);
+        }
+
         public bool GoToPreviousBookmark(int fromLine, bool wrap = true)
         {
             if (fromLine <= 0)
@@ -735,6 +747,16 @@ namespace OTEX.Editor
             else if (wrap)
                 return GoToNextBookmark(Lines.Count, false);
             return false;
+        }
+
+        void IEditorTextBox.NextBookmark()
+        {
+            GoToNextBookmark(CurrentLine);
+        }
+
+        void IEditorTextBox.PreviousBookmark()
+        {
+            GoToPreviousBookmark(CurrentLine);
         }
 
         /////////////////////////////////////////////////////////////////////
@@ -847,17 +869,17 @@ namespace OTEX.Editor
             }
         }
 
-        public void CommentSelection()
+        void IEditorTextBox.CommentSelection()
         {
             CommentSelection(1);
         }
 
-        public void ToggleCommentSelection()
+        void IEditorTextBox.ToggleCommentSelection()
         {
             CommentSelection(0);
         }
 
-        public void UncommentSelection()
+        void IEditorTextBox.UncommentSelection()
         {
             CommentSelection(-1);
         }

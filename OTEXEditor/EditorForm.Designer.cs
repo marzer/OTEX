@@ -426,7 +426,10 @@
             // tbClientAddress
             // 
             this.tbClientAddress.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.tbClientAddress.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.tbClientAddress.Location = new System.Drawing.Point(203, 126);
+            this.tbClientAddress.Margin = new System.Windows.Forms.Padding(0);
+            this.tbClientAddress.MaxLength = 512;
             this.tbClientAddress.Name = "tbClientAddress";
             this.tbClientAddress.Size = new System.Drawing.Size(166, 20);
             this.tbClientAddress.TabIndex = 2001;

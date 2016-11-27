@@ -38,8 +38,10 @@ namespace OTEX.Editor
         private readonly Dictionary<Guid, User> remoteUsers
             = new Dictionary<Guid, User>();
         private readonly PluginFactory plugins;
+        private readonly Dictionary<Keys, Action> customKeyBindings
+            = new Dictionary<Keys, Action>();
 
-       
+
         /////////////////////////////////////////////////////////////////////
         // CONSTRUCTOR
         /////////////////////////////////////////////////////////////////////
@@ -307,7 +309,7 @@ namespace OTEX.Editor
             }
 
             // CREATE TEXT EDITOR //////////////////////////////////////////////////////////////////
-            tbEditor = plugins.CreateByConfig<IEditorTextBox>("editor", "plugins.editor", true, false, true, "scintilla", true);
+            tbEditor = plugins.CreateByConfig<IEditorTextBox>("editor", "plugins.editor", true, false, true, "Scintilla", true);
             tbEditor.OnInsertion += (tb, offset, text) =>
             {
                 if (otexClient.Connected)
@@ -322,6 +324,11 @@ namespace OTEX.Editor
             {
                 localUser.SetSelection(start, end);
             };
+            customKeyBindings[Keys.Control | Keys.W] = () => { tbEditor.LineEndingsVisible = !tbEditor.LineEndingsVisible; };
+            customKeyBindings[Keys.Control | Keys.Q] = () => { tbEditor.ToggleCommentSelection(); };
+            customKeyBindings[Keys.Control | Keys.F2] = () => { tbEditor.ToggleBookmark(); };
+            customKeyBindings[Keys.F2] = () => { tbEditor.NextBookmark(); };
+            customKeyBindings[Keys.Shift | Keys.F2] = () => { tbEditor.PreviousBookmark(); };
 
             // CREATE LANGUAGE MANAGER /////////////////////////////////////////////////////////////
             languageManager = new LanguageManager();
@@ -588,6 +595,17 @@ namespace OTEX.Editor
         // UI EVENTS
         /////////////////////////////////////////////////////////////////////
 
+        protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+        {
+            Action customBinding = null;
+            if (customKeyBindings.TryGetValue(keyData, out customBinding))
+            {
+                customBinding();
+                return true;
+            }
+            return base.ProcessCmdKey(ref msg, keyData);
+        }
+
         protected override void OnFirstShown(EventArgs e)
         {
             base.OnFirstShown(e);
@@ -724,6 +742,7 @@ namespace OTEX.Editor
                 languageManager = null;
             }
             App.Config.User.Flush();
+            customKeyBindings.Clear();
             base.OnClosed(e);
         }
 

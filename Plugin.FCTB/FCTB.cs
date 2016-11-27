@@ -172,9 +172,45 @@ namespace OTEX.Editor.Plugins
         private readonly Dictionary<Keys, Action> customKeyBindings
             = new Dictionary<Keys, Action>();
 
+        /// <summary>
+        /// Are line ending characters visible?
+        /// </summary>
+        public bool LineEndingsVisible
+        {
+            get
+            {
+                if (IsDisposed || Disposing)
+                    throw new ObjectDisposedException(GetType().Name);
+                return lineEndingsVisible;
+            }
+            set
+            {
+                if (IsDisposed || Disposing)
+                    throw new ObjectDisposedException(GetType().Name);
+                if (lineEndingsVisible != value)
+                {
+                    lineEndingsVisible = value;
+                    Refresh();
+                }
+                
+            }
+        }
+        private volatile bool lineEndingsVisible = false;
+        private static readonly string NewLineEscaped;
+
         /////////////////////////////////////////////////////////////////////
         // CONSTRUCTOR
         /////////////////////////////////////////////////////////////////////
+
+        static FCTB()
+        {
+            switch (Environment.NewLine)
+            {
+                case "\r": NewLineEscaped = "\\r"; break;
+                case "\n": NewLineEscaped = "\\n"; break;
+                default: NewLineEscaped = "\\r\\n"; break;                
+            }
+        }
 
         public FCTB()
         {
@@ -238,13 +274,9 @@ namespace OTEX.Editor.Plugins
             HotkeysMapping[Keys.Control | Keys.Down] = FCTBAction.ScrollDown;
             //HotkeysMapping[Keys.Back] = ; //backspace (FCTB handles this natively)
             HotkeysMapping[Keys.Delete] = FCTBAction.DeleteCharRight;
-            customKeyBindings[Keys.Shift | Keys.Delete] = () => { ClearCurrentLine(); };
-            customKeyBindings[Keys.Control | Keys.F2] = () => { ToggleBookmark(Selection.Start.iLine); };
-            HotkeysMapping[Keys.F2] = FCTBAction.GoNextBookmark;
-            HotkeysMapping[Keys.Shift | Keys.F2] = FCTBAction.GoPrevBookmark;
-            customKeyBindings[Keys.Control | Keys.Q] = () => { ToggleCommentSelection(); };
             HotkeysMapping[Keys.Alt | Keys.Up] = FCTBAction.MoveSelectedLinesUp;
             HotkeysMapping[Keys.Alt | Keys.Down] = FCTBAction.MoveSelectedLinesDown;
+            customKeyBindings[Keys.Shift | Keys.Delete] = () => { ClearCurrentLine(); };
 
             //cache previous text
             TextChanging += (s, e) =>
@@ -510,51 +542,73 @@ namespace OTEX.Editor.Plugins
             if (IsDesignMode)
                 return;
 
-            var highlightRanges = ranges.Ranges;
-            if (highlightRanges == null || highlightRanges.Length == 0)
-                return;
-
-            Range lineRange = new Range(this, e.LineIndex);
-            var len = (uint)TextLength;
-            foreach (var highlightRange in highlightRanges)
+            //line endings
+            if (lineEndingsVisible && e.LineIndex < (Lines.Count-1))
             {
-                if (highlightRange == null)
-                    continue;
-                
-                //check range
-                var selStart = PositionToPlace((int)highlightRange.Start.Clamp(0, len));
-                var selEnd = PositionToPlace((int)highlightRange.End.Clamp(0, len));
-                var selRange = new Range(this, selStart, selEnd);
-                var hlRange = lineRange.GetIntersectionWith(selRange);
-                if (hlRange.Length == 0 && !lineRange.Contains(selStart))
-                    continue;
-
-                var ptStart = PlaceToPoint(hlRange.Start);
-                var ptEnd = PlaceToPoint(hlRange.End);
-                var caret = lineRange.Contains(selStart);
-
-                //draw "current line" fill
-                if (caret && selRange.Length == 0)
+                var szf = e.Graphics.MeasureString(NewLineEscaped.Substring(0, 2), Font);
+                var sz = new Size((int)szf.Width, e.LineRect.Height);
+                var pt = PlaceToPoint(new Place(Lines[e.LineIndex].Length, e.LineIndex));
+                pt.X += 2;
+                using (var bg = new SolidBrush(Color.FromArgb(120, ForeColor)))
                 {
-                    using (SolidBrush b = new SolidBrush(Color.FromArgb(12, highlightRange.Colour)))
-                        e.Graphics.FillRectangle(b, e.LineRect);
-                }
-                //draw highlight
-                if (hlRange.Length > 0)
-                {
-                    using (SolidBrush b = new SolidBrush(Color.FromArgb(32, highlightRange.Colour)))
-                        e.Graphics.FillRectangle(b, new Rectangle(ptStart.X, e.LineRect.Y,
-                            ptEnd.X - ptStart.X, e.LineRect.Height));
-                }
-                //draw caret
-                if (caret)
-                {
-                    ptStart = PlaceToPoint(selStart);
-                    using (Pen p = new Pen(Color.FromArgb(190, highlightRange.Colour)))
+                    using (var fg = new SolidBrush(BackColor))
                     {
-                        p.Width = 2;
-                        e.Graphics.DrawLine(p, ptEnd.X, e.LineRect.Top,
-                            ptEnd.X, e.LineRect.Bottom);
+                        for (int c = 0; c < NewLineEscaped.Length; c += 2)
+                        {
+                            e.Graphics.FillRoundedRectangle(bg, pt, sz);
+                            e.Graphics.DrawString(NewLineEscaped.Substring(c, 2), Font, fg, pt);
+                            pt = pt.Add(sz.Width+2, 0);
+                        }
+                    }
+                }
+            }
+
+            //highlight ranges
+            var highlightRanges = ranges.Ranges;
+            if (highlightRanges != null && highlightRanges.Length > 0)
+            {
+                Range lineRange = new Range(this, e.LineIndex);
+                var len = (uint)TextLength;
+                foreach (var highlightRange in highlightRanges)
+                {
+                    if (highlightRange == null)
+                        continue;
+
+                    //check range
+                    var selStart = PositionToPlace((int)highlightRange.Start.Clamp(0, len));
+                    var selEnd = PositionToPlace((int)highlightRange.End.Clamp(0, len));
+                    var selRange = new Range(this, selStart, selEnd);
+                    var hlRange = lineRange.GetIntersectionWith(selRange);
+                    if (hlRange.Length == 0 && !lineRange.Contains(selStart))
+                        continue;
+
+                    var ptStart = PlaceToPoint(hlRange.Start);
+                    var ptEnd = PlaceToPoint(hlRange.End);
+                    var caret = lineRange.Contains(selStart);
+
+                    //draw "current line" fill
+                    if (caret && selRange.Length == 0)
+                    {
+                        using (SolidBrush b = new SolidBrush(Color.FromArgb(12, highlightRange.Colour)))
+                            e.Graphics.FillRectangle(b, e.LineRect);
+                    }
+                    //draw highlight
+                    if (hlRange.Length > 0)
+                    {
+                        using (SolidBrush b = new SolidBrush(Color.FromArgb(32, highlightRange.Colour)))
+                            e.Graphics.FillRectangle(b, new Rectangle(ptStart.X, e.LineRect.Y,
+                                ptEnd.X - ptStart.X, e.LineRect.Height));
+                    }
+                    //draw caret
+                    if (caret)
+                    {
+                        ptStart = PlaceToPoint(selStart);
+                        using (Pen p = new Pen(Color.FromArgb(190, highlightRange.Colour)))
+                        {
+                            p.Width = 2;
+                            e.Graphics.DrawLine(p, ptEnd.X, e.LineRect.Top,
+                                ptEnd.X, e.LineRect.Bottom);
+                        }
                     }
                 }
             }
@@ -594,6 +648,21 @@ namespace OTEX.Editor.Plugins
                 Bookmarks.Remove(atLine);
             else
                 Bookmarks.Add(atLine);
+        }
+
+        void IEditorTextBox.ToggleBookmark()
+        {
+            ToggleBookmark(Selection.Start.iLine);
+        }
+
+        void IEditorTextBox.NextBookmark()
+        {
+            GotoNextBookmark(Selection.Start.iLine);
+        }
+
+        void IEditorTextBox.PreviousBookmark()
+        {
+            GotoPrevBookmark(Selection.Start.iLine);
         }
 
         /////////////////////////////////////////////////////////////////////
@@ -723,17 +792,17 @@ namespace OTEX.Editor.Plugins
             }
         }
 
-        public void CommentSelection()
+        void IEditorTextBox.CommentSelection()
         {
             CommentSelection(1);
         }
 
-        public void ToggleCommentSelection()
+        void IEditorTextBox.ToggleCommentSelection()
         {
             CommentSelection(0);
         }
 
-        public void UncommentSelection()
+        void IEditorTextBox.UncommentSelection()
         {
             CommentSelection(-1);
         }
