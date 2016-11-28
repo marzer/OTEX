@@ -112,7 +112,7 @@ namespace OTEX.Editor
         // LOADING
         /////////////////////////////////////////////////////////////////////
 
-        public void Load()
+        public void Load(string path)
         {
             if (disposed)
                 throw new ObjectDisposedException(GetType().Name);
@@ -126,13 +126,13 @@ namespace OTEX.Editor
                 {
                     //download langs file if necessary
                     byte[] fileData = null;
-                    if (!File.Exists(Paths.LanguagesFile)
-                        || (DateTime.UtcNow - File.GetCreationTimeUtc(Paths.LanguagesFile)).TotalDays >= 14.0)
-                        File.WriteAllBytes(Paths.LanguagesFile, fileData = LanguagesURL.DownloadData());
+                    if (!File.Exists(path)
+                        || (DateTime.UtcNow - File.GetCreationTimeUtc(path)).TotalDays >= 14.0)
+                        File.WriteAllBytes(path, fileData = LanguagesURL.DownloadData());
 
                     //read file
                     if (fileData == null)
-                        fileData = File.ReadAllBytes(Paths.LanguagesFile);
+                        fileData = File.ReadAllBytes(path);
 
                     //parse file
                     using (MemoryStream stream = new MemoryStream(fileData, false))
