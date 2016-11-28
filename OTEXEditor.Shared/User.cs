@@ -103,7 +103,7 @@ namespace OTEX.Editor
                     return;
                 colour = (int)col;
                 if (IsLocal)
-                    ctx.Configs.Files.User.Set("user.colour", colour.ToColour());
+                    App.Config.User.Set("user.colour", colour.ToColour());
                 OnColourChanged?.Invoke(this);
             }
         }
@@ -143,12 +143,12 @@ namespace OTEX.Editor
         /// </summary>
         public bool Ruler
         {
-            get { return IsLocal ? ctx.Configs.Files.User.Get("user.ruler", true) : false; }
+            get { return IsLocal ? App.Config.User.Get("user.ruler", true) : false; }
             set
             {
                 if (IsLocal && value != Ruler)
                 {
-                    ctx.Configs.Files.User.Set("user.ruler", value);
+                    App.Config.User.Set("user.ruler", value);
                     OnRulerChanged?.Invoke(this);
                 }
             }
@@ -159,12 +159,12 @@ namespace OTEX.Editor
         /// </summary>
         public uint RulerOffset
         {
-            get { return IsLocal ? ctx.Configs.Files.User.Get("user.ruler_offset", 100u).Clamp(60u,200u) : 0; }
+            get { return IsLocal ? App.Config.User.Get("user.ruler_offset", 100u).Clamp(60u,200u) : 0; }
             set
             {
                 if (IsLocal && (value = value.Clamp(60u, 200u)) != RulerOffset)
                 {
-                    ctx.Configs.Files.User.Set("user.ruler_offset", value);
+                    App.Config.User.Set("user.ruler_offset", value);
                     OnRulerChanged?.Invoke(this);
                 }
             }
@@ -175,12 +175,12 @@ namespace OTEX.Editor
         /// </summary>
         public float UpdateInterval
         {
-            get { return IsLocal ? ctx.Configs.Files.User.Get("user.update_interval", 1.0f).Clamp(0.5f,5.0f) : 0.0f; }
+            get { return IsLocal ? App.Config.User.Get("user.update_interval", 1.0f).Clamp(0.5f,5.0f) : 0.0f; }
             set
             {
                 if (IsLocal && !(value = value.Clamp(0.5f, 5.0f)).Equal(UpdateInterval))
                 {
-                    ctx.Configs.Files.User.Set("user.update_interval", value);
+                    App.Config.User.Set("user.update_interval", value);
                     OnUpdateIntervalChanged?.Invoke(this);
                 }
             }
@@ -191,12 +191,12 @@ namespace OTEX.Editor
         /// </summary>
         public string Theme
         {
-            get { return IsLocal ? ctx.Configs.Files.User.Get("user.theme", "dark").Trim().ToLower() : ""; }
+            get { return IsLocal ? App.Config.User.Get("user.theme", "dark").Trim().ToLower() : ""; }
             set
             {
                 if (IsLocal && !(value = ((value ?? "").Trim().ToLower())).Equals(Theme))
                 {
-                    ctx.Configs.Files.User.Set("user.theme", value);
+                    App.Config.User.Set("user.theme", value);
                     OnThemeChanged?.Invoke(this);
                 }
             }
@@ -207,22 +207,16 @@ namespace OTEX.Editor
         /// </summary>
         public string LastDirectConnection
         {
-            get { return IsLocal ? ctx.Configs.Files.User.Get("user.last_direct_connection", "127.0.0.1").Trim() : ""; }
+            get { return IsLocal ? App.Config.User.Get("user.last_direct_connection", "127.0.0.1").Trim() : ""; }
             set
             {
                 if (IsLocal && !(value = ((value ?? "").Trim())).Equals(LastDirectConnection))
                 {
-                    ctx.Configs.Files.User.Set("user.last_direct_connection", value);
+                    App.Config.User.Set("user.last_direct_connection", value);
                     OnLastDirectConnectionChanged?.Invoke(this);
                 }
             }
         }
-
-        /// <summary>
-        /// This user's App context so it may read and write from config files.
-        /// </summary>
-        [NonSerialized]
-        private readonly App.Contexts ctx;
 
         /////////////////////////////////////////////////////////////////////
         // CONSTRUCTOR
@@ -233,15 +227,12 @@ namespace OTEX.Editor
         /// </summary>
         /// <param name="id">ID of the local user (from OTEXClient.ID)</param>
         /// <exception cref="ArgumentOutOfRangeException"/>
-        public User(Guid id, App.Contexts ctx)
+        public User(Guid id)
         {
             if ((this.id = id).Equals(Guid.Empty))
                 throw new ArgumentOutOfRangeException("id", "id cannot be Guid.Empty");
-            if (ctx == null)
-                throw new ArgumentNullException("ctx");
-            this.ctx = ctx;
             IsLocal = true;
-            colour = ctx.Configs.Files.User.Get("user.colour", Color.Transparent).ToArgb();
+            colour = App.Config.User.Get("user.colour", Color.Transparent).ToArgb();
         }
 
         /// <summary>

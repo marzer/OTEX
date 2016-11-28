@@ -25,12 +25,12 @@ namespace OTEX.Editor
             App.SplashForm = false;
 
             //enumerate plugin assemblies
-            App.Initialization = (ctx) =>
+            App.Initialization = () =>
             {
                 //create plugin factory
                 PluginFactory pluginFactory = new PluginFactory(
                     new Type[] { typeof(IEditorTextBox) },
-                            Path.Combine(ctx.Paths.Directory, "Plugins"), true);
+                            Path.Combine(App.ExecutableDirectory, "Plugins"), true);
                 
                 //check critical types that must have at least 1 plugin
                 if (pluginFactory.Count<IEditorTextBox>() == 0)

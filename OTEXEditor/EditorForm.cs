@@ -63,7 +63,7 @@ namespace OTEX.Editor
             lblAbout.MouseLeave += (s, e) => { lblAbout.ForeColor = App.Theme.Foreground.LowContrast.Colour; };
             lblAbout.Click += (s, e) => { App.Website.LaunchWebsite(); };
             //version label
-            lblVersion.Text = "v" + RegularExpressions.VersionTrailingZeroes.Replace(AppContexts.Assembly.Version.ToString(),"");
+            lblVersion.Text = "v" + RegularExpressions.VersionTrailingZeroes.Replace(App.AssemblyVersion.ToString(),"");
             if (lblVersion.Text.IndexOf('.') == -1)
                 lblVersion.Text += ".0";
             //file dialog filters
@@ -363,7 +363,7 @@ namespace OTEX.Editor
 
             // CREATE LOCAL USER ///////////////////////////////////////////////////////////////////
             //create local user (handles settings file)
-            localUser = new User(otexClient.ID, MakeContexts(App.ConfigContext.Flag));
+            localUser = new User(otexClient.ID);
             //generate list of allowed user colours via colour combo box
             cbClientColour.RegenerateItems(
                 false, //darks
@@ -410,7 +410,7 @@ namespace OTEX.Editor
             //last direct connection address
             tbClientAddress.Text = localUser.LastDirectConnection;
             //theme
-            var allowedThemes = AppContexts.Themes.All.Keys.ToList();
+            var allowedThemes = App.Themes.Keys.ToList();
             foreach (var theme in allowedThemes)
                 cbTheme.Items.Add(theme.Nameify());
             var selectedTheme = localUser.Theme;
@@ -422,10 +422,10 @@ namespace OTEX.Editor
             }
             else
                 cbTheme.SelectedIndex = selectedThemeIndex;
-            localUser.OnThemeChanged += (u) => { this.Execute(() => { AppContexts.Themes.Current = AppContexts.Themes.All[u.Theme]; }); };
+            localUser.OnThemeChanged += (u) => { this.Execute(() => { App.Theme = App.Themes[u.Theme]; }); };
             //save settings
             settingsLoaded = true;
-            AppContexts.Configs.Files.Flush();
+            App.Config.Flush();
 
             // HANDLE THEMES ///////////////////////////////////////////////////////////////////////
             App.ThemeChanged += (t) =>
@@ -447,12 +447,12 @@ namespace OTEX.Editor
                     settingsButton.Colour = t.Accent(1).Colour;
 
                     settingsButton.Image = App.Images.Resource("cog" + (t.IsDark ? "" : "_black"),
-                        AppContexts.Assembly.Assembly, "OTEX.Editor");
+                        App.Assembly, "OTEX.Editor");
                     logoutButton.Image = App.Images.Resource("logout" + (t.IsDark ? "" : "_black"),
-                        AppContexts.Assembly.Assembly, "OTEX.Editor");
+                        App.Assembly, "OTEX.Editor");
                 }, false);
             };
-            AppContexts.Themes.Current = AppContexts.Themes.All[localUser.Theme];
+            App.Theme = App.Themes[localUser.Theme];
 
             // CONFIGURE PAGINATOR /////////////////////////////////////////////////////////////////
             paginator = new Paginator(this);
@@ -638,21 +638,21 @@ namespace OTEX.Editor
             base.OnFirstShown(e);
             if (IsDesignMode)
                 return;
-            languageManager.Load(Path.Combine(AppContexts.Paths.Directory, "..\\languages.xml"));
+            languageManager.Load(Path.Combine(App.ExecutableDirectory, "..\\languages.xml"));
 
-            var path = AppContexts.Configs.Arguments.OrphanedValues.LastOrDefault();
+            var path = App.Arguments.OrphanedValues.LastOrDefault();
             if (path != null && File.Exists(path.Value))
             {
                 Server.StartParams startParams = new Server.StartParams();
                 startParams.FilePath = path.Value;
 
-                AppContexts.Configs.Arguments.Key("port", ref startParams.Port);
-                AppContexts.Configs.Arguments.Key("name", ref startParams.Name);
-                AppContexts.Configs.Arguments.Key("maxclients", ref startParams.MaxClients);
+                App.Arguments.Key("port", ref startParams.Port);
+                App.Arguments.Key("name", ref startParams.Name);
+                App.Arguments.Key("maxclients", ref startParams.MaxClients);
                 string pw = null;
-                if (AppContexts.Configs.Arguments.Key("password", ref pw))
+                if (App.Arguments.Key("password", ref pw))
                     startParams.Password = new Password(pw);
-                startParams.Public = AppContexts.Configs.Arguments.Key("public");
+                startParams.Public = App.Arguments.Key("public");
                 StartServerMode(startParams);
             }
             else
@@ -768,7 +768,7 @@ namespace OTEX.Editor
                 languageManager.Dispose();
                 languageManager = null;
             }
-            AppContexts.Configs.Files.Flush();
+            App.Config.Flush();
             customKeyBindings.Clear();
             base.OnClosed(e);
         }
