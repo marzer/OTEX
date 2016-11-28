@@ -11,6 +11,7 @@ using System.Linq;
 using System.Collections.Generic;
 using Marzersoft.Themes;
 using Marzersoft.Controls;
+using System.Diagnostics;
 
 namespace OTEX.Editor
 {
@@ -126,6 +127,10 @@ namespace OTEX.Editor
             otexServer.OnThreadException += (s, e) =>
             {
                 Logger.W("Server: {0}: {1}", e.InnerException.GetType().FullName, e.InnerException.Message);
+#if DEBUG
+                if (Debugger.IsAttached && !closing)
+                    throw new Exception("otexServer.OnThreadException", e);
+#endif
             };
             otexServer.OnStarted += (s) =>
             {
@@ -153,6 +158,10 @@ namespace OTEX.Editor
             otexClient.OnThreadException += (c, e) =>
             {
                 Logger.W("Client: {0}: {1}", e.InnerException.GetType().Name, e.InnerException.Message);
+#if DEBUG
+                if (Debugger.IsAttached && !closing)
+                    throw new Exception("otexClient.OnThreadException", e);
+#endif
             };
             otexClient.OnConnected += (c) =>
             {
@@ -266,6 +275,10 @@ namespace OTEX.Editor
                 otexServerListener.OnThreadException += (sl, e) =>
                 {
                     Logger.W("ServerListener: {0}: {1}", e.InnerException.GetType().FullName, e.InnerException.Message);
+#if DEBUG
+                    if (Debugger.IsAttached && !closing)
+                        throw new Exception("otexServerListener.OnThreadException", e);
+#endif
                 };
                 otexServerListener.OnServerAdded += (sl, s) =>
                 {
@@ -335,6 +348,10 @@ namespace OTEX.Editor
             languageManager.OnThreadException += (lm, e) =>
             {
                 Logger.E("LanguageManager: {0}: {1}", e.InnerException.GetType().FullName, e.InnerException.Message);
+#if DEBUG
+                if (Debugger.IsAttached && !closing)
+                    throw new Exception("languageManager.OnThreadException", e);
+#endif
             };
             languageManager.OnLoaded += (lm, c) =>
             {
@@ -475,6 +492,10 @@ namespace OTEX.Editor
             {
                 Logger.ErrorMessage(this, "An error occurred while starting the server:\n\n{0}",
                     exc.Message);
+#if DEBUG
+                if (Debugger.IsAttached && !closing)
+                    throw new Exception("otexServer.Start", exc);
+#endif
                 return;
             }
 
@@ -489,6 +510,11 @@ namespace OTEX.Editor
                 Logger.ErrorMessage(this, "An error occurred while connecting:\n\n{0}",
                     exc.Message);
                 otexServer.Stop();
+
+#if DEBUG
+                if (Debugger.IsAttached && !closing)
+                    throw new Exception("otexClient.Connect", exc);
+#endif
                 return;
             }
 
