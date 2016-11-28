@@ -338,7 +338,7 @@ namespace OTEX.Editor
             };
             customKeyBindings[Keys.Control | Keys.W] = () => { tbEditor.LineEndingsVisible = !tbEditor.LineEndingsVisible; };
             customKeyBindings[Keys.Control | Keys.Q] = () => { tbEditor.ToggleCommentSelection(); };
-            customKeyBindings[Keys.Control | Keys.F2] = () => { tbEditor.ToggleBookmark(); };
+            customKeyBindings[Keys.Control | Keys.B] = () => { tbEditor.ToggleBookmark(); };
             customKeyBindings[Keys.F2] = () => { tbEditor.NextBookmark(); };
             customKeyBindings[Keys.Shift | Keys.F2] = () => { tbEditor.PreviousBookmark(); };
 
