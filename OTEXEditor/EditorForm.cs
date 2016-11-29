@@ -28,13 +28,13 @@ namespace OTEX.Editor
         private ServerListener otexServerListener = null;
         private volatile Thread clientConnectingThread = null;
         private volatile bool closing = false, firstOperationsSinceConnecting = false;
-        private FlyoutForm passwordForm = null, settingsForm = null;
+        private FlyoutForm passwordForm = null;
         private volatile IPEndPoint lastConnectionEndpoint = null;
         private volatile Password lastConnectionPassword = null;
         private volatile bool lastConnectionReturnToServerBrowser = false;
-        private TitleBarButton logoutButton = null, settingsButton;
+        private ITitleBarButton logoutButton = null, settingsButton;
         private volatile bool settingsLoaded = false;
-        private Paginator paginator = null;
+        private Paginator mainPaginator = null, sidePaginator = null;
         private readonly User localUser;
         private readonly Dictionary<Guid, User> remoteUsers
             = new Dictionary<Guid, User>();
@@ -52,7 +52,12 @@ namespace OTEX.Editor
             if (IsDesignMode)
                 return;
 
+            // PLUGINS /////////////////////////////////////////////////////////////////////////////
             plugins = plf[0] as PluginFactory;
+
+            // SPLIT PANEL /////////////////////////////////////////////////////////////////////////
+            splitter.Dock = DockStyle.Fill;
+            splitter.HidePanel(2);
 
             // CONFIGURE MAIN MENU /////////////////////////////////////////////////////////////////
             //button text alignment
@@ -102,12 +107,17 @@ namespace OTEX.Editor
             //text
             Text = App.Name;
             //settings menu
-            settingsForm = new FlyoutForm(panSettings);
-            settingsForm.Accent = 1;
-            settingsButton = AddCustomTitleBarButton();
-            settingsButton.Click += (b) => { settingsForm.Flyout(PointToScreen(b.Bounds.BottomMiddle())); };
+            settingsButton = AddTitleBarButton();
+            settingsButton.ToggleCheckedOnClick = true;
+            settingsButton.CheckedChanged += (b) =>
+            {
+                if (b.Checked)
+                    sidePaginator.ActivePageKey = "settings";
+                else if (sidePaginator.ActivePageKey.Equals("settings"))
+                    sidePaginator.ActivePageKey = "";
+            };
             //logout button
-            logoutButton = AddCustomTitleBarButton();
+            logoutButton = AddTitleBarButton(false);
             logoutButton.Colour = ColorTranslator.FromHtml("#DF3F26");
             logoutButton.Visible = false;
             logoutButton.Click += (b) =>
@@ -176,7 +186,7 @@ namespace OTEX.Editor
                     tbEditor.Language = languageManager[c.ServerFilePath];
 
                     logoutButton.Visible = true;
-                    paginator.ActivePageKey = "editor";
+                    mainPaginator.ActivePageKey = "editor";
                     (tbEditor as Control).Focus();
                 }, false);
             };
@@ -251,13 +261,13 @@ namespace OTEX.Editor
                                     lastConnectionEndpoint);
                                 btnConnectingBack.Visible = true;
                                 btnConnectingReconnect.Visible = true;
-                                paginator.ActivePageKey = "connecting";
+                                mainPaginator.ActivePageKey = "connecting";
                             }
                             else
-                                paginator.ActivePageKey = "menu";
+                                mainPaginator.ActivePageKey = "menu";
                         }
                         else
-                            paginator.ActivePageKey = "menu";
+                            mainPaginator.ActivePageKey = "menu";
 
                         Text = App.Name;
                         logoutButton.Visible = false;
@@ -450,18 +460,21 @@ namespace OTEX.Editor
                         App.Assembly, "OTEX.Editor");
                     logoutButton.Image = App.Images.Resource("logout" + (t.IsDark ? "" : "_black"),
                         App.Assembly, "OTEX.Editor");
+
                 }, false);
             };
             App.Theme = App.Themes[localUser.Theme];
 
-            // CONFIGURE PAGINATOR /////////////////////////////////////////////////////////////////
-            paginator = new Paginator(this);
-            paginator.Add("menu", panMenuPage);
-            paginator.Add("connecting", panConnectingPage);
-            paginator.Add("servers", panServerBrowserPage);
-            paginator.Add("editor", tbEditor as Control);
-            paginator.PageActivated += (s, k, p) =>
+            // CONFIGURE MAIN CONTENT PAGINATOR ////////////////////////////////////////////////////
+            mainPaginator = new Paginator(splitter.Panel1);
+            mainPaginator.Add("menu", panMenuPage);
+            mainPaginator.Add("connecting", panConnectingPage);
+            mainPaginator.Add("servers", panServerBrowserPage);
+            mainPaginator.Add("editor", tbEditor as Control);
+            mainPaginator.PageActivated += (s, k, p) =>
             {
+                if (p == null)
+                    return;
                 switch (k)
                 {
                     case "menu":
@@ -473,8 +486,19 @@ namespace OTEX.Editor
                         break;
                 }
             };
-            //set current page
-            paginator.ActivePageKey = "menu";
+            mainPaginator.ActivePageKey = "menu";
+
+            // CONFIGURE SIDEBAR PAGINATOR /////////////////////////////////////////////////////////
+            sidePaginator = new Paginator(splitter.Panel2);
+            sidePaginator.Add("settings", panSettings);
+            sidePaginator.PageActivated += (s, k, p) =>
+            {
+                if (p == null)
+                    splitter.HidePanel(2);
+                else
+                    splitter.ShowPanel(2);
+            };
+            sidePaginator.ActivePageKey = "";
         }
 
         /////////////////////////////////////////////////////////////////////
@@ -577,7 +601,7 @@ namespace OTEX.Editor
             lblConnectingStatus.Text = string.Format("Connecting to {0}...", lastConnectionEndpoint);
             btnConnectingBack.Visible = false;
             btnConnectingReconnect.Visible = false;
-            paginator.ActivePageKey = "connecting";
+            mainPaginator.ActivePageKey = "connecting";
 
             //start connection thread
             clientConnectingThread = new Thread(() =>
@@ -656,17 +680,17 @@ namespace OTEX.Editor
                 StartServerMode(startParams);
             }
             else
-                paginator.ActivePageKey = "menu";
+                mainPaginator.ActivePageKey = "menu";
         }
 
         private void btnClient_Click(object sender, EventArgs e)
         {
-            paginator.ActivePageKey = "servers";
+            mainPaginator.ActivePageKey = "servers";
         }
 
         private void btnClientCancel_Click(object sender, EventArgs e)
         {
-            paginator.ActivePageKey = "menu";
+            mainPaginator.ActivePageKey = "menu";
         }
 
         private void btnServerNew_Click(object sender, EventArgs e)
@@ -728,10 +752,15 @@ namespace OTEX.Editor
         protected override void OnClosed(EventArgs e)
         {
             closing = true;
-            if (paginator != null)
+            if (mainPaginator != null)
             {
-                paginator.Dispose();
-                paginator = null;
+                mainPaginator.Dispose();
+                mainPaginator = null;
+            }
+            if (sidePaginator != null)
+            {
+                sidePaginator.Dispose();
+                sidePaginator = null;
             }
             if (clientConnectingThread != null)
             {
@@ -757,11 +786,6 @@ namespace OTEX.Editor
             {
                 passwordForm.Dispose();
                 passwordForm = null;
-            }
-            if (settingsForm != null)
-            {
-                settingsForm.Dispose();
-                settingsForm = null;
             }
             if (languageManager != null)
             {
@@ -842,9 +866,9 @@ namespace OTEX.Editor
         private void btnConnectingBack_Click(object sender, EventArgs e)
         {
             if (lastConnectionReturnToServerBrowser)
-                paginator.ActivePageKey = "servers";
+                mainPaginator.ActivePageKey = "servers";
             else
-                paginator.ActivePageKey = "menu";
+                mainPaginator.ActivePageKey = "menu";
         }
 
         private void btnConnectingReconnect_Click(object sender, EventArgs e)

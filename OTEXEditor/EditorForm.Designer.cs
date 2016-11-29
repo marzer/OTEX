@@ -75,6 +75,7 @@
             this.cbClientColour = new Marzersoft.Controls.ColourComboBox();
             this.nudClientUpdateInterval = new Marzersoft.Themes.ThemedNumericUpDown();
             this.label3 = new System.Windows.Forms.Label();
+            this.splitter = new Marzersoft.Themes.ThemedSplitContainer();
             this.panMenu.SuspendLayout();
             this.panMenuButtons.SuspendLayout();
             this.panServerBrowserPage.SuspendLayout();
@@ -86,6 +87,8 @@
             this.panSettings.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.nudLineLength)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.nudClientUpdateInterval)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.splitter)).BeginInit();
+            this.splitter.SuspendLayout();
             this.SuspendLayout();
             // 
             // btnServerExisting
@@ -606,15 +609,17 @@
             // 
             this.label6.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.label6.Location = new System.Drawing.Point(7, 151);
+            this.label6.Location = new System.Drawing.Point(7, 148);
             this.label6.Name = "label6";
-            this.label6.Size = new System.Drawing.Size(109, 24);
+            this.label6.Size = new System.Drawing.Size(118, 24);
             this.label6.TabIndex = 117;
             this.label6.Text = "Visual style:";
             this.label6.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
             // cbTheme
             // 
+            this.cbTheme.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.cbTheme.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cbTheme.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.cbTheme.Location = new System.Drawing.Point(131, 151);
@@ -659,9 +664,9 @@
             // 
             this.label5.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.label5.Location = new System.Drawing.Point(7, 115);
+            this.label5.Location = new System.Drawing.Point(7, 114);
             this.label5.Name = "label5";
-            this.label5.Size = new System.Drawing.Size(169, 24);
+            this.label5.Size = new System.Drawing.Size(169, 22);
             this.label5.TabIndex = 114;
             this.label5.Text = "Ruler offset (characters):";
             this.label5.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
@@ -673,7 +678,7 @@
             this.cbLineLength.CheckAlign = System.Drawing.ContentAlignment.MiddleRight;
             this.cbLineLength.Checked = true;
             this.cbLineLength.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.cbLineLength.Location = new System.Drawing.Point(7, 82);
+            this.cbLineLength.Location = new System.Drawing.Point(7, 79);
             this.cbLineLength.Name = "cbLineLength";
             this.cbLineLength.Size = new System.Drawing.Size(229, 24);
             this.cbLineLength.TabIndex = 113;
@@ -685,9 +690,9 @@
             // 
             this.label4.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.label4.Location = new System.Drawing.Point(7, 45);
+            this.label4.Location = new System.Drawing.Point(7, 41);
             this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(169, 24);
+            this.label4.Size = new System.Drawing.Size(169, 21);
             this.label4.TabIndex = 112;
             this.label4.Text = "User colour:";
             this.label4.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
@@ -743,18 +748,31 @@
             // 
             this.label3.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.label3.Location = new System.Drawing.Point(7, 10);
+            this.label3.Location = new System.Drawing.Point(7, 9);
             this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(169, 24);
+            this.label3.Size = new System.Drawing.Size(169, 20);
             this.label3.TabIndex = 109;
             this.label3.Text = "Update interval (seconds):";
             this.label3.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            // 
+            // splitter
+            // 
+            this.splitter.FixedPanel = System.Windows.Forms.FixedPanel.Panel2;
+            this.splitter.IsSplitterFixed = true;
+            this.splitter.Location = new System.Drawing.Point(301, 410);
+            this.splitter.Margin = new System.Windows.Forms.Padding(0);
+            this.splitter.Name = "splitter";
+            this.splitter.Size = new System.Drawing.Size(351, 100);
+            this.splitter.SplitterDistance = 83;
+            this.splitter.SplitterWidth = 1;
+            this.splitter.TabIndex = 9;
             // 
             // EditorForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1074, 478);
+            this.Controls.Add(this.splitter);
             this.Controls.Add(this.panSettings);
             this.Controls.Add(this.panConnectingPage);
             this.Controls.Add(this.panMenuPage);
@@ -779,6 +797,8 @@
             this.panSettings.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.nudLineLength)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.nudClientUpdateInterval)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.splitter)).EndInit();
+            this.splitter.ResumeLayout(false);
             this.ResumeLayout(false);
 
         }
@@ -831,6 +851,7 @@
         private System.Windows.Forms.Label label5;
         private System.Windows.Forms.Label label6;
         private Marzersoft.Themes.ThemedComboBox cbTheme;
+        private Marzersoft.Themes.ThemedSplitContainer splitter;
     }
 }
 
