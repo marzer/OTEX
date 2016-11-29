@@ -262,11 +262,6 @@ namespace OTEX.Editor.Plugins
             HotkeysMapping[Keys.Control | Keys.Right] = FCTBAction.GoWordRight;
             HotkeysMapping[Keys.Control | Keys.Shift | Keys.Left] = FCTBAction.GoWordLeftWithSelection;
             HotkeysMapping[Keys.Control | Keys.Shift | Keys.Right] = FCTBAction.GoWordRightWithSelection;
-            HotkeysMapping[Keys.Control | Keys.Subtract] = FCTBAction.ZoomOut;
-            HotkeysMapping[Keys.Control | Keys.Add] = FCTBAction.ZoomIn;
-            HotkeysMapping[Keys.Control | Keys.NumPad0] = FCTBAction.ZoomNormal;
-            HotkeysMapping[Keys.Control | Keys.U] = FCTBAction.UpperCase;
-            HotkeysMapping[Keys.Control | Keys.Shift | Keys.U] = FCTBAction.LowerCase;
             HotkeysMapping[Keys.Insert] = FCTBAction.ReplaceMode;
             HotkeysMapping[Keys.Control | Keys.Back] = FCTBAction.ClearWordLeft;
             HotkeysMapping[Keys.Control | Keys.Delete] = FCTBAction.ClearWordRight;
@@ -805,6 +800,39 @@ namespace OTEX.Editor.Plugins
         void IEditorTextBox.UncommentSelection()
         {
             CommentSelection(-1);
+        }
+
+        /////////////////////////////////////////////////////////////////////
+        // ZOOM
+        /////////////////////////////////////////////////////////////////////
+
+        void IEditorTextBox.IncreaseZoom()
+        {
+            Zoom += 10;
+        }
+
+        void IEditorTextBox.DecreaseZoom()
+        {
+            Zoom -= 10;
+        }
+
+        void IEditorTextBox.ResetZoom()
+        {
+            Zoom = 100;
+        }
+
+        /////////////////////////////////////////////////////////////////////
+        // CASE CONVERSION
+        /////////////////////////////////////////////////////////////////////
+
+        void IEditorTextBox.UppercaseSelection()
+        {
+            UpperCase();
+        }
+
+        void IEditorTextBox.LowercaseSelection()
+        {
+            LowerCase();
         }
 
         /////////////////////////////////////////////////////////////////////

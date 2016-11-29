@@ -136,5 +136,30 @@ namespace OTEX.Editor
         /// Move the caret to the previous bookmark.
         /// </summary>
         void PreviousBookmark();
+
+        /// <summary>
+        /// Increase the current zoom level.
+        /// </summary>
+        void IncreaseZoom();
+
+        /// <summary>
+        /// Decrease the current zoom level.
+        /// </summary>
+        void DecreaseZoom();
+
+        /// <summary>
+        /// Reset the zoom level back to zero.
+        /// </summary>
+        void ResetZoom();
+
+        /// <summary>
+        /// Convert all currently selected characters to uppercase.
+        /// </summary>
+        void UppercaseSelection();
+
+        /// <summary>
+        /// Convert all currently selected characters to lowercase.
+        /// </summary>
+        void LowercaseSelection();
     }
 }

@@ -146,12 +146,6 @@ namespace OTEX.Editor
         private readonly HighlightRanges ranges = new HighlightRanges(24);
 
         /// <summary>
-        /// custom key bindings
-        /// </summary>
-        private readonly Dictionary<Keys, Action> customKeyBindings
-            = new Dictionary<Keys, Action>();
-
-        /// <summary>
         /// Bookmark marker mask.
         /// </summary>
         private const int BookmarkMarker = 1;
@@ -165,6 +159,18 @@ namespace OTEX.Editor
             get { return ViewEol; }
             set { ViewEol = value; }
         }
+
+        public bool VerticalScrollbarVisible
+        {
+            get { return verticalScrollbarVisible; }
+            private set
+            {
+                if (value == verticalScrollbarVisible)
+                    return;
+                verticalScrollbarVisible = value;
+            }
+        }
+        private volatile bool verticalScrollbarVisible = false;
 
         /////////////////////////////////////////////////////////////////////
         // CONSTRUCTOR
@@ -269,10 +275,6 @@ namespace OTEX.Editor
             AssignCmdKey(Keys.Control | Keys.Right, Command.WordRight);
             AssignCmdKey(Keys.Control | Keys.Shift | Keys.Left, Command.WordLeftExtend);
             AssignCmdKey(Keys.Control | Keys.Shift | Keys.Right, Command.WordRightExtend);
-            AssignCmdKey(Keys.Control | Keys.Subtract, Command.ZoomOut);
-            AssignCmdKey(Keys.Control | Keys.Add, Command.ZoomIn);
-            AssignCmdKey(Keys.Control | Keys.U, Command.Uppercase);
-            AssignCmdKey(Keys.Control | Keys.Shift | Keys.U, Command.Lowercase);
             AssignCmdKey(Keys.Insert, Command.EditToggleOvertype);
             AssignCmdKey(Keys.Control | Keys.Back, Command.DelWordLeft);
             AssignCmdKey(Keys.Control | Keys.Delete, Command.DelWordRight);
@@ -285,10 +287,6 @@ namespace OTEX.Editor
             AssignCmdKey(Keys.Alt | Keys.Down, Command.MoveSelectedLinesDown);
             AssignCmdKey(Keys.Enter, Command.NewLine);
             AssignCmdKey(Keys.Shift | Keys.Enter, Command.NewLine);
-            customKeyBindings[Keys.Control | Keys.NumPad0] = () => { Zoom = 0; };
-            //disable scintilla hotkeys for our 'custom' ones
-            foreach (var kvp in customKeyBindings)
-                AssignCmdKey(kvp.Key, Command.Null);
 
             //insert diff
             Insert += (s, e) =>
@@ -348,6 +346,12 @@ namespace OTEX.Editor
             {
                 if (e.Margin == 1)
                     ToggleBookmark(LineFromPosition(e.Position));
+            };
+
+            //scrollbar
+            Layout += (s, e) =>
+            {
+                VerticalScrollbarVisible = this.VerticalScrollbarVisible();
             };
 
             //themes
@@ -685,14 +689,6 @@ namespace OTEX.Editor
             AssignCmdKey(Keys.Control | Keys.Shift | Keys.Alt | key, Command.Null);
         }
 
-        protected override void OnKeyDown(KeyEventArgs e)
-        {
-            Action customBinding = null;
-            if (customKeyBindings.TryGetValue(e.KeyData, out customBinding))
-                customBinding();
-            base.OnKeyDown(e);
-        }
-
         /////////////////////////////////////////////////////////////////////
         // BOOKMARKS
         /////////////////////////////////////////////////////////////////////
@@ -885,6 +881,39 @@ namespace OTEX.Editor
         }
 
         /////////////////////////////////////////////////////////////////////
+        // ZOOM
+        /////////////////////////////////////////////////////////////////////
+
+        void IEditorTextBox.IncreaseZoom()
+        {
+            ZoomIn();
+        }
+
+        void IEditorTextBox.DecreaseZoom()
+        {
+            ZoomOut();
+        }
+
+        void IEditorTextBox.ResetZoom()
+        {
+            Zoom = 0;
+        }
+
+        /////////////////////////////////////////////////////////////////////
+        // CASE CONVERSION
+        /////////////////////////////////////////////////////////////////////
+
+        void IEditorTextBox.UppercaseSelection()
+        {
+            ExecuteCmd(Command.Uppercase);
+        }
+
+        void IEditorTextBox.LowercaseSelection()
+        {
+            ExecuteCmd(Command.Lowercase);
+        }
+
+        /////////////////////////////////////////////////////////////////////
         // DISPOSE
         /////////////////////////////////////////////////////////////////////
 
@@ -906,7 +935,6 @@ namespace OTEX.Editor
                             currentLanguage = null;
                         }
                         ranges.Clear();
-                        customKeyBindings.Clear();
                     }
                 }
             }
