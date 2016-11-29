@@ -76,6 +76,8 @@
             this.nudClientUpdateInterval = new Marzersoft.Themes.ThemedNumericUpDown();
             this.label3 = new System.Windows.Forms.Label();
             this.splitter = new Marzersoft.Themes.ThemedSplitContainer();
+            this.sideSplitter = new Marzersoft.Themes.ThemedSplitContainer();
+            this.lbUsers = new Marzersoft.Themes.ThemedListBox();
             this.panMenu.SuspendLayout();
             this.panMenuButtons.SuspendLayout();
             this.panServerBrowserPage.SuspendLayout();
@@ -88,7 +90,10 @@
             ((System.ComponentModel.ISupportInitialize)(this.nudLineLength)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.nudClientUpdateInterval)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.splitter)).BeginInit();
+            this.splitter.Panel2.SuspendLayout();
             this.splitter.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.sideSplitter)).BeginInit();
+            this.sideSplitter.SuspendLayout();
             this.SuspendLayout();
             // 
             // btnServerExisting
@@ -463,7 +468,7 @@
             // 
             this.panServerPassword.Controls.Add(this.labServerPassword);
             this.panServerPassword.Controls.Add(this.tbServerPassword);
-            this.panServerPassword.Location = new System.Drawing.Point(494, 15);
+            this.panServerPassword.Location = new System.Drawing.Point(20, 391);
             this.panServerPassword.Name = "panServerPassword";
             this.panServerPassword.Size = new System.Drawing.Size(204, 56);
             this.panServerPassword.TabIndex = 6;
@@ -534,7 +539,7 @@
             // 
             this.panConnectingPage.Controls.Add(this.panConnectingContent);
             this.panConnectingPage.Controls.Add(this.lblConnectingStatus);
-            this.panConnectingPage.Location = new System.Drawing.Point(63, 219);
+            this.panConnectingPage.Location = new System.Drawing.Point(12, 206);
             this.panConnectingPage.Name = "panConnectingPage";
             this.panConnectingPage.Size = new System.Drawing.Size(613, 179);
             this.panConnectingPage.TabIndex = 7;
@@ -600,9 +605,9 @@
             this.panSettings.Controls.Add(this.cbClientColour);
             this.panSettings.Controls.Add(this.nudClientUpdateInterval);
             this.panSettings.Controls.Add(this.label3);
-            this.panSettings.Location = new System.Drawing.Point(548, 114);
+            this.panSettings.Location = new System.Drawing.Point(817, 410);
             this.panSettings.Name = "panSettings";
-            this.panSettings.Size = new System.Drawing.Size(245, 185);
+            this.panSettings.Size = new System.Drawing.Size(245, 228);
             this.panSettings.TabIndex = 8;
             // 
             // label6
@@ -759,19 +764,56 @@
             // 
             this.splitter.FixedPanel = System.Windows.Forms.FixedPanel.Panel2;
             this.splitter.IsSplitterFixed = true;
-            this.splitter.Location = new System.Drawing.Point(301, 410);
+            this.splitter.Location = new System.Drawing.Point(494, 32);
             this.splitter.Margin = new System.Windows.Forms.Padding(0);
             this.splitter.Name = "splitter";
+            // 
+            // splitter.Panel2
+            // 
+            this.splitter.Panel2.Controls.Add(this.sideSplitter);
             this.splitter.Size = new System.Drawing.Size(351, 100);
-            this.splitter.SplitterDistance = 83;
+            this.splitter.SplitterDistance = 98;
             this.splitter.SplitterWidth = 1;
             this.splitter.TabIndex = 9;
+            this.splitter.TabStop = false;
+            // 
+            // sideSplitter
+            // 
+            this.sideSplitter.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.sideSplitter.FixedPanel = System.Windows.Forms.FixedPanel.Panel1;
+            this.sideSplitter.IsSplitterFixed = true;
+            this.sideSplitter.Location = new System.Drawing.Point(0, 0);
+            this.sideSplitter.Margin = new System.Windows.Forms.Padding(0);
+            this.sideSplitter.Name = "sideSplitter";
+            this.sideSplitter.Orientation = System.Windows.Forms.Orientation.Horizontal;
+            // 
+            // sideSplitter.Panel1
+            // 
+            this.sideSplitter.Panel1.Paint += new System.Windows.Forms.PaintEventHandler(this.themedSplitContainer1_Panel1_Paint);
+            this.sideSplitter.Size = new System.Drawing.Size(252, 100);
+            this.sideSplitter.SplitterDistance = 40;
+            this.sideSplitter.SplitterWidth = 1;
+            this.sideSplitter.TabIndex = 0;
+            this.sideSplitter.TabStop = false;
+            // 
+            // lbUsers
+            // 
+            this.lbUsers.BorderStyle = System.Windows.Forms.BorderStyle.None;
+            this.lbUsers.DrawMode = System.Windows.Forms.DrawMode.OwnerDrawVariable;
+            this.lbUsers.FormattingEnabled = true;
+            this.lbUsers.IntegralHeight = false;
+            this.lbUsers.Location = new System.Drawing.Point(666, 294);
+            this.lbUsers.Margin = new System.Windows.Forms.Padding(0);
+            this.lbUsers.Name = "lbUsers";
+            this.lbUsers.Size = new System.Drawing.Size(152, 91);
+            this.lbUsers.TabIndex = 10;
             // 
             // EditorForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1074, 478);
+            this.Controls.Add(this.lbUsers);
             this.Controls.Add(this.splitter);
             this.Controls.Add(this.panSettings);
             this.Controls.Add(this.panConnectingPage);
@@ -797,8 +839,11 @@
             this.panSettings.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.nudLineLength)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.nudClientUpdateInterval)).EndInit();
+            this.splitter.Panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.splitter)).EndInit();
             this.splitter.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.sideSplitter)).EndInit();
+            this.sideSplitter.ResumeLayout(false);
             this.ResumeLayout(false);
 
         }
@@ -852,6 +897,8 @@
         private System.Windows.Forms.Label label6;
         private Marzersoft.Themes.ThemedComboBox cbTheme;
         private Marzersoft.Themes.ThemedSplitContainer splitter;
+        private Marzersoft.Themes.ThemedListBox lbUsers;
+        private Marzersoft.Themes.ThemedSplitContainer sideSplitter;
     }
 }
 

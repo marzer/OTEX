@@ -32,7 +32,7 @@ namespace OTEX.Editor
         private volatile IPEndPoint lastConnectionEndpoint = null;
         private volatile Password lastConnectionPassword = null;
         private volatile bool lastConnectionReturnToServerBrowser = false;
-        private ITitleBarButton logoutButton = null, settingsButton;
+        private ITitleBarButton logoutButton = null, settingsButton = null, usersButton = null;
         private volatile bool settingsLoaded = false;
         private Paginator mainPaginator = null, sidePaginator = null;
         private readonly User localUser;
@@ -41,6 +41,7 @@ namespace OTEX.Editor
         private readonly PluginFactory plugins;
         private readonly Dictionary<Keys, Action> customKeyBindings
             = new Dictionary<Keys, Action>();
+        private volatile bool suspendTitleBarButtonEvents = false;
 
         /////////////////////////////////////////////////////////////////////
         // CONSTRUCTOR
@@ -109,13 +110,16 @@ namespace OTEX.Editor
             //settings menu
             settingsButton = AddTitleBarButton();
             settingsButton.ToggleCheckedOnClick = true;
-            settingsButton.CheckedChanged += (b) =>
-            {
-                if (b.Checked)
-                    sidePaginator.ActivePageKey = "settings";
-                else if (sidePaginator.ActivePageKey.Equals("settings"))
-                    sidePaginator.ActivePageKey = "";
-            };
+            settingsButton.Tag = panSettings;
+            panSettings.Tag = settingsButton;
+            settingsButton.CheckedChanged += TitleBarButton_CheckedChanged;
+            //users menu
+            usersButton = AddTitleBarButton();
+            usersButton.ToggleCheckedOnClick = true;
+            usersButton.Tag = lbUsers;
+            lbUsers.Tag = usersButton;
+            usersButton.CheckedChanged += TitleBarButton_CheckedChanged;
+            usersButton.Visible = false;
             //logout button
             logoutButton = AddTitleBarButton(false);
             logoutButton.Colour = ColorTranslator.FromHtml("#DF3F26");
@@ -185,9 +189,10 @@ namespace OTEX.Editor
                     tbEditor.DiffEvents = true;
                     tbEditor.Language = languageManager[c.ServerFilePath];
 
-                    logoutButton.Visible = true;
                     mainPaginator.ActivePageKey = "editor";
                     (tbEditor as Control).Focus();
+                    usersButton.Visible = logoutButton.Visible = true;
+                    lbUsers.Items.Add(localUser);
                 }, false);
             };
             otexClient.OnRemoteOperations += (c,operations) =>
@@ -232,6 +237,7 @@ namespace OTEX.Editor
                             {
                                 this.Execute(() => { tbEditor.SetHighlightRange(u.ID, u.SelectionStart, u.SelectionEnd, u.Colour); });
                             };
+                            lbUsers.Items.Add(remoteUser);
                         }
                         this.Execute(() => { tbEditor.SetHighlightRange(remoteUser.ID, remoteUser.SelectionStart,
                             remoteUser.SelectionEnd, remoteUser.Colour); });
@@ -250,6 +256,7 @@ namespace OTEX.Editor
                 {
                     localUser.SetSelection(0, 0);
                     tbEditor.ClearHighlightRanges();
+                    lbUsers.Items.Clear();
                     this.Execute(() =>
                     {
                         //client mode (in server mode, client always disconnects first)
@@ -270,9 +277,11 @@ namespace OTEX.Editor
                             mainPaginator.ActivePageKey = "menu";
 
                         Text = App.Name;
-                        logoutButton.Visible = false;
                         tbEditor.ClearText();
                         tbEditor.ClearUndoHistory();
+
+                        usersButton.Checked = false;
+                        usersButton.Visible = logoutButton.Visible = false;
                     });
                 }
             };
@@ -351,6 +360,11 @@ namespace OTEX.Editor
             customKeyBindings[Keys.Control | Keys.B] = () => { tbEditor.ToggleBookmark(); };
             customKeyBindings[Keys.F2] = () => { tbEditor.NextBookmark(); };
             customKeyBindings[Keys.Shift | Keys.F2] = () => { tbEditor.PreviousBookmark(); };
+            customKeyBindings[Keys.Control | Keys.Subtract] = () => { tbEditor.DecreaseZoom(); };
+            customKeyBindings[Keys.Control | Keys.Add] = () => { tbEditor.IncreaseZoom(); };
+            customKeyBindings[Keys.Control | Keys.NumPad0] = () => { tbEditor.ResetZoom(); };
+            customKeyBindings[Keys.Control | Keys.U] = () => { tbEditor.UppercaseSelection(); };
+            customKeyBindings[Keys.Control | Keys.Shift | Keys.U] = () => { tbEditor.LowercaseSelection(); };
 
             // CREATE LANGUAGE MANAGER /////////////////////////////////////////////////////////////
             languageManager = new LanguageManager();
@@ -454,12 +468,16 @@ namespace OTEX.Editor
 
                     lblAbout.Font = t.Font.Underline;
 
-                    settingsButton.Colour = t.Accent(1).Colour;
-
+                    settingsButton.Colour = t.Accent(0).Colour;
                     settingsButton.Image = App.Images.Resource("cog" + (t.IsDark ? "" : "_black"),
                         App.Assembly, "OTEX.Editor");
+
+                    usersButton.Colour = t.Accent(1).Colour;
+
                     logoutButton.Image = App.Images.Resource("logout" + (t.IsDark ? "" : "_black"),
                         App.Assembly, "OTEX.Editor");
+
+                    sideSplitter.Panel1.Refresh();
 
                 }, false);
             };
@@ -489,16 +507,10 @@ namespace OTEX.Editor
             mainPaginator.ActivePageKey = "menu";
 
             // CONFIGURE SIDEBAR PAGINATOR /////////////////////////////////////////////////////////
-            sidePaginator = new Paginator(splitter.Panel2);
+            sidePaginator = new Paginator(sideSplitter.Panel2);
             sidePaginator.Add("settings", panSettings);
-            sidePaginator.PageActivated += (s, k, p) =>
-            {
-                if (p == null)
-                    splitter.HidePanel(2);
-                else
-                    splitter.ShowPanel(2);
-            };
-            sidePaginator.ActivePageKey = "";
+            sidePaginator.Add("users", lbUsers);
+            sidePaginator.ActivePage = null;
         }
 
         /////////////////////////////////////////////////////////////////////
@@ -889,6 +901,27 @@ namespace OTEX.Editor
                 localUser.Ruler = cbLineLength.Checked;
         }
 
+        private void themedSplitContainer1_Panel1_Paint(object sender, PaintEventArgs e)
+        {
+            if (sidePaginator.ActivePage == null)
+                return;
+            var button = sidePaginator.ActivePage.Tag as ITitleBarButton;
+            if (button == null)
+                return;
+
+            using (var brush = new SolidBrush(button.Colour.Value))
+                e.Graphics.FillRectangle(brush, 0, 0, (sender as Control).Width, 4);
+            using (var format = new StringFormat())
+            {
+                format.Alignment = StringAlignment.Near;
+                format.LineAlignment = StringAlignment.Center;
+                var title = sidePaginator.ActivePageKey.Nameify();
+                var font = App.Theme.Font.Large.Regular;
+                var sz = e.Graphics.MeasureString(title, font, (sender as Control).Width, format);
+                e.Graphics.DrawString(title, font, App.Theme.Foreground.Brush, 5, 4 + sz.Height / 2, format);
+            }
+        }
+
         private void nudLineLength_ValueChanged(object sender, EventArgs e)
         {
             if (settingsLoaded)
@@ -915,6 +948,28 @@ namespace OTEX.Editor
             panConnectingContent.CenterInParent();
             panConnectingContent.Top = lblConnectingStatus.Bottom + 8;
             panConnectingPage.ResumeLayout(true);
+        }
+
+        private void TitleBarButton_CheckedChanged(ITitleBarButton b)
+        {
+            if (suspendTitleBarButtonEvents)
+                return;
+            var buttonPage = b.Tag as Control;
+            var currentPage = sidePaginator.ActivePage;
+            if (b.Checked && currentPage != buttonPage)
+            {
+                suspendTitleBarButtonEvents = true;
+                if (currentPage != null)
+                    (currentPage.Tag as ITitleBarButton).Checked = false;
+                sidePaginator.ActivePage = buttonPage;
+                splitter.ShowPanel(2);
+                suspendTitleBarButtonEvents = false;
+            }
+            else if (!b.Checked && currentPage == buttonPage)
+            {
+                sidePaginator.ActivePage = null;
+                splitter.HidePanel(2);
+            }
         }
     }
 }

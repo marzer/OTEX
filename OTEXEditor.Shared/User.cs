@@ -4,7 +4,9 @@ using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 using Marzersoft;
+using Marzersoft.Themes;
 
 namespace OTEX.Editor
 {
@@ -14,7 +16,7 @@ namespace OTEX.Editor
     /// with other OTEX clients via "metadata".
     /// </summary>
     [Serializable]
-    public class User
+    public sealed class User : IThemedListBoxItem
     {
         /////////////////////////////////////////////////////////////////////
         // EVENTS
@@ -315,6 +317,20 @@ namespace OTEX.Editor
             selectionStart = start;
             selectionEnd = end;
             OnSelectionChanged?.Invoke(this);
+        }
+
+        /////////////////////////////////////////////////////////////////////
+        // LIST BOX ITEM
+        /////////////////////////////////////////////////////////////////////
+
+        int IThemedListBoxItem.MeasureItemHeight(ThemedListBox host, MeasureItemEventArgs e)
+        {
+            return 40;
+        }
+
+        void IThemedListBoxItem.DrawListboxItem(DrawItemEventArgs e)
+        {
+
         }
     }
 }
