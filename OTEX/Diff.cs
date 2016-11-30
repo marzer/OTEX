@@ -245,9 +245,7 @@ namespace OTEX
             }
             else
             {
-                // Find the middle snakea and length of an optimal path for A and B
-                long smsrdX, smsrdY;
-                ShortestMiddleSnake(DataA, LowerA, UpperA, DataB, LowerB, UpperB, DownVector, UpVector, out smsrdX, out smsrdY);
+                ShortestMiddleSnake(DataA, LowerA, UpperA, DataB, LowerB, UpperB, DownVector, UpVector, out long smsrdX, out long smsrdY);
 
                 // The path is from LowerX to (x,y) and (x,y) to UpperX
                 LongestCommonSubsequence(DataA, LowerA, smsrdX, DataB, LowerB, smsrdY, DownVector, UpVector);

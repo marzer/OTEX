@@ -514,7 +514,7 @@ namespace OTEX.Editor
                 Lexer = newLexer;
 #if DEBUG
                 if (newLexer != Lexer.Null)
-                    Logger.I("Scintilla Lexer: {0}\nKeywords:\n{1}", newLexer, DescribeKeywordSets().SplitLines().Print());
+                    Logger.V("Scintilla Lexer: {0}\nKeywords:\n{1}", newLexer, DescribeKeywordSets().SplitLines().Print());
 #endif
                 if (newLexer == Lexer.Null)
                 {
@@ -848,10 +848,8 @@ namespace OTEX.Editor
                 int anchor = AnchorPosition;
                 int anchorLine = LineFromPosition(anchor);
                 int anchorOffset = anchor - Lines[anchorLine].Position;
-                int firstLine, lastLine, firstOffset, lastOffset;
-                int actualMode;
-                if (CommentRegion(caret, anchor, mode, out firstLine, out firstOffset,
-                    out lastLine, out lastOffset, out actualMode))
+                if (CommentRegion(caret, anchor, mode, out int firstLine, out int firstOffset,
+                    out int lastLine, out int lastOffset, out int actualMode))
                 {
                     if ((caretLine == firstLine && caretOffset >= firstOffset)
                         || (caretLine == lastLine && caretOffset >= lastOffset))

@@ -159,8 +159,7 @@ namespace OTEX
                     //process
                     lock (activeServers)
                     {
-                        ServerDescription knownServer = null;
-                        if (!activeServers.TryGetValue(senderEndPoint, out knownServer))
+                        if (!activeServers.TryGetValue(senderEndPoint, out var knownServer))
                         {
                             activeServers[senderEndPoint] = knownServer = new ServerDescription(senderEndPoint, packet);
                             OnServerAdded?.Invoke(this, knownServer);

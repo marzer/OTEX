@@ -616,8 +616,7 @@ namespace OTEX
                     lock (stateLock)
                     {
                         //duplicate id (already connected... shouldn't happen?)
-                        ClientData cl = null;
-                        if (connectedClients.TryGetValue(request.ClientID, out cl))
+                        if (connectedClients.TryGetValue(request.ClientID, out var cl))
                         {
                             CaptureException(() =>
                             {
@@ -697,8 +696,7 @@ namespace OTEX
                                     if (incoming.Metadata != null && incoming.Metadata.Count > 0)
                                     {
                                         //get metadata array
-                                        byte[] metadata;
-                                        if (!incoming.Metadata.TryGetValue(clientData.ID, out metadata))
+                                        if (!incoming.Metadata.TryGetValue(clientData.ID, out var metadata))
                                             break; //shouldn't happen; clients only send their own
 
                                         //compare it to existing metadata
