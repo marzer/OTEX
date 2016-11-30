@@ -54,7 +54,8 @@ namespace OTEX.Editor
         /// <summary>
         /// All loaded syntax highlighting languages.
         /// </summary>
-        private Dictionary<string, Language> languages = null;
+        private readonly Dictionary<string, Language> languages
+            = new Dictionary<string, Language>();
         private readonly object languagesLock = new object();
 
         /// <summary>
@@ -160,9 +161,9 @@ namespace OTEX.Editor
                 int count = 0;
                 lock (languagesLock)
                 {
-                    if (languages != null)
-                        languages.Clear();
-                    languages = newLanguages;
+                    languages.Clear();
+                    foreach (var kvp in newLanguages)
+                        languages[kvp.Key] = kvp.Value;
                     count = languages.Count;
                 }
                 OnLoaded?.Invoke(this, count);
@@ -221,9 +222,7 @@ namespace OTEX.Editor
                     key = (key ?? "").Trim().ToLower();
                     if (key.Length == 0)
                         return null;
-
-                    List<string> list = null;
-                    if (keywords.TryGetValue(key, out list))
+                    if (keywords.TryGetValue(key, out var list))
                         return list.AsReadOnly();
                     return null;
                 }
@@ -279,8 +278,7 @@ namespace OTEX.Editor
                         continue;
 
                     var key = ((string)k.Attribute("name")).Trim().ToLower();
-                    List<string> list = null;
-                    if (!keywords.TryGetValue(key, out list))
+                    if (!keywords.TryGetValue(key, out var list))
                         keywords[key] = list = new List<string>();
                     list.AddRange(tokens);
                 }
