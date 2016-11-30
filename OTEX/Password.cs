@@ -14,11 +14,6 @@ namespace OTEX
         /////////////////////////////////////////////////////////////////////
 
         /// <summary>
-        /// Key for encrypting and decrypting passwords.
-        /// </summary>
-        private static readonly Guid EncryptionKey = new Guid("38751C0B-2842-43F4-8059-6E3AD3FAAD55");
-
-        /// <summary>
         /// The encrypted version of the original input password.
         /// </summary>
         private string EncyptedPassword;
@@ -41,7 +36,7 @@ namespace OTEX
                 throw new ArgumentOutOfRangeException("password", "password must be between 6 and 32 characters");
             if (password.IndexOfAny(new char[] { '\r', '\n', '\t', '\f', '\a', '\b', '\v' }) != -1)
                 throw new ArgumentOutOfRangeException("password", "password contains reserved characters");
-            EncyptedPassword = password.Encrypt(EncryptionKey.ToString());
+            EncyptedPassword = password.Encrypt();
         }
 
         /////////////////////////////////////////////////////////////////////
