@@ -1,17 +1,15 @@
 ﻿using Marzersoft;
+using Marzersoft.Controls;
 using Marzersoft.Forms;
 using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
-using System.Windows.Forms;
-using System.Net;
-using System.Text.RegularExpressions;
-using System.Threading;
 using System.IO;
 using System.Linq;
-using System.Collections.Generic;
-using Marzersoft.Themes;
-using Marzersoft.Controls;
-using System.Diagnostics;
+using System.Net;
+using System.Threading;
+using System.Windows.Forms;
 
 namespace OTEX.Editor
 {
@@ -167,7 +165,7 @@ namespace OTEX.Editor
             };
 
             // CREATE OTEX CLIENT //////////////////////////////////////////////////////////////////
-            otexClient = new Client();
+            otexClient = new Client(App.UserID);
             otexClient.OnThreadException += (c, e) =>
             {
                 Logger.W("Client: {0}: {1}", e.InnerException.GetType().Name, e.InnerException.Message);
@@ -223,8 +221,7 @@ namespace OTEX.Editor
                 {
                     lock (remoteUsers)
                     {
-                        User remoteUser = null;
-                        if (remoteUsers.TryGetValue(id, out remoteUser))
+                        if (remoteUsers.TryGetValue(id, out var remoteUser))
                             remoteUser.Update(md);
                         else
                         {
@@ -251,14 +248,14 @@ namespace OTEX.Editor
                 {
                     remoteUsers.Clear();
                 }
-                tbEditor.ClearHighlightRanges();
                 if (!closing)
                 {
                     localUser.SetSelection(0, 0);
-                    tbEditor.ClearHighlightRanges();
-                    lbUsers.Items.Clear();
                     this.Execute(() =>
                     {
+                        lbUsers.Items.Clear();
+                        tbEditor.ClearHighlightRanges();
+
                         //client mode (in server mode, client always disconnects first)
                         if (serverSide)
                         {
@@ -660,8 +657,7 @@ namespace OTEX.Editor
 
         protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
         {
-            Action customBinding = null;
-            if (customKeyBindings.TryGetValue(keyData, out customBinding))
+            if (customKeyBindings.TryGetValue(keyData, out var customBinding))
             {
                 customBinding();
                 return true;
