@@ -398,7 +398,7 @@ namespace OTEX
                                 throw new InvalidDataException("unexpected response packet type");
                             response = responsePacket.Payload.Deserialize<ConnectionResponse>();
                             if (response.Result != ConnectionResponse.ResponseCode.Approved)
-                                throw new Exception(string.Format("connection rejected by server: {0}",response.Result));
+                                throw new Exception(string.Format("Rejected: {0}", ConnectionResponse.Describe(response.Result)));
                             if (response.ServerID.Equals(Guid.Empty))
                                 throw new InvalidDataException("response.ServerID was Guid.Empty");
                         }

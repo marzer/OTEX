@@ -166,5 +166,38 @@ namespace OTEX.Packets
             metadata = null;
             operations = null;
         }
+
+        /////////////////////////////////////////////////////////////////////
+        // DESCRIBING ERROR CODES
+        /////////////////////////////////////////////////////////////////////
+
+        /// <summary>
+        /// Describes a response code in plain-English (for error messages, exceptions, etc.).
+        /// </summary>
+        /// <param name="code">The code to describe</param>
+        /// <returns>A plain-English description of a server's response.</returns>
+        public static string Describe(ResponseCode code)
+        {
+            switch (code)
+            {
+                case ResponseCode.Approved:
+                    return "The connection was approved by the server.";
+
+                case ResponseCode.DuplicateGUID:
+                    return "A client with the same ID is already connected to the server.";
+
+                case ResponseCode.IncorrectPassword:
+                    return "The password provided by the client was incorrect.";
+
+                case ResponseCode.InvalidState:
+                    return "The server detected the client being in an invalid state.";
+
+                case ResponseCode.SessionFull:
+                    return "The server's session is full.";
+
+                default:
+                    return "The server rejected the connection.";
+            }
+        }
     }
 }
