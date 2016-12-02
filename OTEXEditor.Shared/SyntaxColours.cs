@@ -87,10 +87,7 @@ namespace OTEX.Editor
         /// </summary>
         public static Color Documentation
         {
-            get
-            {
-                return PreprocessorDirectives.Darken(0.4f).Blend(Comments, 100);
-            }
+            get { return PreprocessorDirectives.Darken(0.4f).Blend(Comments, 100); }
         }
     }
 }

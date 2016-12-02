@@ -16,7 +16,7 @@ namespace OTEX.Editor
     /// with other OTEX clients via "metadata".
     /// </summary>
     [Serializable]
-    public sealed class User : IThemedListBoxItem
+    public sealed class User : IEquatable<User>, IComparable<User>, IComparable
     {
         /////////////////////////////////////////////////////////////////////
         // EVENTS
@@ -33,30 +33,6 @@ namespace OTEX.Editor
         /// </summary>
         [field: NonSerialized]
         public event Action<User> OnSelectionChanged;
-
-        /// <summary>
-        /// Event triggered when this User's line-length ruler settings change (local user only).
-        /// </summary>
-        [field: NonSerialized]
-        public event Action<User> OnRulerChanged;
-
-        /// <summary>
-        /// Event triggered when this User's otex client update interval setting changes (local user only).
-        /// </summary>
-        [field: NonSerialized]
-        public event Action<User> OnUpdateIntervalChanged;
-
-        /// <summary>
-        /// Event triggered when this User's colour theme setting changes (local user only).
-        /// </summary>
-        [field: NonSerialized]
-        public event Action<User> OnThemeChanged;
-
-        /// <summary>
-        /// Event triggered when this User's last direct connection setting changes (local user only).
-        /// </summary>
-        [field: NonSerialized]
-        public event Action<User> OnLastDirectConnectionChanged;
 
         /////////////////////////////////////////////////////////////////////
         // PROPERTIES/VARIABLES
@@ -139,86 +115,6 @@ namespace OTEX.Editor
         /// </summary>
         [NonSerialized]
         public readonly bool IsLocal;
-
-        /// <summary>
-        /// Does the user have the line length ruler visible? (local user only)
-        /// </summary>
-        public bool Ruler
-        {
-            get { return IsLocal ? App.Config.User.Get("user.ruler", true) : false; }
-            set
-            {
-                if (IsLocal && value != Ruler)
-                {
-                    App.Config.User.Set("user.ruler", value);
-                    OnRulerChanged?.Invoke(this);
-                }
-            }
-        }
-
-        /// <summary>
-        /// What is the line-length setting of the ruler? (local user only)
-        /// </summary>
-        public uint RulerOffset
-        {
-            get { return IsLocal ? App.Config.User.Get("user.ruler_offset", 100u).Clamp(60u,200u) : 0; }
-            set
-            {
-                if (IsLocal && (value = value.Clamp(60u, 200u)) != RulerOffset)
-                {
-                    App.Config.User.Set("user.ruler_offset", value);
-                    OnRulerChanged?.Invoke(this);
-                }
-            }
-        }
-
-        /// <summary>
-        /// Time, in seconds, between each request for updates sent to the server (local user only)
-        /// </summary>
-        public float UpdateInterval
-        {
-            get { return IsLocal ? App.Config.User.Get("user.update_interval", 1.0f).Clamp(0.5f,5.0f) : 0.0f; }
-            set
-            {
-                if (IsLocal && !(value = value.Clamp(0.5f, 5.0f)).Equal(UpdateInterval))
-                {
-                    App.Config.User.Set("user.update_interval", value);
-                    OnUpdateIntervalChanged?.Invoke(this);
-                }
-            }
-        }
-
-        /// <summary>
-        /// User's chosen colour theme (local user only).
-        /// </summary>
-        public string Theme
-        {
-            get { return IsLocal ? App.Config.User.Get("user.theme", "dark").Trim().ToLower() : ""; }
-            set
-            {
-                if (IsLocal && !(value = ((value ?? "").Trim().ToLower())).Equals(Theme))
-                {
-                    App.Config.User.Set("user.theme", value);
-                    OnThemeChanged?.Invoke(this);
-                }
-            }
-        }
-
-        /// <summary>
-        /// User's last connection from the "enter server details manually" control (local user only)
-        /// </summary>
-        public string LastDirectConnection
-        {
-            get { return IsLocal ? App.Config.User.Get("user.last_direct_connection", "127.0.0.1").Trim() : ""; }
-            set
-            {
-                if (IsLocal && !(value = ((value ?? "").Trim())).Equals(LastDirectConnection))
-                {
-                    App.Config.User.Set("user.last_direct_connection", value);
-                    OnLastDirectConnectionChanged?.Invoke(this);
-                }
-            }
-        }
 
         /////////////////////////////////////////////////////////////////////
         // CONSTRUCTOR
@@ -320,17 +216,40 @@ namespace OTEX.Editor
         }
 
         /////////////////////////////////////////////////////////////////////
-        // LIST BOX ITEM
+        // EQUALITY, COMPARISONS
         /////////////////////////////////////////////////////////////////////
 
-        int IThemedListBoxItem.MeasureItemHeight(ThemedListBox host, MeasureItemEventArgs e)
+        public override int GetHashCode()
         {
-            return 40;
+            return ID.GetHashCode();
         }
 
-        void IThemedListBoxItem.DrawListboxItem(DrawItemEventArgs e)
+        public override bool Equals(object other)
         {
+            return Equals(other as User);
+        }
 
+        public bool Equals(User other)
+        {
+            if (other == null)
+                return false;
+            if (ReferenceEquals(this, other))
+                return true;
+            return ID.Equals(other.ID);
+        }
+
+        public int CompareTo(object other)
+        {
+            return CompareTo(other as User);
+        }
+
+        public int CompareTo(User other)
+        {
+            if (other == null)
+                return 1;
+            if (ReferenceEquals(this, other))
+                return 0;
+            return ID.CompareTo(other.ID);
         }
     }
 }
