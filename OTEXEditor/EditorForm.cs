@@ -34,12 +34,34 @@ namespace OTEX.Editor
         private volatile bool settingsLoaded = false;
         private Paginator mainPaginator = null, sidePaginator = null;
         private readonly User localUser;
-        private readonly Dictionary<Guid, User> remoteUsers
-            = new Dictionary<Guid, User>();
+        private readonly Dictionary<Guid, User> remoteUsers = new Dictionary<Guid, User>();
         private readonly PluginFactory plugins;
         private readonly Dictionary<Keys, Action> customKeyBindings
             = new Dictionary<Keys, Action>();
         private volatile bool suspendTitleBarButtonEvents = false;
+        private readonly Settings settings;
+
+        /// <summary>
+        /// List of allowed user colours.
+        /// </summary>
+        public static IReadOnlyList<Color> AllowedColours
+        {
+            get { return allowedColors.Value; }
+        }
+        private static readonly Lazy<IReadOnlyList<Color>> allowedColors
+            = new Lazy<IReadOnlyList<Color>>(() =>
+            {
+                List<Color> colours = new List<Color>();
+                colours.Add(ColorTranslator.FromHtml("#ec7063"));
+                colours.Add(ColorTranslator.FromHtml("#af7ac5"));
+                colours.Add(ColorTranslator.FromHtml("#5dade2"));
+                colours.Add(ColorTranslator.FromHtml("#48c9b0"));
+                colours.Add(ColorTranslator.FromHtml("#52be80"));
+                colours.Add(ColorTranslator.FromHtml("#f4d03f"));
+                colours.Add(ColorTranslator.FromHtml("#f5b041"));
+                colours.Add(ColorTranslator.FromHtml("#dc7633"));
+                return colours.AsReadOnly();
+            }, true);
 
         /////////////////////////////////////////////////////////////////////
         // CONSTRUCTOR
@@ -114,8 +136,8 @@ namespace OTEX.Editor
             //users menu
             usersButton = AddTitleBarButton();
             usersButton.ToggleCheckedOnClick = true;
-            usersButton.Tag = lbUsers;
-            lbUsers.Tag = usersButton;
+            usersButton.Tag = flpUsers;
+            flpUsers.Tag = usersButton;
             usersButton.CheckedChanged += TitleBarButton_CheckedChanged;
             usersButton.Visible = false;
             //logout button
@@ -134,7 +156,13 @@ namespace OTEX.Editor
             };
 
             // CREATE OTEX SERVER //////////////////////////////////////////////////////////////////
-            otexServer = new Server();
+            var instanceID = App.UserID;
+#if DEBUG
+            string argID = null;
+            if (App.Arguments.Key("id", ref argID))
+                argID.TryParse(out instanceID);
+#endif
+            otexServer = new Server(instanceID);
             otexServer.OnThreadException += (s, e) =>
             {
                 Logger.W("Server: {0}: {1}", e.InnerException.GetType().FullName, e.InnerException.Message);
@@ -165,7 +193,7 @@ namespace OTEX.Editor
             };
 
             // CREATE OTEX CLIENT //////////////////////////////////////////////////////////////////
-            otexClient = new Client(App.UserID);
+            otexClient = new Client(instanceID);
             otexClient.OnThreadException += (c, e) =>
             {
                 Logger.W("Client: {0}: {1}", e.InnerException.GetType().Name, e.InnerException.Message);
@@ -190,7 +218,7 @@ namespace OTEX.Editor
                     mainPaginator.ActivePageKey = "editor";
                     (tbEditor as Control).Focus();
                     usersButton.Visible = logoutButton.Visible = true;
-                    lbUsers.Items.Add(localUser);
+                    flpUsers.Users.Clear().Add(localUser);
                 }, false);
             };
             otexClient.OnRemoteOperations += (c,operations) =>
@@ -234,7 +262,7 @@ namespace OTEX.Editor
                             {
                                 this.Execute(() => { tbEditor.SetHighlightRange(u.ID, u.SelectionStart, u.SelectionEnd, u.Colour); });
                             };
-                            lbUsers.Items.Add(remoteUser);
+                            this.Execute(() => { flpUsers.Users.Add(remoteUser); }, false);
                         }
                         this.Execute(() => { tbEditor.SetHighlightRange(remoteUser.ID, remoteUser.SelectionStart,
                             remoteUser.SelectionEnd, remoteUser.Colour); });
@@ -253,7 +281,7 @@ namespace OTEX.Editor
                     localUser.SetSelection(0, 0);
                     this.Execute(() =>
                     {
-                        lbUsers.Items.Clear();
+                        flpUsers.Users.Clear();
                         tbEditor.ClearHighlightRanges();
 
                         //client mode (in server mode, client always disconnects first)
@@ -383,25 +411,9 @@ namespace OTEX.Editor
             };
 
             // CREATE LOCAL USER ///////////////////////////////////////////////////////////////////
-            //create local user (handles settings file)
             localUser = new User(otexClient.ID);
-            //generate list of allowed user colours via colour combo box
-            cbClientColour.RegenerateItems(
-                false, //darks
-                true, //mids
-                false, //lights
-                false, //transparents
-                false, //monochromatics
-                0.1f, //similarity threshold
-                new Color[] //exludes
-                {
-                    Color.Blue, Color.MediumBlue, Color.Red,
-                    Color.Fuchsia, Color.Magenta, Color.Yellow, Color.Aqua
-                }
-            );
-            var allowedColours = cbClientColour.Items.OfType<Color>().ToList();
-            //user colour
-            var selectedColourIndex = allowedColours.FindIndex(c => c.ToArgb() == localUser.ColourInteger );
+            cbClientColour.SetItems(AllowedColours, false);
+            var selectedColourIndex = Array.FindIndex(AllowedColours.ToArray(), c => c.ToArgb() == localUser.ColourInteger );
             if (selectedColourIndex < 0)
             {
                 cbClientColour.SelectedIndex = App.Random.Next(cbClientColour.Items.Count);
@@ -417,33 +429,36 @@ namespace OTEX.Editor
             };
             //selection changed
             localUser.OnSelectionChanged += (u) => { otexClient.Metadata = u.Serialize(); };
+
+            // CREATE SETTINGS MANAGER /////////////////////////////////////////////////////////////
+            settings = new Settings();
             //update interval
-            nudClientUpdateInterval.Value = (decimal)(otexClient.UpdateInterval = localUser.UpdateInterval);
-            localUser.OnUpdateIntervalChanged += (u) => { otexClient.UpdateInterval = u.UpdateInterval; };
+            nudClientUpdateInterval.Value = (decimal)(otexClient.UpdateInterval = settings.UpdateInterval);
+            settings.OnUpdateIntervalChanged += (u) => { otexClient.UpdateInterval = u.UpdateInterval; };
             //line length ruler
-            cbLineLength.Checked = localUser.Ruler;
-            nudLineLength.Value = localUser.RulerOffset;
-            tbEditor.SetRuler(localUser.Ruler, localUser.RulerOffset);
-            localUser.OnRulerChanged += (u) =>
+            cbLineLength.Checked = settings.RulerVisible;
+            nudLineLength.Value = settings.RulerOffset;
+            tbEditor.SetRuler(settings.RulerVisible, settings.RulerOffset);
+            settings.OnRulerChanged += (u) =>
             {
-                tbEditor.SetRuler(localUser.Ruler, localUser.RulerOffset);
+                tbEditor.SetRuler(settings.RulerVisible, settings.RulerOffset);
             };
             //last direct connection address
-            tbClientAddress.Text = localUser.LastDirectConnection;
+            tbClientAddress.Text = settings.LastDirectConnection;
             //theme
             var allowedThemes = App.Themes.Keys.ToList();
             foreach (var theme in allowedThemes)
                 cbTheme.Items.Add(theme.Nameify());
-            var selectedTheme = localUser.Theme;
+            var selectedTheme = settings.Theme;
             var selectedThemeIndex = allowedThemes.FindIndex(s => s.Equals(selectedTheme));
             if (selectedThemeIndex < 0)
             {
                 cbTheme.SelectedIndex = 0;
-                localUser.Theme = allowedThemes[0];
+                settings.Theme = allowedThemes[0];
             }
             else
                 cbTheme.SelectedIndex = selectedThemeIndex;
-            localUser.OnThemeChanged += (u) => { this.Execute(() => { App.Theme = App.Themes[u.Theme]; }); };
+            settings.OnThemeChanged += (u) => { this.Execute(() => { App.Theme = App.Themes[u.Theme]; }); };
             //save settings
             settingsLoaded = true;
             App.Config.Flush();
@@ -455,6 +470,7 @@ namespace OTEX.Editor
                 {
                     lblManualEntry.Font
                         = lblServerBrowser.Font
+                        = lblSideBar.Font
                         = t.Font.Large.Regular;
 
                     lblTitle.Font = t.Font.Huge.Bold;
@@ -478,7 +494,7 @@ namespace OTEX.Editor
 
                 }, false);
             };
-            App.Theme = App.Themes[localUser.Theme];
+            App.Theme = App.Themes[settings.Theme];
 
             // CONFIGURE MAIN CONTENT PAGINATOR ////////////////////////////////////////////////////
             mainPaginator = new Paginator(splitter.Panel1);
@@ -506,8 +522,14 @@ namespace OTEX.Editor
             // CONFIGURE SIDEBAR PAGINATOR /////////////////////////////////////////////////////////
             sidePaginator = new Paginator(sideSplitter.Panel2);
             sidePaginator.Add("settings", panSettings);
-            sidePaginator.Add("users", lbUsers);
+            sidePaginator.Add("users", flpUsers);
             sidePaginator.ActivePage = null;
+            sidePaginator.PageActivated += (s, k, p) =>
+            {
+                if (p == null)
+                    return;
+                lblSideBar.Text = k.Nameify();
+            };
         }
 
         /////////////////////////////////////////////////////////////////////
@@ -520,6 +542,7 @@ namespace OTEX.Editor
             try
             {
                 startParams.ReplaceTabsWithSpaces = 4;
+                startParams.Port = Server.DefaultPort + 1;
                 otexServer.Start(startParams);
             }
             catch (Exception exc)
@@ -708,7 +731,6 @@ namespace OTEX.Editor
                     {
                         FilePath = dlgServerCreateNew.FileName,
                         EditMode = false,
-                        Port = Server.DefaultPort + 1,
                         Public = true
                     });
         }
@@ -720,7 +742,6 @@ namespace OTEX.Editor
                     {
                         FilePath = dlgServerOpenExisting.FileName,
                         EditMode = true,
-                        Port = Server.DefaultPort + 1,
                         Public = true
                     });
         }
@@ -746,7 +767,7 @@ namespace OTEX.Editor
             }
             lastConnectionReturnToServerBrowser = true;
             if (StartClientMode(endpoint, tbClientPassword.Text.Trim()))
-                localUser.LastDirectConnection = tbClientAddress.Text;
+                settings.LastDirectConnection = tbClientAddress.Text;
         }
 
         private void EditorForm_FormClosing(object sender, FormClosingEventArgs e)
@@ -894,7 +915,7 @@ namespace OTEX.Editor
         {
             nudLineLength.Enabled = cbLineLength.Checked;
             if (settingsLoaded)
-                localUser.Ruler = cbLineLength.Checked;
+                settings.RulerVisible = cbLineLength.Checked;
         }
 
         private void themedSplitContainer1_Panel1_Paint(object sender, PaintEventArgs e)
@@ -907,33 +928,107 @@ namespace OTEX.Editor
 
             using (var brush = new SolidBrush(button.Colour.Value))
                 e.Graphics.FillRectangle(brush, 0, 0, (sender as Control).Width, 4);
-            using (var format = new StringFormat())
-            {
-                format.Alignment = StringAlignment.Near;
-                format.LineAlignment = StringAlignment.Center;
-                var title = sidePaginator.ActivePageKey.Nameify();
-                var font = App.Theme.Font.Large.Regular;
-                var sz = e.Graphics.MeasureString(title, font, (sender as Control).Width, format);
-                e.Graphics.DrawString(title, font, App.Theme.Foreground.Brush, 5, 4 + sz.Height / 2, format);
-            }
         }
 
         private void nudLineLength_ValueChanged(object sender, EventArgs e)
         {
             if (settingsLoaded)
-                localUser.RulerOffset = (uint)nudLineLength.Value;
+                settings.RulerOffset = (uint)nudLineLength.Value;
         }
+
+        private void cmUsers_Opening(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            if (!otexClient.Connected)
+            {
+                e.Cancel = true;
+                return;
+            }
+
+            var selectedUsers = flpUsers.Users.SelectedItems;
+            if (selectedUsers.Length == 0)
+            {
+                e.Cancel = true;
+                return;
+            }
+
+            adminSeparator.Visible = adminToolStripMenuItem.Visible = otexClient.ServerID.Equals(otexServer.ID);
+        }
+
+        private void kickToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (!otexServer.Running)
+                return;
+
+            var selectedUsers = flpUsers.Users.SelectedItems;
+            if (selectedUsers.Length > 0)
+            {
+                foreach (var user in selectedUsers)
+                    otexServer.Kick(user.ID, sender == banToolStripMenuItem);
+            }
+        }
+
+        /*
+        int IThemedListBoxItem.MeasureItemHeight(ThemedListBox host, MeasureItemEventArgs e)
+        {
+            return 48;
+        }
+
+        void IThemedListBoxItem.DrawListboxItem(DrawItemEventArgs e)
+        {
+            using (var brush = new SolidBrush(Colour))
+                e.Graphics.FillRectangle(brush, 8, 8, 36, 36);
+
+            var textRect = new Rectangle(52, 8, e.Bounds.Width - 60, 36);
+            using (var format = new StringFormat())
+            {
+                format.Alignment = StringAlignment.Near;
+                format.LineAlignment = StringAlignment.Near;
+                format.FormatFlags |= StringFormatFlags.NoWrap;
+
+                using (var brush = new SolidBrush(e.ForeColor))
+                    e.Graphics.DrawString(IsLocal ? "You" : "User", e.Font, brush, textRect);
+            }
+        }*/
+
+        /*
+    private void lbUsers_MeasureItem(object sender, MeasureItemEventArgs e)
+    {
+        if (e.Index >= 0)
+            e.ItemHeight = 48;
+    }
+
+    private void lbUsers_DrawItem(object sender, DrawItemEventArgs e)
+    {
+        if (e.Index < 0)
+            return;
+
+        var user = (sender as ListBox).Items[e.Index] as User;
+        if (user == null)
+            throw new InvalidOperationException("non-User item added to users list");
+
+        using (var brush = new SolidBrush(user.Colour))
+            e.Graphics.FillRectangle(brush, 8, 8, 36, 36);
+        var textRect = new Rectangle(52, 8, e.Bounds.Width - 60, 36);
+        using (var brush = new SolidBrush(lbUsers.ForeColor))
+            e.Graphics.DrawString(user.IsLocal ? "You" : "User", e.Font, brush, textRect);
+    }
+
+    private void lbUsers_SelectedIndexChanged(object sender, EventArgs e)
+    {
+        lbUsers.Refresh();
+    }
+    */
 
         private void nudClientUpdateInterval_ValueChanged(object sender, EventArgs e)
         {
             if (settingsLoaded)
-                localUser.UpdateInterval = (float)nudClientUpdateInterval.Value;
+                settings.UpdateInterval = (float)nudClientUpdateInterval.Value;
         }
 
         private void cbTheme_SelectedIndexChanged(object sender, EventArgs e)
         {
             if (settingsLoaded)
-                localUser.Theme = cbTheme.Items[cbTheme.SelectedIndex] as string;
+                settings.Theme = cbTheme.Items[cbTheme.SelectedIndex] as string;
         }
 
         private void PositionConnectingPageControls()

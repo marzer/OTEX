@@ -60,6 +60,11 @@ namespace OTEX.Packets
             InvalidState,
 
             /// <summary>
+            /// Client has been banned from this server
+            /// </summary>
+            Banned,
+
+            /// <summary>
             /// Other (not used by anything currently)
             /// </summary>
             Other
@@ -194,6 +199,9 @@ namespace OTEX.Packets
 
                 case ResponseCode.SessionFull:
                     return "The server's session is full.";
+
+                case ResponseCode.Banned:
+                    return "The client has been banned from the server.";
 
                 default:
                     return "The server rejected the connection.";

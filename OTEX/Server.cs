@@ -7,6 +7,7 @@ using System.Threading;
 using System.Net.Sockets;
 using System.Net;
 using OTEX.Packets;
+using System.Text;
 
 namespace OTEX
 {
@@ -112,6 +113,18 @@ namespace OTEX
             public uint ReplaceTabsWithSpaces = 0;
 
             /// <summary>
+            /// Path to plain text file containing list of clients who have been banned from the server.
+            /// If no path is provided, bans will not be read from or written to disk.
+            /// </summary>
+            public string BanListPath = null;
+
+            /// <summary>
+            /// Initial collection of bans. Can be used in tandem with BanListPath; if a file exists, the contents
+            /// will be merged into this set.
+            /// </summary>
+            public readonly HashSet<Guid> BanList = null;
+
+            /// <summary>
             /// Default constructor.
             /// </summary>
             public StartParams()
@@ -132,6 +145,8 @@ namespace OTEX
                 Name = p.Name;
                 MaxClients = p.MaxClients;
                 ReplaceTabsWithSpaces = p.ReplaceTabsWithSpaces.Clamp(0,8);
+                BanListPath = p.BanListPath;
+                BanList = p.BanList == null ? new HashSet<Guid>() : new HashSet<Guid>(p.BanList);
             }
         }
         private volatile StartParams startParams = null;
@@ -320,6 +335,12 @@ namespace OTEX
             public readonly Dictionary<Guid, byte[]> OutgoingMetadata
                 = new Dictionary<Guid, byte[]>();
 
+            /// <summary>
+            /// Has this client been kicked from the server? This will be true if the server calls Ban()
+            /// or Kick() with this client's ID while the server is running.
+            /// </summary>
+            public volatile bool Kicked = false;
+
             public ClientData(Guid id)
             {
                 ID = id;
@@ -391,6 +412,26 @@ namespace OTEX
                             tempParams.Name = tempParams.Name.Substring(0, 32);
                         if (tempParams.MaxClients == 0 || tempParams.MaxClients > 100u)
                             tempParams.MaxClients = 100u;
+                        if ((tempParams.BanListPath = (tempParams.BanListPath ?? "").Trim()).Length > 0)
+                        {
+                            if (!File.Exists(tempParams.BanListPath) && Directory.Exists(tempParams.BanListPath))
+                                throw new FileNotFoundException("startParams.BanListPath", "Given path is a directory");
+                            bool immediateFlush = tempParams.BanList.Count > 0;
+                            if (File.Exists(tempParams.BanListPath))
+                            {
+                                var lines = File.ReadAllLines(tempParams.BanListPath, tempParams.BanListPath.DetectEncoding());
+                                for (int i = 0; i < lines.Length; ++i)
+                                {
+                                    if ((lines[i] = lines[i].Trim()).Length == 0)
+                                        continue;
+                                    Guid guid;
+                                    if (lines[i].TryParse(out guid))
+                                        tempParams.BanList.Add(guid);
+                                }
+                            }
+                            if (immediateFlush)
+                                FlushBanList();
+                        }
                         this.startParams = tempParams;
 
                         //session initialization
@@ -531,9 +572,7 @@ namespace OTEX
                 if (startParams.FilePath.Length > 0 && flushTimer.Seconds >= 15.0)
                 {
                     lock (stateLock)
-                    {
-                        CaptureException(() => { SyncFileContents(); });
-                    }
+                        CaptureException(() => { FlushDocument(); });
                     flushTimer.Reset();
                 }
             }
@@ -547,9 +586,9 @@ namespace OTEX
             foreach (Thread thread in clientThreads)
                 thread.Join();
 
-            //final flush to disk (don't need a lock this time, all client threads have stopped)
+            //final flush to disk
             if (startParams.FilePath.Length > 0)
-                CaptureException(() => { SyncFileContents(); });
+                CaptureException(() => { FlushDocument(); });
         }
 
         /////////////////////////////////////////////////////////////////////
@@ -569,7 +608,11 @@ namespace OTEX
             bool clientSideDisconnect = false;
             ClientData clientData = null;
             while (running && stream.Connected)
-            {               
+            {
+                //check banned flag
+                if (clientData != null && clientData.Kicked)
+                    break;
+                
                 //check if client has sent data
                 if (!stream.DataAvailable)
                 {
@@ -580,6 +623,10 @@ namespace OTEX
                 //read incoming packet
                 Packet packet = null;
                 if (CaptureException(() => { packet = stream.Read(); }))
+                    break;
+
+                //check banned flag again (in case it changed during the packet read)
+                if (clientData != null && clientData.Kicked)
                     break;
 
                 //is this the first packet from a new client?
@@ -615,6 +662,16 @@ namespace OTEX
 
                     lock (stateLock)
                     {
+                        //check ban list
+                        if (startParams.BanList.Contains(request.ClientID))
+                        {
+                            CaptureException(() =>
+                            {
+                                stream.Write(new ConnectionResponse(ConnectionResponse.ResponseCode.Banned));
+                            });
+                            break;
+                        }
+
                         //duplicate id (already connected... shouldn't happen?)
                         if (connectedClients.TryGetValue(request.ClientID, out var cl))
                         {
@@ -763,7 +820,7 @@ namespace OTEX
         /// Applies the output of all new operations to the internal file contents string, then
         /// writes the new contents to disk.
         /// </summary>
-        private void SyncFileContents()
+        private void FlushDocument()
         {
             //flush pending operations to the file contents
             while (fileSyncIndex < masterOperations.Count)
@@ -783,6 +840,56 @@ namespace OTEX
 
             //trigger event
             OnFileSynchronized?.Invoke(this);
+        }
+
+        /////////////////////////////////////////////////////////////////////
+        // BANNING/KICKING CLIENTS
+        /////////////////////////////////////////////////////////////////////
+
+        /// <summary>
+        /// Kicks a client from the server, optionally banning them.
+        /// </summary>
+        /// <param name="id">The id of the client to kick</param>
+        /// <exception cref="ArgumentOutOfRangeException" />
+        /// <exception cref="InvalidOperationException" />
+        /// <exception cref="ObjectDisposedException" />
+        public void Kick(Guid id, bool ban = false)
+        {
+            if (isDisposed)
+                throw new ObjectDisposedException("OTEX.Server");
+            if (id.Equals(Guid.Empty))
+                throw new ArgumentOutOfRangeException("id", "id cannot be Guid.Empty");
+            if (!running)
+                throw new InvalidOperationException("Server is not running.");
+
+            lock (stateLock)
+            {
+                if (isDisposed)
+                    throw new ObjectDisposedException("OTEX.Server");
+                if (!running)
+                    throw new InvalidOperationException("Server is not running.");
+
+                if (connectedClients.TryGetValue(id, out ClientData client))
+                    client.Kicked = true; //will cause it to be disconnected by the main thread
+
+                if (ban)
+                {
+                    startParams.BanList.Add(id);
+                    if (startParams.BanListPath.Length > 0)
+                        FlushBanList();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Writes the list of bans to disk.
+        /// </summary>
+        private void FlushBanList()
+        {
+            StringBuilder sb = new StringBuilder();
+            foreach (var ban in startParams.BanList)
+                sb.AppendLine(ban.ToString());
+            File.WriteAllText(startParams.BanListPath, sb.ToString());
         }
 
         /////////////////////////////////////////////////////////////////////

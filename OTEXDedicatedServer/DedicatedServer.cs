@@ -1,5 +1,6 @@
 ﻿using Marzersoft;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -44,8 +45,9 @@ namespace OTEX
             get
             {
                 StringBuilder sb = new StringBuilder();
-                return string.Format("  {0} [file] [/EDIT|/NEW] [/PORT port] [/NAME name] [/PASSWORD pass] [/PUBLIC] [/MAXCLIENTS max] [/?]",
-                    Process.GetCurrentProcess().ProcessName.ToUpper());
+                return string.Format("  {0} [file] [/EDIT|/NEW] [/PORT port] [/NAME name] [/PASSWORD pass] [/PUBLIC]{1}"
+                                   + "             [/MAXCLIENTS max] [/BANLIST file] [/?]",
+                    Process.GetCurrentProcess().ProcessName.ToUpper(), Environment.NewLine);
             }
         }
 
@@ -75,6 +77,7 @@ namespace OTEX
                 sb.AppendLine("                  Omit to allow clients to connect without a password.");
                 sb.AppendLine("         /PUBLIC: Regularly broadcast the presence of this server to OTEX clients.");
                 sb.AppendLine(" /MAXCLIENTS max: Maximum number of clients to allow. Defaults to 10, caps at 100.");
+                sb.AppendLine("   /BANLIST file: Text file containing a newline-delimited list of banned client IDs.");
                 sb.AppendLine("              /?: Prints help and exits.");
                 sb.AppendLine();
                 sb.AppendLine("Arguments may appear in any order. /SWITCHES and file paths are not case-sensitive.");
@@ -151,6 +154,8 @@ namespace OTEX
                 startParams.Password = new Password(pw);
             args.Boolean("edit", "new", ref startParams.EditMode);
             startParams.Public = args.Key("public");
+            args.Key("name", ref startParams.Name);
+            args.Key("banlist", ref startParams.BanListPath);
             var path = args.OrphanedValues.LastOrDefault();
             if (path != null)
                 startParams.FilePath = path.Value;

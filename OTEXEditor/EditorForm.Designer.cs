@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            this.components = new System.ComponentModel.Container();
             this.btnServerExisting = new Marzersoft.Themes.ThemedButton();
             this.btnServerNew = new Marzersoft.Themes.ThemedButton();
             this.btnClient = new Marzersoft.Themes.ThemedButton();
@@ -77,7 +78,15 @@
             this.label3 = new System.Windows.Forms.Label();
             this.splitter = new Marzersoft.Themes.ThemedSplitContainer();
             this.sideSplitter = new Marzersoft.Themes.ThemedSplitContainer();
-            this.lbUsers = new Marzersoft.Themes.ThemedListBox();
+            this.lblSideBar = new System.Windows.Forms.Label();
+            this.cmUsers = new System.Windows.Forms.ContextMenuStrip(this.components);
+            this.showSelectionsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.adminSeparator = new System.Windows.Forms.ToolStripSeparator();
+            this.adminToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.readonlyToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.kickToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.banToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.flpUsers = new OTEX.Editor.UserList();
             this.panMenu.SuspendLayout();
             this.panMenuButtons.SuspendLayout();
             this.panServerBrowserPage.SuspendLayout();
@@ -93,7 +102,9 @@
             this.splitter.Panel2.SuspendLayout();
             this.splitter.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.sideSplitter)).BeginInit();
+            this.sideSplitter.Panel1.SuspendLayout();
             this.sideSplitter.SuspendLayout();
+            this.cmUsers.SuspendLayout();
             this.SuspendLayout();
             // 
             // btnServerExisting
@@ -605,18 +616,18 @@
             this.panSettings.Controls.Add(this.cbClientColour);
             this.panSettings.Controls.Add(this.nudClientUpdateInterval);
             this.panSettings.Controls.Add(this.label3);
-            this.panSettings.Location = new System.Drawing.Point(817, 410);
+            this.panSettings.Location = new System.Drawing.Point(631, 169);
             this.panSettings.Name = "panSettings";
-            this.panSettings.Size = new System.Drawing.Size(245, 228);
+            this.panSettings.Size = new System.Drawing.Size(264, 228);
             this.panSettings.TabIndex = 8;
             // 
             // label6
             // 
             this.label6.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.label6.Location = new System.Drawing.Point(7, 148);
+            this.label6.Location = new System.Drawing.Point(0, 148);
             this.label6.Name = "label6";
-            this.label6.Size = new System.Drawing.Size(118, 24);
+            this.label6.Size = new System.Drawing.Size(144, 24);
             this.label6.TabIndex = 117;
             this.label6.Text = "Visual style:";
             this.label6.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
@@ -630,7 +641,7 @@
             this.cbTheme.Location = new System.Drawing.Point(131, 151);
             this.cbTheme.Margin = new System.Windows.Forms.Padding(0);
             this.cbTheme.Name = "cbTheme";
-            this.cbTheme.Size = new System.Drawing.Size(105, 21);
+            this.cbTheme.Size = new System.Drawing.Size(124, 21);
             this.cbTheme.TabIndex = 116;
             this.cbTheme.SelectedIndexChanged += new System.EventHandler(this.cbTheme_SelectedIndexChanged);
             // 
@@ -643,7 +654,7 @@
             0,
             0,
             0});
-            this.nudLineLength.Location = new System.Drawing.Point(182, 117);
+            this.nudLineLength.Location = new System.Drawing.Point(201, 117);
             this.nudLineLength.Margin = new System.Windows.Forms.Padding(0);
             this.nudLineLength.Maximum = new decimal(new int[] {
             200,
@@ -669,9 +680,9 @@
             // 
             this.label5.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.label5.Location = new System.Drawing.Point(7, 114);
+            this.label5.Location = new System.Drawing.Point(0, 114);
             this.label5.Name = "label5";
-            this.label5.Size = new System.Drawing.Size(169, 22);
+            this.label5.Size = new System.Drawing.Size(195, 22);
             this.label5.TabIndex = 114;
             this.label5.Text = "Ruler offset (characters):";
             this.label5.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
@@ -683,9 +694,9 @@
             this.cbLineLength.CheckAlign = System.Drawing.ContentAlignment.MiddleRight;
             this.cbLineLength.Checked = true;
             this.cbLineLength.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.cbLineLength.Location = new System.Drawing.Point(7, 79);
+            this.cbLineLength.Location = new System.Drawing.Point(0, 79);
             this.cbLineLength.Name = "cbLineLength";
-            this.cbLineLength.Size = new System.Drawing.Size(229, 24);
+            this.cbLineLength.Size = new System.Drawing.Size(255, 24);
             this.cbLineLength.TabIndex = 113;
             this.cbLineLength.Text = "Draw line-length guide ruler?";
             this.cbLineLength.UseVisualStyleBackColor = true;
@@ -695,9 +706,9 @@
             // 
             this.label4.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.label4.Location = new System.Drawing.Point(7, 41);
+            this.label4.Location = new System.Drawing.Point(0, 41);
             this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(169, 21);
+            this.label4.Size = new System.Drawing.Size(195, 21);
             this.label4.TabIndex = 112;
             this.label4.Text = "User colour:";
             this.label4.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
@@ -709,7 +720,7 @@
             this.cbClientColour.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cbClientColour.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.cbClientColour.FormattingEnabled = true;
-            this.cbClientColour.Location = new System.Drawing.Point(182, 44);
+            this.cbClientColour.Location = new System.Drawing.Point(201, 44);
             this.cbClientColour.Margin = new System.Windows.Forms.Padding(0);
             this.cbClientColour.Name = "cbClientColour";
             this.cbClientColour.ShowNames = false;
@@ -727,7 +738,7 @@
             0,
             0,
             65536});
-            this.nudClientUpdateInterval.Location = new System.Drawing.Point(182, 12);
+            this.nudClientUpdateInterval.Location = new System.Drawing.Point(201, 12);
             this.nudClientUpdateInterval.Margin = new System.Windows.Forms.Padding(0);
             this.nudClientUpdateInterval.Maximum = new decimal(new int[] {
             50,
@@ -753,9 +764,9 @@
             // 
             this.label3.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.label3.Location = new System.Drawing.Point(7, 9);
+            this.label3.Location = new System.Drawing.Point(0, 9);
             this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(169, 20);
+            this.label3.Size = new System.Drawing.Size(198, 20);
             this.label3.TabIndex = 109;
             this.label3.Text = "Update interval (seconds):";
             this.label3.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
@@ -772,7 +783,7 @@
             // 
             this.splitter.Panel2.Controls.Add(this.sideSplitter);
             this.splitter.Size = new System.Drawing.Size(351, 100);
-            this.splitter.SplitterDistance = 98;
+            this.splitter.SplitterDistance = 103;
             this.splitter.SplitterWidth = 1;
             this.splitter.TabIndex = 9;
             this.splitter.TabStop = false;
@@ -789,31 +800,103 @@
             // 
             // sideSplitter.Panel1
             // 
+            this.sideSplitter.Panel1.Controls.Add(this.lblSideBar);
+            this.sideSplitter.Panel1.Padding = new System.Windows.Forms.Padding(2, 4, 0, 0);
             this.sideSplitter.Panel1.Paint += new System.Windows.Forms.PaintEventHandler(this.themedSplitContainer1_Panel1_Paint);
-            this.sideSplitter.Size = new System.Drawing.Size(252, 100);
-            this.sideSplitter.SplitterDistance = 40;
+            // 
+            // sideSplitter.Panel2
+            // 
+            this.sideSplitter.Panel2.Padding = new System.Windows.Forms.Padding(2, 0, 0, 0);
+            this.sideSplitter.Size = new System.Drawing.Size(247, 100);
+            this.sideSplitter.SplitterDistance = 34;
             this.sideSplitter.SplitterWidth = 1;
             this.sideSplitter.TabIndex = 0;
             this.sideSplitter.TabStop = false;
             // 
-            // lbUsers
+            // lblSideBar
             // 
-            this.lbUsers.BorderStyle = System.Windows.Forms.BorderStyle.None;
-            this.lbUsers.DrawMode = System.Windows.Forms.DrawMode.OwnerDrawVariable;
-            this.lbUsers.FormattingEnabled = true;
-            this.lbUsers.IntegralHeight = false;
-            this.lbUsers.Location = new System.Drawing.Point(666, 294);
-            this.lbUsers.Margin = new System.Windows.Forms.Padding(0);
-            this.lbUsers.Name = "lbUsers";
-            this.lbUsers.Size = new System.Drawing.Size(152, 91);
-            this.lbUsers.TabIndex = 10;
+            this.lblSideBar.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.lblSideBar.Location = new System.Drawing.Point(2, 4);
+            this.lblSideBar.Margin = new System.Windows.Forms.Padding(0);
+            this.lblSideBar.Name = "lblSideBar";
+            this.lblSideBar.Size = new System.Drawing.Size(245, 30);
+            this.lblSideBar.TabIndex = 108;
+            this.lblSideBar.Text = "<sidebar>";
+            this.lblSideBar.TextAlign = System.Drawing.ContentAlignment.BottomLeft;
+            // 
+            // cmUsers
+            // 
+            this.cmUsers.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.showSelectionsToolStripMenuItem,
+            this.adminSeparator,
+            this.adminToolStripMenuItem});
+            this.cmUsers.Name = "cmUsers";
+            this.cmUsers.Size = new System.Drawing.Size(155, 76);
+            this.cmUsers.Opening += new System.ComponentModel.CancelEventHandler(this.cmUsers_Opening);
+            // 
+            // showSelectionsToolStripMenuItem
+            // 
+            this.showSelectionsToolStripMenuItem.Checked = true;
+            this.showSelectionsToolStripMenuItem.CheckOnClick = true;
+            this.showSelectionsToolStripMenuItem.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.showSelectionsToolStripMenuItem.Name = "showSelectionsToolStripMenuItem";
+            this.showSelectionsToolStripMenuItem.Size = new System.Drawing.Size(154, 22);
+            this.showSelectionsToolStripMenuItem.Text = "Show Selection";
+            // 
+            // adminSeparator
+            // 
+            this.adminSeparator.Name = "adminSeparator";
+            this.adminSeparator.Size = new System.Drawing.Size(151, 6);
+            // 
+            // adminToolStripMenuItem
+            // 
+            this.adminToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.readonlyToolStripMenuItem,
+            this.kickToolStripMenuItem,
+            this.banToolStripMenuItem});
+            this.adminToolStripMenuItem.Name = "adminToolStripMenuItem";
+            this.adminToolStripMenuItem.Size = new System.Drawing.Size(154, 22);
+            this.adminToolStripMenuItem.Text = "Admin";
+            // 
+            // readonlyToolStripMenuItem
+            // 
+            this.readonlyToolStripMenuItem.CheckOnClick = true;
+            this.readonlyToolStripMenuItem.Name = "readonlyToolStripMenuItem";
+            this.readonlyToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.readonlyToolStripMenuItem.Text = "Read-only";
+            // 
+            // kickToolStripMenuItem
+            // 
+            this.kickToolStripMenuItem.Name = "kickToolStripMenuItem";
+            this.kickToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.kickToolStripMenuItem.Text = "Kick";
+            this.kickToolStripMenuItem.Click += new System.EventHandler(this.kickToolStripMenuItem_Click);
+            // 
+            // banToolStripMenuItem
+            // 
+            this.banToolStripMenuItem.Name = "banToolStripMenuItem";
+            this.banToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.banToolStripMenuItem.Text = "Ban";
+            this.banToolStripMenuItem.Click += new System.EventHandler(this.kickToolStripMenuItem_Click);
+            // 
+            // flpUsers
+            // 
+            this.flpUsers.AutoScroll = true;
+            this.flpUsers.ContextMenuStrip = this.cmUsers;
+            this.flpUsers.FlowDirection = System.Windows.Forms.FlowDirection.TopDown;
+            this.flpUsers.Location = new System.Drawing.Point(255, 405);
+            this.flpUsers.Margin = new System.Windows.Forms.Padding(0);
+            this.flpUsers.Name = "flpUsers";
+            this.flpUsers.Size = new System.Drawing.Size(88, 34);
+            this.flpUsers.TabIndex = 10;
+            this.flpUsers.WrapContents = false;
             // 
             // EditorForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1074, 478);
-            this.Controls.Add(this.lbUsers);
+            this.Controls.Add(this.flpUsers);
             this.Controls.Add(this.splitter);
             this.Controls.Add(this.panSettings);
             this.Controls.Add(this.panConnectingPage);
@@ -842,8 +925,10 @@
             this.splitter.Panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.splitter)).EndInit();
             this.splitter.ResumeLayout(false);
+            this.sideSplitter.Panel1.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.sideSplitter)).EndInit();
             this.sideSplitter.ResumeLayout(false);
+            this.cmUsers.ResumeLayout(false);
             this.ResumeLayout(false);
 
         }
@@ -897,8 +982,16 @@
         private System.Windows.Forms.Label label6;
         private Marzersoft.Themes.ThemedComboBox cbTheme;
         private Marzersoft.Themes.ThemedSplitContainer splitter;
-        private Marzersoft.Themes.ThemedListBox lbUsers;
         private Marzersoft.Themes.ThemedSplitContainer sideSplitter;
+        private System.Windows.Forms.Label lblSideBar;
+        private UserList flpUsers;
+        private System.Windows.Forms.ContextMenuStrip cmUsers;
+        private System.Windows.Forms.ToolStripMenuItem showSelectionsToolStripMenuItem;
+        private System.Windows.Forms.ToolStripSeparator adminSeparator;
+        private System.Windows.Forms.ToolStripMenuItem adminToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem readonlyToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem kickToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem banToolStripMenuItem;
     }
 }
 
