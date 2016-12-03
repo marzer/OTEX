@@ -27,15 +27,14 @@ namespace OTEX.Editor
             //enumerate plugin assemblies
             App.Initialization = () =>
             {
+                //create plugin directory if necessary
+                var dir = Path.Combine(App.ExecutableDirectory, "Plugins");
+                Directory.CreateDirectory(dir);
+                
                 //create plugin factory
                 PluginFactory pluginFactory = new PluginFactory(
-                    new Type[] { typeof(IEditorTextBox) },
-                            Path.Combine(App.ExecutableDirectory, "Plugins"), true);
+                    new Type[] { typeof(IEditorTextBox) }, dir, true);
                 
-                //check critical types that must have at least 1 plugin
-                if (pluginFactory.Count<IEditorTextBox>() == 0)
-                    throw new FileNotFoundException("No plugins implementing the IEditorTextBox type were found");
-
                 //pass to form constructor
                 return new object[] { pluginFactory };
             };

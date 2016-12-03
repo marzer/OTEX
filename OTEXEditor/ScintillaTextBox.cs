@@ -12,7 +12,7 @@ using System.Windows.Forms;
 
 namespace OTEX.Editor
 {
-    public class Scintilla : ScintillaNET.Scintilla, IThemeable, IEditorTextBox
+    public class ScintillaTextBox : Scintilla, IThemeable, IEditorTextBox
     {
         /////////////////////////////////////////////////////////////////////
         // EVENTS
@@ -92,7 +92,6 @@ namespace OTEX.Editor
                     return;
 
                 //apply user colour
-                //(alpha values match those of FCTB)
                 userColour = value;
                 SetSelectionBackColor(true, App.Theme == null || App.Theme.IsDark
                     ? Styles[Style.Default].BackColor.Blend(userColour, 60)
@@ -176,7 +175,7 @@ namespace OTEX.Editor
         // CONSTRUCTOR
         /////////////////////////////////////////////////////////////////////
 
-        public Scintilla()
+        public ScintillaTextBox()
         {
             //setup
             WrapMode = WrapMode.Word;
