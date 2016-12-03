@@ -15,27 +15,19 @@ namespace OTEX
         /// <summary>
         /// The first port in the port range.
         /// </summary>
-        public ushort First
-        {
-            get { return first; }
-        }
-        private ushort first;
+        public ushort First { get; private set; }
 
         /// <summary>
         /// The last port in the port range.
         /// </summary>
-        public ushort Last
-        {
-            get { return last; }
-        }
-        private ushort last;
+        public ushort Last { get; private set; }
 
         /// <summary>
         /// The total number of ports in the port range.
         /// </summary>
         public ushort Count
         {
-            get { return (ushort)(((int)last - first) + 1); }
+            get { return (ushort)(((int)Last - First) + 1); }
         }
 
         /////////////////////////////////////////////////////////////////////
@@ -52,8 +44,8 @@ namespace OTEX
         {
             if (last < first)
                 throw new ArgumentOutOfRangeException("last", "last port must be equal to or greater than first port");
-            this.first = first;
-            this.last = last;
+            First = first;
+            Last = last;
         }
 
         /////////////////////////////////////////////////////////////////////
@@ -67,7 +59,7 @@ namespace OTEX
         /// <returns>True if the given port is contained by this PortRange.</returns>
         public bool Contains(ushort port)
         {
-            return port >= first && port <= last;
+            return port >= First && port <= Last;
         }
 
         /// <summary>
@@ -77,7 +69,7 @@ namespace OTEX
         /// <returns>True if the given port is contained by this PortRange.</returns>
         public bool Contains(uint port)
         {
-            return port >= first && port <= last;
+            return port >= First && port <= Last;
         }
 
         /// <summary>
@@ -87,7 +79,7 @@ namespace OTEX
         /// <returns>True if the given port is contained by this PortRange.</returns>
         public bool Contains(int port)
         {
-            return port >= first && port <= last;
+            return port >= First && port <= Last;
         }
 
         /// <summary>
@@ -97,7 +89,7 @@ namespace OTEX
         /// <returns>True if the given port is contained by this PortRange.</returns>
         public bool Contains(long port)
         {
-            return port >= first && port <= last;
+            return port >= First && port <= Last;
         }
 
         /// <summary>
@@ -106,7 +98,7 @@ namespace OTEX
         /// <returns>A string representation of this PortRange.</returns>
         public override string ToString()
         {
-            return string.Format("{0}-{1}",first,last);
+            return string.Format("{0}-{1}",First,Last);
         }
     }
 }

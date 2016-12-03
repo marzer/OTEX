@@ -160,9 +160,14 @@ namespace OTEX.Editor
 #if DEBUG
             string argID = null;
             if (App.Arguments.Key("id", ref argID))
-                argID.TryParse(out instanceID);
+            {
+                if (argID.Trim().ToLower().Equals("random"))
+                    instanceID = Guid.NewGuid();
+                else
+                    argID.TryParse(out instanceID);
+            }
 #endif
-            otexServer = new Server(instanceID);
+            otexServer = new Server(Editor.AppKey, instanceID);
             otexServer.OnThreadException += (s, e) =>
             {
                 Logger.W("Server: {0}: {1}", e.InnerException.GetType().FullName, e.InnerException.Message);
@@ -193,7 +198,7 @@ namespace OTEX.Editor
             };
 
             // CREATE OTEX CLIENT //////////////////////////////////////////////////////////////////
-            otexClient = new Client(instanceID);
+            otexClient = new Client(Editor.AppKey, instanceID);
             otexClient.OnThreadException += (c, e) =>
             {
                 Logger.W("Client: {0}: {1}", e.InnerException.GetType().Name, e.InnerException.Message);
@@ -314,7 +319,7 @@ namespace OTEX.Editor
             // CREATE OTEX SERVER LISTENER /////////////////////////////////////////////////////////
             try
             {
-                otexServerListener = new ServerListener(otexServer.ID);
+                otexServerListener = new ServerListener(Editor.AppKey, otexServer.ID);
                 otexServerListener.OnThreadException += (sl, e) =>
                 {
                     Logger.W("ServerListener: {0}: {1}", e.InnerException.GetType().FullName, e.InnerException.Message);
@@ -365,7 +370,9 @@ namespace OTEX.Editor
             }
 
             // CREATE TEXT EDITOR //////////////////////////////////////////////////////////////////
-            tbEditor = plugins.CreateByConfig<IEditorTextBox>("editor", "plugins.editor", true, false, true, "Scintilla", true);
+            tbEditor = plugins.CreateByConfig<IEditorTextBox>("editor", "plugins.editor", true, false, true, "", false);
+            if (tbEditor == null)
+                tbEditor = new ScintillaTextBox();
             tbEditor.OnInsertion += (tb, offset, text) =>
             {
                 if (otexClient.Connected)
@@ -502,6 +509,10 @@ namespace OTEX.Editor
             mainPaginator.Add("connecting", panConnectingPage);
             mainPaginator.Add("servers", panServerBrowserPage);
             mainPaginator.Add("editor", tbEditor as Control);
+            mainPaginator.PageDeactivated += (s, k, p) =>
+            {
+                splitter.SuspendRepaints();
+            };
             mainPaginator.PageActivated += (s, k, p) =>
             {
                 if (p == null)
@@ -516,6 +527,7 @@ namespace OTEX.Editor
                         PositionConnectingPageControls();
                         break;
                 }
+                splitter.ResumeRepaints();
             };
             mainPaginator.ActivePageKey = "menu";
 
@@ -951,7 +963,7 @@ namespace OTEX.Editor
                 return;
             }
 
-            adminSeparator.Visible = adminToolStripMenuItem.Visible = otexClient.ServerID.Equals(otexServer.ID);
+            adminSeparator.Visible = adminToolStripMenuItem.Visible = (otexClient.ServerID == otexServer.ID);
         }
 
         private void kickToolStripMenuItem_Click(object sender, EventArgs e)
@@ -1045,6 +1057,7 @@ namespace OTEX.Editor
         {
             if (suspendTitleBarButtonEvents)
                 return;
+            sideSplitter.SuspendRepaints();
             var buttonPage = b.Tag as Control;
             var currentPage = sidePaginator.ActivePage;
             if (b.Checked && currentPage != buttonPage)
@@ -1061,6 +1074,7 @@ namespace OTEX.Editor
                 sidePaginator.ActivePage = null;
                 splitter.HidePanel(2);
             }
+            sideSplitter.ResumeRepaints();
         }
     }
 }

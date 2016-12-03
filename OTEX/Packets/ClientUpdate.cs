@@ -35,11 +35,7 @@ namespace OTEX.Packets
         /// to synchronize with other clients. Can be null/empty; this means "There have been no new
         /// remote operations since your last request".
         /// </summary>
-        public List<Operation> Operations
-        {
-            get { return operations; }
-        }
-        private List<Operation> operations;
+        public List<Operation> Operations { get; private set; }
 
         /// <summary>
         /// When sent from a client, this will contain at most 1 element, which will be the new value
@@ -49,11 +45,7 @@ namespace OTEX.Packets
         /// may synchronize it's local replications of remote clients metadata with their new values.
         /// Can be null/empty; this means "there have been no changes to metadata since your last request".
         /// </summary>
-        public Dictionary<Guid, byte[]> Metadata
-        {
-            get { return metadata; }
-        }
-        private Dictionary<Guid, byte[]> metadata;
+        public Dictionary<Guid, byte[]> Metadata { get; private set; }
 
         /////////////////////////////////////////////////////////////////////
         // CONSTRUCTORS
@@ -73,9 +65,10 @@ namespace OTEX.Packets
                     if (kvp.Value != null && kvp.Value.LongLength >= Client.MaxMetadataSize)
                         throw new ArgumentOutOfRangeException("metadata",
                             string.Format("metadata byte arrays may not be longer than {0} bytes", Client.MaxMetadataSize));
+                Metadata = metadata;
             }
-            this.metadata = metadata != null && metadata.Count > 0 ? metadata : null;
-            this.operations = operations != null && operations.Count > 0 ? operations : null;
+            
+            Operations = operations != null && operations.Count > 0 ? operations : null;
         }
     }
 }

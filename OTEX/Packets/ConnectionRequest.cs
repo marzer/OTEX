@@ -26,31 +26,24 @@ namespace OTEX.Packets
         }
 
         /// <summary>
+        /// AppKey for the client's application. Will only be compatible with servers sharing a matching AppKey.
+        /// </summary>
+        public AppKey AppKey { get; private set; }
+
+        /// <summary>
         /// Session ID of the client sending the connection request.
         /// </summary>
-        public Guid ClientID
-        {
-            get { return clientID; }
-        }
-        private Guid clientID;
+        public Guid ClientID { get; private set; }
 
         /// <summary>
         /// Password for server (if the server requires one).
         /// </summary>
-        public Password Password
-        {
-            get { return password; }
-        }
-        private Password password;
+        public Password Password { get; private set; }
 
         /// <summary>
         /// Initial metadata for the client.
         /// </summary>
-        public byte[] Metadata
-        {
-            get { return metadata; }
-        }
-        private byte[] metadata;
+        public byte[] Metadata { get; private set; }
 
         /////////////////////////////////////////////////////////////////////
         // CONSTRUCTOR
@@ -59,19 +52,25 @@ namespace OTEX.Packets
         /// <summary>
         /// Construct a connection request packet.
         /// </summary>
+        /// <param name="key">AppKey for this node. Will only be compatible with other nodes sharing a matching AppKey.</param>
         /// <param name="clientID">Client's session ID.</param>
         /// <param name="metadata">Initial metadata for the client, if any.</param>
         /// <param name="password">Password for the server, if requred.</param>
         /// <exception cref="ArgumentOutOfRangeException" />
-        public ConnectionRequest(Guid clientID, byte[] metadata = null, Password password = null)
+        public ConnectionRequest(AppKey key, Guid clientID, byte[] metadata = null, Password password = null)
         {
-            if ((this.clientID = clientID).Equals(Guid.Empty))
+            if ((AppKey = key) == null)
+                throw new ArgumentNullException("key");
+            if ((ClientID = clientID) == Guid.Empty)
                 throw new ArgumentOutOfRangeException("clientID", "clientID cannot be Guid.Empty");
-            if (metadata != null && metadata.LongLength >= Client.MaxMetadataSize)
-                throw new ArgumentOutOfRangeException("metadata",
-                    string.Format("metadata byte arrays may not be longer than {0} bytes", Client.MaxMetadataSize));
-            this.password = password;
-            this.metadata = metadata != null && metadata.Length > 0 ? metadata : null;
+            if (metadata != null && metadata.Length > 0)
+            {
+                if (metadata.LongLength >= Client.MaxMetadataSize)
+                    throw new ArgumentOutOfRangeException("metadata",
+                        string.Format("metadata byte arrays may not be longer than {0} bytes", Client.MaxMetadataSize));
+                Metadata = metadata;
+            }
+            Password = password;
         }
     }
 }

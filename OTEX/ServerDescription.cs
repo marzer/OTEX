@@ -37,68 +37,45 @@ namespace OTEX
         /////////////////////////////////////////////////////////////////////
 
         /// <summary>
+        /// AppKey of the server.
+        /// </summary>
+        public AppKey AppKey { get; private set; }
+
+        /// <summary>
         /// Session ID of the server.
         /// </summary>
-        public Guid ID
-        {
-            get { return id; }
-        }
-        private Guid id;
+        public Guid ID { get; private set; }
 
         /// <summary>
         /// Server name.
         /// </summary>
-        public string Name
-        {
-            get { return name; }
-        }
-        private volatile string name;
+        public string Name { get; private set; }
 
         /// <summary>
         /// Server port.
         /// </summary>
-        public ushort Port
-        {
-            get { return port; }
-        }
-        private ushort port;
+        public ushort Port { get; private set; }
 
         /// <summary>
         /// Does this server require a password?
         /// </summary>
-        public bool RequiresPassword
-        {
-            get { return requiresPassword; }
-        }
-        private volatile bool requiresPassword;
+        public bool RequiresPassword { get; private set; }
 
         /// <summary>
         /// Is the document a temporary one?
         /// (i.e. not backed by a file, will be lost when the server is shutdown)
         /// </summary>
-        public bool TemporaryDocument
-        {
-            get { return temporaryDocument; }
-        }
-        private bool temporaryDocument;
+        public bool TemporaryDocument { get; private set; }
 
         /// <summary>
         /// How many clients are currently connected?
         /// </summary>
-        public uint ClientCount
-        {
-            get { return clientCount; }
-        }
-        private volatile uint clientCount;
+        public uint ClientCount { get; private set; }
 
         /// <summary>
         /// How many clients are allowed to be connected at once?
         /// </summary>
-        public uint MaxClients
-        {
-            get { return maxClients; }
-        }
-        private volatile uint maxClients;
+        public uint MaxClients { get; private set; }
 
         /// <summary>
         /// Where did the packet come from?
@@ -192,13 +169,14 @@ namespace OTEX
         {
             if (server == null)
                 throw new ArgumentNullException("server", "server cannot be null");
-            id = server.ID;
-            clientCount = server.ClientCount;
-            maxClients = server.MaxClients;
-            requiresPassword = server.RequiresPassword;
-            port = server.Port;
-            name = server.Name ?? "";
-            temporaryDocument = (server.FilePath ?? "").Length == 0;
+            AppKey = server.AppKey;
+            ID = server.ID;
+            ClientCount = server.ClientCount;
+            MaxClients = server.MaxClients;
+            RequiresPassword = server.RequiresPassword;
+            Port = server.Port;
+            Name = server.Name ?? "";
+            TemporaryDocument = (server.FilePath ?? "").Length == 0;
             endPoint = null;
             lastUpdateTimer = null;
             lastPingTimer = null;
@@ -216,13 +194,13 @@ namespace OTEX
                 throw new ArgumentNullException("listenEndpoint", "listenEndpoint cannot be null");
             if (packet == null)
                 throw new ArgumentNullException("packet", "packet cannot be null");
-            id = packet.ID;
-            clientCount = packet.ClientCount;
-            maxClients = packet.MaxClients;
-            requiresPassword = packet.RequiresPassword;
-            port = packet.Port;
-            name = packet.Name ?? "";
-            temporaryDocument = packet.temporaryDocument;
+            ID = packet.ID;
+            ClientCount = packet.ClientCount;
+            MaxClients = packet.MaxClients;
+            RequiresPassword = packet.RequiresPassword;
+            Port = packet.Port;
+            Name = packet.Name ?? "";
+            TemporaryDocument = packet.TemporaryDocument;
             endPoint = listenEndpoint;
             lastUpdateTimer = new Marzersoft.Timer();
             lastPingTimer = new Marzersoft.Timer();
@@ -235,14 +213,14 @@ namespace OTEX
 
         /// <summary>
         /// Updates a server description from an announce packet.
-        /// Must be from the same sender (GUID, address and listen port must match).
+        /// Must be from the same sender (AppKey, ID, address and listen port must match).
         /// Not all aspects of the server can be changed; some properties are fixed for the session
         /// (e.g. file path, temporary). If differences are detected in these properies, an exception will be thrown.
         /// Does not update Ping, that is updated separately.
         /// </summary>
         /// <param name="listenEndpoint">Endpoint of the sender (listen server, NOT the announce source)</param>
         /// <param name="packet">Packet that was sent</param>
-        /// <exception cref="ArgumentException" />
+        /// <exception cref="ArgumentOutOfRangeException" />
         /// <exception cref="ArgumentNullException" />
         internal void Update(IPEndPoint listenEndpoint, ServerDescription packet)
         {
@@ -250,24 +228,26 @@ namespace OTEX
                 throw new ArgumentNullException("packet", "packet cannot be null");
             if (listenEndpoint == null)
                 throw new ArgumentNullException("listenEndpoint", "sender cannot be null");
-            if (!packet.ID.Equals(id))
-                throw new ArgumentException("packet ID did not match", "packet");
-            if (packet.Port != port)
-                throw new ArgumentException("packet port did not match", "packet");
+            if (packet.AppKey != AppKey)
+                throw new ArgumentOutOfRangeException("packet", "AppKeys did not match");
+            if (packet.ID != ID)
+                throw new ArgumentOutOfRangeException("packet", "ID did not match");
+            if (packet.Port != Port)
+                throw new ArgumentOutOfRangeException("packet", "port did not match");
             if (!listenEndpoint.Equals(endPoint))
-                throw new ArgumentException("listenEndpoint port did not match", "listenEndpoint");
-            if (temporaryDocument != packet.temporaryDocument)
-                throw new ArgumentException("temporaryDocument did not match", "temporaryDocument");
+                throw new ArgumentOutOfRangeException("listenEndpoint", "listenEndpoint did not match");
+            if (TemporaryDocument != packet.TemporaryDocument)
+                throw new ArgumentOutOfRangeException("packet", "temporaryDocument did not match");
 
             bool changed = false;
-            if (changed = (packet.ClientCount != clientCount))
-                clientCount = packet.ClientCount;
-            if (changed = (packet.MaxClients != maxClients))
-                maxClients = packet.MaxClients;
-            if (changed = (packet.RequiresPassword != requiresPassword))
-                requiresPassword = packet.RequiresPassword;
-            if (changed = (!name.Equals(packet.Name)))
-                name = packet.Name ?? "";
+            if (changed = (packet.ClientCount != ClientCount))
+                ClientCount = packet.ClientCount;
+            if (changed = (packet.MaxClients != MaxClients))
+                MaxClients = packet.MaxClients;
+            if (changed = (packet.RequiresPassword != RequiresPassword))
+                RequiresPassword = packet.RequiresPassword;
+            if (changed = (!Name.Equals(packet.Name)))
+                Name = packet.Name ?? "";
             lastUpdateTimer.Reset();
             if (changed)
                 OnUpdated?.Invoke(this);

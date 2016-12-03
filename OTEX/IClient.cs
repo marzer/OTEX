@@ -6,7 +6,7 @@ namespace OTEX
     /// <summary>
     /// Interface representing client-side objects in an OTEX connection.
     /// </summary>
-    public interface IClient
+    public interface IClient : INode
     {
         /////////////////////////////////////////////////////////////////////
         // EVENTS

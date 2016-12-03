@@ -1,13 +1,12 @@
 ﻿using Marzersoft;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
 
-namespace OTEX
+namespace OTEX.Editor
 {
     class DedicatedServer
     {
@@ -18,12 +17,12 @@ namespace OTEX
         /// <summary>
         /// Application name.
         /// </summary>
-        private static readonly string Name = "OTEX Dedicated Server";
+        private static readonly string Name = "OTEX Editor Server";
 
         /// <summary>
         /// Application description.
         /// </summary>
-        private static readonly string Description = "Dedicated server for OTEX collaborative text editor framework.";
+        private static readonly string Description = "Dedicated server for the OTEX collaborative text editor.";
 
         /// <summary>
         /// Splash text.
@@ -46,7 +45,7 @@ namespace OTEX
             {
                 StringBuilder sb = new StringBuilder();
                 return string.Format("  {0} [file] [/EDIT|/NEW] [/PORT port] [/NAME name] [/PASSWORD pass] [/PUBLIC]{1}"
-                                   + "             [/MAXCLIENTS max] [/BANLIST file] [/?]",
+                                   + "             [/MAXCLIENTS max] [/BANLIST file] [/ID guid] [/?]",
                     Process.GetCurrentProcess().ProcessName.ToUpper(), Environment.NewLine);
             }
         }
@@ -78,6 +77,9 @@ namespace OTEX
                 sb.AppendLine("         /PUBLIC: Regularly broadcast the presence of this server to OTEX clients.");
                 sb.AppendLine(" /MAXCLIENTS max: Maximum number of clients to allow. Defaults to 10, caps at 100.");
                 sb.AppendLine("   /BANLIST file: Text file containing a newline-delimited list of banned client IDs.");
+                sb.AppendLine("        /ID guid: Specify an ID for the server.");
+                sb.AppendLine("                  Format: XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX (where X == any");
+                sb.AppendLine("                  Hexadecimal character). Omit to generate the ID randomly.");
                 sb.AppendLine("              /?: Prints help and exits.");
                 sb.AppendLine();
                 sb.AppendLine("Arguments may appear in any order. /SWITCHES and file paths are not case-sensitive.");
@@ -159,9 +161,13 @@ namespace OTEX
             var path = args.OrphanedValues.LastOrDefault();
             if (path != null)
                 startParams.FilePath = path.Value;
+            Guid instanceID = Guid.NewGuid();
+            string argID = null;
+            if (App.Arguments.Key("id", ref argID))
+                argID.TryParse(out instanceID);
 
             //create server
-            server = new Server();
+            server = new Server(Editor.AppKey, instanceID);
 
             //attach server events
             server.OnThreadException += (s, e) =>

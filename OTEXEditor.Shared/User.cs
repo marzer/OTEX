@@ -127,7 +127,7 @@ namespace OTEX.Editor
         /// <exception cref="ArgumentOutOfRangeException"/>
         public User(Guid id)
         {
-            if ((this.id = id).Equals(Guid.Empty))
+            if ((this.id = id) == Guid.Empty)
                 throw new ArgumentOutOfRangeException("id", "id cannot be Guid.Empty");
             IsLocal = true;
             colour = App.Config.User.Get("user.colour", Color.Transparent).ToArgb();
@@ -147,7 +147,7 @@ namespace OTEX.Editor
         /// <exception cref="System.IO.IOException" />
         public User(Guid id, byte[] metadata)
         {
-            if ((this.id = id).Equals(Guid.Empty))
+            if ((this.id = id) == Guid.Empty)
                 throw new ArgumentOutOfRangeException("id", "id cannot be Guid.Empty");
             IsLocal = false;
             Update(metadata);
@@ -177,7 +177,7 @@ namespace OTEX.Editor
 
             //deserialize
             var remote = metadata.Deserialize<User>();
-            if (!remote.id.Equals(Guid.Empty))
+            if (remote.id != Guid.Empty)
                 throw new ArgumentException("metadata.ID must be Guid.Empty (cannot copy a non-deserialized User)", "metadata");
 
             //update
@@ -233,9 +233,25 @@ namespace OTEX.Editor
         {
             if (other == null)
                 return false;
-            if (ReferenceEquals(this, other))
+            return this == other;
+        }
+
+        public static bool operator ==(User a, User b)
+        {
+            //same instance or both null
+            if (ReferenceEquals(a, b))
                 return true;
-            return ID.Equals(other.ID);
+
+            //one is null, one is not
+            if (((object)a == null) || ((object)b == null))
+                return false;
+
+            return a.ID == b.ID;
+        }
+
+        public static bool operator !=(User a, User b)
+        {
+            return !(a == b);
         }
 
         public int CompareTo(object other)

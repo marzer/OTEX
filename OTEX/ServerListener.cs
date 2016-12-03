@@ -5,13 +5,14 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using Marzersoft;
+using System.IO;
 
 namespace OTEX
 {
     /// <summary>
     /// Class responsible for listening for the availability of public OTEX servers.
     /// </summary>
-    public sealed class ServerListener : ThreadController, IDisposable
+    public sealed class ServerListener : Node, IDisposable
     {
         /////////////////////////////////////////////////////////////////////
         // EVENTS
@@ -40,11 +41,7 @@ namespace OTEX
         /// Does this server listener routinely update pings at regular intervals?
         /// If false, it only attempts to determine ping to a server the first time it learns of it.
         /// </summary>
-        public bool AutoPing
-        {
-            get { return autoPing; }
-        }
-        private volatile bool autoPing = true;
+        public bool AutoPing { get; private set; }
 
         /// <summary>
         /// Master thread for listening for new servers.
@@ -65,8 +62,12 @@ namespace OTEX
         {
             get
             {
+                if (isDisposed)
+                    throw new ObjectDisposedException("OTEX.ServerListener");
                 lock (activeServers)
                 {
+                    if (isDisposed)
+                        throw new ObjectDisposedException("OTEX.ServerListener");
                     return activeServers.Values.ToList();
                 }
             }
@@ -84,15 +85,16 @@ namespace OTEX
         /// <summary>
         /// Creates an OTEX server listener.
         /// </summary>
+        /// <param name="key">AppKey for this listener. Will only handle packets from servers with a matching AppKey.</param>
         /// <param name="excludes">A collection of server id's to ignore.</param>
-        /// <exception cref="Exception" />
-        public ServerListener(params Guid[] excludes)
+        /// <exception cref="IOException" />
+        /// <exception cref="ArgumentNullException" />
+        public ServerListener(AppKey key, params Guid[] excludes) : base(key)
         {
+            AutoPing = true;
+            
             //set ignore list
-            if (excludes == null || excludes.Length == 0)
-                excludeServers = null;
-            excludeServers = new Guid[excludes.Length];
-            excludes.CopyTo(excludeServers, 0);
+            excludeServers = excludes != null && excludes.Length > 0 ? (Guid[])excludes.Clone() : null;
 
             //create udp client
             UdpClient udpClient = null;
@@ -106,7 +108,7 @@ namespace OTEX
             }
 
             if (udpClient == null)
-                throw new Exception(string.Format("Could not acquire a socket on any port in the range {0}."
+                throw new IOException(string.Format("Could not acquire a socket on any port in the range {0}."
                     + " (Are there many instances of ServerListener running?)", Server.AnnouncePorts));
 
             //configure client
@@ -152,6 +154,10 @@ namespace OTEX
                     }))
                         continue;
 
+                    //check appkey
+                    if (packet.AppKey != AppKey)
+                        continue;
+
                     //check against blacklist
                     if (excludeServers != null && excludeServers.Contains(packet.ID))
                         continue;
@@ -186,7 +192,7 @@ namespace OTEX
                         }
 
                         //update pings
-                        if (autoPing)
+                        if (AutoPing)
                         {
                             foreach (var active in activeServers)
                             {

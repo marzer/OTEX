@@ -65,6 +65,11 @@ namespace OTEX.Packets
             Banned,
 
             /// <summary>
+            /// Server had a different AppKey
+            /// </summary>
+            DifferentAppKey,
+
+            /// <summary>
             /// Other (not used by anything currently)
             /// </summary>
             Other
@@ -73,56 +78,32 @@ namespace OTEX.Packets
         /// <summary>
         /// What was the result of the request?
         /// </summary>
-        public ResponseCode Result
-        {
-            get { return result; }
-        }
-        private ResponseCode result;
+        public ResponseCode Result { get; private set; }
 
         /// <summary>
         /// Session ID of the server sending the response.
         /// </summary>
-        public Guid ServerID
-        {
-            get { return serverID; }
-        }
-        private Guid serverID;
+        public Guid ServerID { get; private set; }
 
         /// <summary>
         /// Path (on the server) of the file being edited by the session.
         /// </summary>
-        public string FilePath
-        {
-            get { return filePath; }
-        }
-        private string filePath;
+        public string FilePath { get; private set; }
 
         /// <summary>
         /// The friendly name of the server.
         /// </summary>
-        public string Name
-        {
-            get { return name; }
-        }
-        private string name;
+        public string Name { get; private set; }
 
         /// <summary>
         /// List of initial operations.
         /// </summary>
-        public List<Operation> Operations
-        {
-            get { return operations; }
-        }
-        private List<Operation> operations;
+        public List<Operation> Operations { get; private set; }
 
         /// <summary>
         /// Set of metadata for other connected clients.
         /// </summary>
-        public Dictionary<Guid, byte[]> Metadata
-        {
-            get { return metadata; }
-        }
-        private Dictionary<Guid, byte[]> metadata;
+        public Dictionary<Guid, byte[]> Metadata { get; private set; }
 
         /////////////////////////////////////////////////////////////////////
         // CONSTRUCTORS
@@ -138,7 +119,7 @@ namespace OTEX.Packets
         /// <param name="metadata">Set of metadata for other connected clients.</param>
         public ConnectionResponse(Guid serverID, string filePath, string name, List<Operation> operations = null, Dictionary<Guid, byte[]> metadata = null)
         {
-            if ((this.serverID = serverID).Equals(Guid.Empty))
+            if ((ServerID = serverID) == Guid.Empty)
                 throw new ArgumentOutOfRangeException("serverID", "serverID cannot be Guid.Empty");
             if (metadata != null && metadata.Count > 0)
             {
@@ -146,13 +127,12 @@ namespace OTEX.Packets
                     if (kvp.Value != null && kvp.Value.LongLength >= Client.MaxMetadataSize)
                         throw new ArgumentOutOfRangeException("metadata",
                             string.Format("metadata byte arrays may not be longer than {0} bytes", Client.MaxMetadataSize));
+                Metadata = metadata;
             }
-            this.filePath = (filePath ?? "").Trim();
-            this.name = (name ?? "").Trim();
-            this.metadata = metadata != null && metadata.Count > 0 ? metadata : null;
-            this.operations = operations != null && operations.Count > 0 ? operations : null;
-
-            result = ResponseCode.Approved;
+            FilePath = (filePath ?? "").Trim();
+            Name = (name ?? "").Trim();
+            Operations = operations != null && operations.Count > 0 ? operations : null;
+            Result = ResponseCode.Approved;
         }
 
         /// <summary>
@@ -164,12 +144,12 @@ namespace OTEX.Packets
         {
             if (failReason == ResponseCode.Approved || failReason > ResponseCode.Other)
                 throw new ArgumentOutOfRangeException("failReason", "failReason must be one of the negative ResponseCode values.");
-            serverID = Guid.Empty;
-            result = failReason;
-            filePath = null;
-            name = null;
-            metadata = null;
-            operations = null;
+            ServerID = Guid.Empty;
+            Result = failReason;
+            FilePath = null;
+            Name = null;
+            Metadata = null;
+            Operations = null;
         }
 
         /////////////////////////////////////////////////////////////////////
@@ -202,6 +182,9 @@ namespace OTEX.Packets
 
                 case ResponseCode.Banned:
                     return "The client has been banned from the server.";
+
+                case ResponseCode.DifferentAppKey:
+                    return "The server's application key did not match the client's.";
 
                 default:
                     return "The server rejected the connection.";

@@ -87,7 +87,7 @@ namespace OTEX
         {
             if (text == null)
                 throw new ArgumentNullException("text");
-            if (nodeID.Equals(Guid.Empty))
+            if (nodeID == Guid.Empty)
                 throw new ArgumentOutOfRangeException("nodeID", "nodeID cannot be Guid.Empty");
             node = nodeID;
             this.offset = offset;
@@ -101,7 +101,7 @@ namespace OTEX
         /// <exception cref="ArgumentOutOfRangeException" />
         internal Operation(Guid nodeID, int offset, int length)
         {
-            if (nodeID.Equals(Guid.Empty))
+            if (nodeID == Guid.Empty)
                 throw new ArgumentOutOfRangeException("nodeID", "nodeID cannot be Guid.Empty");
             node = nodeID;
             this.offset = offset;

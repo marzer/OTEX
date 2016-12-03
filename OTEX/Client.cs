@@ -52,7 +52,7 @@ namespace OTEX
         /// <summary>
         /// Maximum size of a client's metadata.
         /// </summary>
-        public const uint MaxMetadataSize = 2048;
+        internal const uint MaxMetadataSize = 2048;
 
         /// <summary>
         /// Has this client been disposed?
@@ -204,8 +204,8 @@ namespace OTEX
         /// The server then ensures the new version is received by all other clients during their next updates.
         /// May be set when the client is not connected; this means "send this when I next connect to a server".
         /// 
-        /// The getter returns a copy of the internal metadata buffer (if not null); it does not keep a reference
-        /// to the original set value.
+        /// Getter and setter both work with shallow copies of the data; no reference is kept to the original input
+        /// array, nor is a direct reference to the internal buffer returned.
         /// </summary>
         public byte[] Metadata
         {
@@ -218,12 +218,9 @@ namespace OTEX
                 {
                     if (isDisposed)
                         throw new ObjectDisposedException("OTEX.Client");
-
                     if (metadata == null || metadata.Length == 0)
                         return null;
-                    byte[] md = new byte[metadata.Length];
-                    metadata.CopyTo(md,0);
-                    return md;
+                    return (byte[])metadata.Clone();
                 }
             }
             set
@@ -248,11 +245,8 @@ namespace OTEX
                         if (md == null)
                             metadata = null;
                         else
-                        {
-                            metadata = new byte[md.Length];
-                            md.CopyTo(metadata, 0);
-                            metadataChanged = true;
-                        }
+                            metadata = (byte[])md.Clone();
+                        metadataChanged = true;
                     }
                 }
                 
@@ -269,9 +263,11 @@ namespace OTEX
         /// <summary>
         /// Creates an OTEX client.
         /// </summary>
+        /// <param name="key">AppKey for this client. Will only be compatible with other nodes sharing a matching AppKey.</param>
         /// <param name="guid">Session ID for this client. Leaving it null will auto-generate one.</param>
+        /// <exception cref="ArgumentNullException" />
         /// <exception cref="ArgumentOutOfRangeException" />
-        public Client(Guid? guid = null) : base(guid)
+        public Client(AppKey key, Guid? guid = null) : base(key, guid)
         {
             //
         }
@@ -322,6 +318,8 @@ namespace OTEX
         {
             if (serverDescription == null)
                 throw new ArgumentNullException("serverDescription");
+            if (serverDescription.AppKey != AppKey)
+                throw new ArgumentOutOfRangeException("serverDescription", "AppKeys do not match");
             Connect(serverDescription.EndPoint, password);
         }
 
@@ -390,7 +388,7 @@ namespace OTEX
                             }
 
                             //send connection request packet
-                            packetStream.Write(new ConnectionRequest(ID, md, password));
+                            packetStream.Write(new ConnectionRequest(AppKey, ID, md, password));
 
                             //get response
                             responsePacket = packetStream.Read();
@@ -398,8 +396,8 @@ namespace OTEX
                                 throw new InvalidDataException("unexpected response packet type");
                             response = responsePacket.Payload.Deserialize<ConnectionResponse>();
                             if (response.Result != ConnectionResponse.ResponseCode.Approved)
-                                throw new Exception(string.Format("Rejected: {0}", ConnectionResponse.Describe(response.Result)));
-                            if (response.ServerID.Equals(Guid.Empty))
+                                throw new IOException(string.Format("Rejected: {0}", ConnectionResponse.Describe(response.Result)));
+                            if (response.ServerID == Guid.Empty)
                                 throw new InvalidDataException("response.ServerID was Guid.Empty");
                         }
                         catch (Exception)

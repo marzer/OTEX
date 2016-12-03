@@ -18,7 +18,7 @@ namespace OTEX.Packets
         private TcpClient client = null;
         private NetworkStream stream = null;
         private volatile bool connected = false;
-        private readonly Marzersoft.Timer lastConnectPollTimer = new Marzersoft.Timer();
+        private readonly Timer lastConnectPollTimer = new Timer();
         private readonly object connectionCheckLock = new object();
 
         /// <summary>
@@ -110,6 +110,12 @@ namespace OTEX.Packets
         // DISCONNECTION DETECTION
         /////////////////////////////////////////////////////////////////////
 
+        /// <summary>
+        /// Executes an action on the stream, catching any SocketExceptions thrown
+        /// to determine if the connection was broken.
+        /// </summary>
+        /// <param name="action">An action to perform.</param>
+        /// <returns>True if the connection was broken.</returns>
         private bool DetectBrokenConnection(Action action)
         {
             try
@@ -221,7 +227,7 @@ namespace OTEX.Packets
         /// <exception cref="System.Security.SecurityException" />
         /// <exception cref="IOException" />
         /// <exception cref="ObjectDisposedException" />
-        public void Write<T>(T data) where T : IPacketPayload
+        public void Write<T>(T data) where T : class, IPacketPayload
         {
             if (isDisposed)
                 throw new ObjectDisposedException("OTEX.PacketStream");

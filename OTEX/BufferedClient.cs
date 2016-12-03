@@ -9,6 +9,7 @@ namespace OTEX
     /// BufferedClient class for the OTEX framework. Unlike the regular client, which requires you
     /// to manually calculate operations, the BufferedClient keeps a local cache and generates
     /// operations based on a diff algorithm. Less flexible than Client, easier to get going "in a pinch".
+    /// Better suited to applications which need to send operations upstream rarely/never (e.g. a read-only client).
     /// </summary>
     public sealed class BufferedClient : ThreadController, IClient, IDisposable
     {
@@ -42,6 +43,32 @@ namespace OTEX
         /////////////////////////////////////////////////////////////////////
         // PROPERTIES/VARIABLES
         /////////////////////////////////////////////////////////////////////
+
+        /// <summary>
+        /// ID for this node.
+        /// </summary>
+        public Guid ID
+        {
+            get
+            {
+                if (isDisposed)
+                    throw new ObjectDisposedException("OTEX.BufferedClient");
+                return client.ID;
+            }
+        }
+
+        /// <summary>
+        /// AppKey for this node. Will only be compatible with other nodes sharing a matching AppKey.
+        /// </summary>
+        public AppKey AppKey
+        {
+            get
+            {
+                if (isDisposed)
+                    throw new ObjectDisposedException("OTEX.BufferedClient");
+                return client.AppKey;
+            }
+        }
 
         /// <summary>
         /// has this client been disposed?
@@ -246,11 +273,13 @@ namespace OTEX
         /// <summary>
         /// Creates an OTEX buffered client.
         /// </summary>
+        /// <param name="key">AppKey for this client. Will only be compatible with other nodes sharing a matching AppKey.</param>
         /// <param name="guid">Session ID for this client. Leaving it null will auto-generate one.</param>
+        /// <exception cref="ArgumentNullException" />
         /// <exception cref="ArgumentOutOfRangeException" />
-        public BufferedClient(Guid? guid = null)
+        public BufferedClient(AppKey key, Guid? guid = null)
         {
-            client = new Client(guid);
+            client = new Client(key, guid);
             client.OnConnected += (c) => { OnConnected?.Invoke(this); };
             client.OnDisconnected += (c,forced) => { OnDisconnected?.Invoke(this, forced); };
             client.OnRemoteMetadata += (c,id,md) => { OnRemoteMetadata?.Invoke(this,id,md); };

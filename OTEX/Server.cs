@@ -359,9 +359,11 @@ namespace OTEX
         /// <summary>
         /// Creates an OTEX server.
         /// </summary>
+        /// <param name="key">AppKey for this server. Will only be compatible with other nodes sharing a matching AppKey.</param>
         /// <param name="guid">Session ID for this server. Leaving it null will auto-generate one.</param>
+        /// <exception cref="ArgumentNullException" />
         /// <exception cref="ArgumentOutOfRangeException" />
-        public Server(Guid? guid = null) : base(guid)
+        public Server(AppKey key, Guid? guid = null) : base(key, guid)
         {
             //
         }
@@ -649,9 +651,18 @@ namespace OTEX
                     if (CaptureException(() => { request = packet.Payload.Deserialize<ConnectionRequest>(); }))
                         break;
 
+                    //check app key
+                    if (AppKey != request.AppKey)
+                    {
+                        CaptureException(() =>
+                        {
+                            stream.Write(new ConnectionResponse(ConnectionResponse.ResponseCode.DifferentAppKey));
+                        });
+                        break;
+                    }
+
                     //check password
-                    if ((startParams.Password != null && (request.Password == null || !startParams.Password.Matches(request.Password))) //requires password
-                        || (startParams.Password == null && request.Password != null)) //no password required (reject incoming requests with passwords)
+                    if (startParams.Password != request.Password)
                     {
                         CaptureException(() =>
                         {
@@ -857,7 +868,7 @@ namespace OTEX
         {
             if (isDisposed)
                 throw new ObjectDisposedException("OTEX.Server");
-            if (id.Equals(Guid.Empty))
+            if (id == Guid.Empty)
                 throw new ArgumentOutOfRangeException("id", "id cannot be Guid.Empty");
             if (!running)
                 throw new InvalidOperationException("Server is not running.");

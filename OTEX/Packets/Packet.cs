@@ -15,20 +15,12 @@ namespace OTEX
         /// <summary>
         /// Payload type.
         /// </summary>
-        public uint PayloadType
-        {
-            get { return payloadType; }
-        }
-        private uint payloadType;
+        public uint PayloadType { get; private set; }
 
         /// <summary>
         /// This packet's serialized payload data.
         /// </summary>
-        public byte[] Payload
-        {
-            get { return payload; }
-        }
-        private byte[] payload;
+        public byte[] Payload { get; private set; }
 
         /////////////////////////////////////////////////////////////////////
         // CONSTRUCTOR
@@ -41,8 +33,8 @@ namespace OTEX
         /// <param name="payload">Serialized payload object.</param>
         public Packet(uint payloadType, byte[] payload = null)
         {
-            this.payloadType = payloadType;
-            this.payload = payload != null && payload.Length > 0 ? payload : null;
+            PayloadType = payloadType;
+            Payload = payload != null && payload.Length > 0 ? payload : null;
         }
     }
 }
