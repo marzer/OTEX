@@ -62,6 +62,7 @@
             this.panMenuPage = new System.Windows.Forms.Panel();
             this.lblAbout = new System.Windows.Forms.Label();
             this.lblVersion = new System.Windows.Forms.Label();
+            this.lblDebug = new System.Windows.Forms.Label();
             this.panConnectingPage = new System.Windows.Forms.Panel();
             this.panConnectingContent = new System.Windows.Forms.Panel();
             this.btnConnectingReconnect = new Marzersoft.Themes.ThemedButton();
@@ -110,7 +111,6 @@
             // btnServerExisting
             // 
             this.btnServerExisting.Accent = ((uint)(2u));
-            this.btnServerExisting.AccentMode = false;
             this.btnServerExisting.BackColor = System.Drawing.SystemColors.Control;
             this.btnServerExisting.FlatAppearance.BorderSize = 0;
             this.btnServerExisting.FlatAppearance.MouseDownBackColor = System.Drawing.SystemColors.Highlight;
@@ -133,7 +133,6 @@
             // btnServerNew
             // 
             this.btnServerNew.Accent = ((uint)(2u));
-            this.btnServerNew.AccentMode = false;
             this.btnServerNew.BackColor = System.Drawing.SystemColors.Control;
             this.btnServerNew.FlatAppearance.BorderSize = 0;
             this.btnServerNew.FlatAppearance.MouseDownBackColor = System.Drawing.SystemColors.Highlight;
@@ -156,7 +155,6 @@
             // btnClient
             // 
             this.btnClient.Accent = ((uint)(0u));
-            this.btnClient.AccentMode = false;
             this.btnClient.FlatAppearance.BorderSize = 0;
             this.btnClient.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnClient.ImageAlign = System.Drawing.ContentAlignment.MiddleRight;
@@ -175,7 +173,7 @@
             // 
             this.panMenu.Controls.Add(this.panMenuButtons);
             this.panMenu.Controls.Add(this.lblTitle);
-            this.panMenu.Location = new System.Drawing.Point(21, 5);
+            this.panMenu.Location = new System.Drawing.Point(81, 12);
             this.panMenu.Name = "panMenu";
             this.panMenu.Size = new System.Drawing.Size(279, 337);
             this.panMenu.TabIndex = 3;
@@ -195,7 +193,6 @@
             // btnServerTemporary
             // 
             this.btnServerTemporary.Accent = ((uint)(1u));
-            this.btnServerTemporary.AccentMode = false;
             this.btnServerTemporary.BackColor = System.Drawing.SystemColors.Control;
             this.btnServerTemporary.FlatAppearance.BorderSize = 0;
             this.btnServerTemporary.FlatAppearance.MouseDownBackColor = System.Drawing.SystemColors.Highlight;
@@ -238,14 +235,14 @@
             this.panServerBrowserPage.Location = new System.Drawing.Point(9, 15);
             this.panServerBrowserPage.Margin = new System.Windows.Forms.Padding(0);
             this.panServerBrowserPage.Name = "panServerBrowserPage";
-            this.panServerBrowserPage.Size = new System.Drawing.Size(471, 188);
+            this.panServerBrowserPage.Size = new System.Drawing.Size(438, 188);
             this.panServerBrowserPage.TabIndex = 4;
             this.panServerBrowserPage.Visible = false;
             // 
             // label1
             // 
             this.label1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.label1.Location = new System.Drawing.Point(116, 126);
+            this.label1.Location = new System.Drawing.Point(83, 126);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(81, 20);
             this.label1.TabIndex = 108;
@@ -255,7 +252,7 @@
             // lblManualEntry
             // 
             this.lblManualEntry.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.lblManualEntry.Location = new System.Drawing.Point(131, 89);
+            this.lblManualEntry.Location = new System.Drawing.Point(98, 89);
             this.lblManualEntry.Margin = new System.Windows.Forms.Padding(0);
             this.lblManualEntry.Name = "lblManualEntry";
             this.lblManualEntry.Size = new System.Drawing.Size(327, 28);
@@ -269,7 +266,7 @@
             | System.Windows.Forms.AnchorStyles.Right)));
             this.lblServerBrowser.Location = new System.Drawing.Point(11, 6);
             this.lblServerBrowser.Name = "lblServerBrowser";
-            this.lblServerBrowser.Size = new System.Drawing.Size(447, 28);
+            this.lblServerBrowser.Size = new System.Drawing.Size(414, 28);
             this.lblServerBrowser.TabIndex = 106;
             this.lblServerBrowser.Text = "Public documents";
             this.lblServerBrowser.TextAlign = System.Drawing.ContentAlignment.BottomLeft;
@@ -309,7 +306,7 @@
             this.dgvServers.ShowCellToolTips = false;
             this.dgvServers.ShowEditingIcon = false;
             this.dgvServers.ShowRowErrors = false;
-            this.dgvServers.Size = new System.Drawing.Size(447, 49);
+            this.dgvServers.Size = new System.Drawing.Size(414, 49);
             this.dgvServers.TabIndex = 2000;
             this.dgvServers.CellDoubleClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.dgvServers_CellContentDoubleClick);
             // 
@@ -385,7 +382,7 @@
             // label2
             // 
             this.label2.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.label2.Location = new System.Drawing.Point(116, 154);
+            this.label2.Location = new System.Drawing.Point(83, 154);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(81, 20);
             this.label2.TabIndex = 104;
@@ -396,7 +393,7 @@
             // 
             this.tbClientPassword.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.tbClientPassword.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.tbClientPassword.Location = new System.Drawing.Point(203, 154);
+            this.tbClientPassword.Location = new System.Drawing.Point(170, 154);
             this.tbClientPassword.Margin = new System.Windows.Forms.Padding(0);
             this.tbClientPassword.MaxLength = 32;
             this.tbClientPassword.Name = "tbClientPassword";
@@ -407,7 +404,6 @@
             // btnClientCancel
             // 
             this.btnClientCancel.Accent = ((uint)(0u));
-            this.btnClientCancel.AccentMode = false;
             this.btnClientCancel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.btnClientCancel.FlatAppearance.BorderSize = 0;
             this.btnClientCancel.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
@@ -426,12 +422,11 @@
             // btnClientConnect
             // 
             this.btnClientConnect.Accent = ((uint)(0u));
-            this.btnClientConnect.AccentMode = false;
             this.btnClientConnect.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.btnClientConnect.FlatAppearance.BorderSize = 0;
             this.btnClientConnect.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnClientConnect.ImageAlign = System.Drawing.ContentAlignment.MiddleRight;
-            this.btnClientConnect.Location = new System.Drawing.Point(378, 128);
+            this.btnClientConnect.Location = new System.Drawing.Point(345, 128);
             this.btnClientConnect.Margin = new System.Windows.Forms.Padding(0);
             this.btnClientConnect.Name = "btnClientConnect";
             this.btnClientConnect.Size = new System.Drawing.Size(80, 48);
@@ -446,7 +441,7 @@
             // 
             this.tbClientAddress.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.tbClientAddress.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.tbClientAddress.Location = new System.Drawing.Point(203, 126);
+            this.tbClientAddress.Location = new System.Drawing.Point(170, 126);
             this.tbClientAddress.Margin = new System.Windows.Forms.Padding(0);
             this.tbClientAddress.MaxLength = 512;
             this.tbClientAddress.Name = "tbClientAddress";
@@ -470,7 +465,7 @@
             | System.Windows.Forms.AnchorStyles.Right)));
             this.lblConnectingStatus.Location = new System.Drawing.Point(14, -39);
             this.lblConnectingStatus.Name = "lblConnectingStatus";
-            this.lblConnectingStatus.Size = new System.Drawing.Size(587, 137);
+            this.lblConnectingStatus.Size = new System.Drawing.Size(274, 137);
             this.lblConnectingStatus.TabIndex = 2;
             this.lblConnectingStatus.Text = "Connecting...";
             this.lblConnectingStatus.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
@@ -516,9 +511,10 @@
             this.panMenuPage.Controls.Add(this.panMenu);
             this.panMenuPage.Controls.Add(this.lblAbout);
             this.panMenuPage.Controls.Add(this.lblVersion);
-            this.panMenuPage.Location = new System.Drawing.Point(873, 15);
+            this.panMenuPage.Controls.Add(this.lblDebug);
+            this.panMenuPage.Location = new System.Drawing.Point(475, 15);
             this.panMenuPage.Name = "panMenuPage";
-            this.panMenuPage.Size = new System.Drawing.Size(345, 345);
+            this.panMenuPage.Size = new System.Drawing.Size(427, 345);
             this.panMenuPage.TabIndex = 5;
             this.panMenuPage.Resize += new System.EventHandler(this.panMenuPage_Resize);
             // 
@@ -538,7 +534,7 @@
             // lblVersion
             // 
             this.lblVersion.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.lblVersion.Location = new System.Drawing.Point(243, 313);
+            this.lblVersion.Location = new System.Drawing.Point(325, 313);
             this.lblVersion.Margin = new System.Windows.Forms.Padding(0);
             this.lblVersion.Name = "lblVersion";
             this.lblVersion.Size = new System.Drawing.Size(100, 30);
@@ -546,13 +542,27 @@
             this.lblVersion.Text = "label2";
             this.lblVersion.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
+            // lblDebug
+            // 
+            this.lblDebug.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.lblDebug.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.lblDebug.Location = new System.Drawing.Point(100, 313);
+            this.lblDebug.Margin = new System.Windows.Forms.Padding(0);
+            this.lblDebug.Name = "lblDebug";
+            this.lblDebug.Size = new System.Drawing.Size(225, 30);
+            this.lblDebug.TabIndex = 5;
+            this.lblDebug.TabStop = true;
+            this.lblDebug.Text = "About";
+            this.lblDebug.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            // 
             // panConnectingPage
             // 
             this.panConnectingPage.Controls.Add(this.panConnectingContent);
             this.panConnectingPage.Controls.Add(this.lblConnectingStatus);
             this.panConnectingPage.Location = new System.Drawing.Point(12, 206);
             this.panConnectingPage.Name = "panConnectingPage";
-            this.panConnectingPage.Size = new System.Drawing.Size(613, 179);
+            this.panConnectingPage.Size = new System.Drawing.Size(300, 179);
             this.panConnectingPage.TabIndex = 7;
             this.panConnectingPage.Resize += new System.EventHandler(this.panConnectingPage_Resize);
             // 
@@ -560,7 +570,7 @@
             // 
             this.panConnectingContent.Controls.Add(this.btnConnectingReconnect);
             this.panConnectingContent.Controls.Add(this.btnConnectingBack);
-            this.panConnectingContent.Location = new System.Drawing.Point(165, 103);
+            this.panConnectingContent.Location = new System.Drawing.Point(21, 109);
             this.panConnectingContent.Name = "panConnectingContent";
             this.panConnectingContent.Size = new System.Drawing.Size(239, 49);
             this.panConnectingContent.TabIndex = 2006;
@@ -568,7 +578,6 @@
             // btnConnectingReconnect
             // 
             this.btnConnectingReconnect.Accent = ((uint)(0u));
-            this.btnConnectingReconnect.AccentMode = false;
             this.btnConnectingReconnect.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.btnConnectingReconnect.FlatAppearance.BorderSize = 0;
             this.btnConnectingReconnect.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
@@ -588,7 +597,6 @@
             // btnConnectingBack
             // 
             this.btnConnectingBack.Accent = ((uint)(0u));
-            this.btnConnectingBack.AccentMode = false;
             this.btnConnectingBack.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.btnConnectingBack.FlatAppearance.BorderSize = 0;
             this.btnConnectingBack.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
@@ -616,7 +624,7 @@
             this.panSettings.Controls.Add(this.cbClientColour);
             this.panSettings.Controls.Add(this.nudClientUpdateInterval);
             this.panSettings.Controls.Add(this.label3);
-            this.panSettings.Location = new System.Drawing.Point(631, 169);
+            this.panSettings.Location = new System.Drawing.Point(373, 391);
             this.panSettings.Name = "panSettings";
             this.panSettings.Size = new System.Drawing.Size(264, 228);
             this.panSettings.TabIndex = 8;
@@ -775,7 +783,7 @@
             // 
             this.splitter.FixedPanel = System.Windows.Forms.FixedPanel.Panel2;
             this.splitter.IsSplitterFixed = true;
-            this.splitter.Location = new System.Drawing.Point(494, 32);
+            this.splitter.Location = new System.Drawing.Point(657, 394);
             this.splitter.Margin = new System.Windows.Forms.Padding(0);
             this.splitter.Name = "splitter";
             // 
@@ -783,7 +791,7 @@
             // 
             this.splitter.Panel2.Controls.Add(this.sideSplitter);
             this.splitter.Size = new System.Drawing.Size(351, 100);
-            this.splitter.SplitterDistance = 103;
+            this.splitter.SplitterDistance = 109;
             this.splitter.SplitterWidth = 1;
             this.splitter.TabIndex = 9;
             this.splitter.TabStop = false;
@@ -807,7 +815,7 @@
             // sideSplitter.Panel2
             // 
             this.sideSplitter.Panel2.Padding = new System.Windows.Forms.Padding(2, 0, 0, 0);
-            this.sideSplitter.Size = new System.Drawing.Size(247, 100);
+            this.sideSplitter.Size = new System.Drawing.Size(241, 100);
             this.sideSplitter.SplitterDistance = 34;
             this.sideSplitter.SplitterWidth = 1;
             this.sideSplitter.TabIndex = 0;
@@ -819,7 +827,7 @@
             this.lblSideBar.Location = new System.Drawing.Point(2, 4);
             this.lblSideBar.Margin = new System.Windows.Forms.Padding(0);
             this.lblSideBar.Name = "lblSideBar";
-            this.lblSideBar.Size = new System.Drawing.Size(245, 30);
+            this.lblSideBar.Size = new System.Drawing.Size(239, 30);
             this.lblSideBar.TabIndex = 108;
             this.lblSideBar.Text = "<sidebar>";
             this.lblSideBar.TextAlign = System.Drawing.ContentAlignment.BottomLeft;
@@ -831,7 +839,7 @@
             this.adminSeparator,
             this.adminToolStripMenuItem});
             this.cmUsers.Name = "cmUsers";
-            this.cmUsers.Size = new System.Drawing.Size(155, 76);
+            this.cmUsers.Size = new System.Drawing.Size(155, 54);
             this.cmUsers.Opening += new System.ComponentModel.CancelEventHandler(this.cmUsers_Opening);
             // 
             // showSelectionsToolStripMenuItem
@@ -862,20 +870,20 @@
             // 
             this.readonlyToolStripMenuItem.CheckOnClick = true;
             this.readonlyToolStripMenuItem.Name = "readonlyToolStripMenuItem";
-            this.readonlyToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.readonlyToolStripMenuItem.Size = new System.Drawing.Size(128, 22);
             this.readonlyToolStripMenuItem.Text = "Read-only";
             // 
             // kickToolStripMenuItem
             // 
             this.kickToolStripMenuItem.Name = "kickToolStripMenuItem";
-            this.kickToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.kickToolStripMenuItem.Size = new System.Drawing.Size(128, 22);
             this.kickToolStripMenuItem.Text = "Kick";
             this.kickToolStripMenuItem.Click += new System.EventHandler(this.kickToolStripMenuItem_Click);
             // 
             // banToolStripMenuItem
             // 
             this.banToolStripMenuItem.Name = "banToolStripMenuItem";
-            this.banToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.banToolStripMenuItem.Size = new System.Drawing.Size(128, 22);
             this.banToolStripMenuItem.Text = "Ban";
             this.banToolStripMenuItem.Click += new System.EventHandler(this.kickToolStripMenuItem_Click);
             // 
@@ -992,6 +1000,7 @@
         private System.Windows.Forms.ToolStripMenuItem readonlyToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem kickToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem banToolStripMenuItem;
+        private System.Windows.Forms.Label lblDebug;
     }
 }
 

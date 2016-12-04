@@ -20,6 +20,7 @@ namespace OTEX.Editor
         /////////////////////////////////////////////////////////////////////
 
         private IEditorTextBox tbEditor = null;
+        private IRepaintMarshal tbEditorRepaintMarshal = null;
         private LanguageManager languageManager = null;
         private Server otexServer = null;
         private Client otexClient = null;
@@ -73,6 +74,19 @@ namespace OTEX.Editor
             if (IsDesignMode)
                 return;
 
+            // USER ID /////////////////////////////////////////////////////////////////////////////
+            var instanceID = App.UserID;
+#if DEBUG
+            string argID = null;
+            if (App.Arguments.Key("id", ref argID))
+            {
+                if (argID.Trim().ToLower().Equals("random"))
+                    instanceID = Guid.NewGuid();
+                else
+                    argID.TryParse(out instanceID);
+            }
+#endif
+
             // PLUGINS /////////////////////////////////////////////////////////////////////////////
             plugins = plf[0] as PluginFactory;
 
@@ -92,6 +106,12 @@ namespace OTEX.Editor
             lblVersion.Text = "v" + RegularExpressions.VersionTrailingZeroes.Replace(App.AssemblyVersion.ToString(),"");
             if (lblVersion.Text.IndexOf('.') == -1)
                 lblVersion.Text += ".0";
+            //debug label
+#if DEBUG
+            lblDebug.Text = instanceID.ToString();
+#else
+            lblDebug.Visible = false;
+#endif
             //file dialog filters
             FileFilterFactory filterFactory = new FileFilterFactory();
             filterFactory.Add("Text files", "txt");
@@ -156,17 +176,6 @@ namespace OTEX.Editor
             };
 
             // CREATE OTEX SERVER //////////////////////////////////////////////////////////////////
-            var instanceID = App.UserID;
-#if DEBUG
-            string argID = null;
-            if (App.Arguments.Key("id", ref argID))
-            {
-                if (argID.Trim().ToLower().Equals("random"))
-                    instanceID = Guid.NewGuid();
-                else
-                    argID.TryParse(out instanceID);
-            }
-#endif
             otexServer = new Server(Editor.AppKey, instanceID);
             otexServer.OnThreadException += (s, e) =>
             {
@@ -231,6 +240,8 @@ namespace OTEX.Editor
                 this.Execute(() =>
                 {
                     tbEditor.DiffEvents = false;
+                    if (tbEditorRepaintMarshal != null)
+                        tbEditorRepaintMarshal.SuspendRepaints();
                     foreach (var operation in operations)
                     {
                         if (operation.IsInsertion)
@@ -244,7 +255,8 @@ namespace OTEX.Editor
                         tbEditor.ClearUndoHistory();
                         firstOperationsSinceConnecting = false;
                     }
-
+                    if (tbEditorRepaintMarshal != null)
+                        tbEditorRepaintMarshal.ResumeRepaints(true);
                     tbEditor.DiffEvents = true;
                 }, false);
             };
@@ -277,6 +289,14 @@ namespace OTEX.Editor
             otexClient.OnRemoteDisconnection += (c, id) =>
             {
                 Logger.I("Client: remote client {0} disconnected.", id);
+
+                User user = null;
+                lock (remoteUsers)
+                {
+                    if (!remoteUsers.TryGetValue(id, out user))
+                        return;
+                }
+                this.Execute(() => { flpUsers.Users.Remove(user); }, false);
             };
             otexClient.OnDisconnected += (c, serverSide) =>
             {
@@ -377,15 +397,16 @@ namespace OTEX.Editor
             tbEditor = plugins.CreateByConfig<IEditorTextBox>("editor", "plugins.editor", true, false, true, "", false);
             if (tbEditor == null)
                 tbEditor = new ScintillaTextBox();
+            tbEditorRepaintMarshal = tbEditor as IRepaintMarshal;
             tbEditor.OnInsertion += (tb, offset, text) =>
             {
                 if (otexClient.Connected)
-                    otexClient.Insert((uint)offset, text);
+                    otexClient.Insert(offset, text);
             };
             tbEditor.OnDeletion += (tb, offset, length) =>
             {
                 if (otexClient.Connected)
-                    otexClient.Delete((uint)offset, (uint)length);
+                    otexClient.Delete(offset, length);
             };
             tbEditor.OnSelection += (tb, start, end) =>
             {
@@ -559,6 +580,9 @@ namespace OTEX.Editor
             {
                 startParams.ReplaceTabsWithSpaces = 4;
                 startParams.Port = Server.DefaultPort + 1;
+#if DEBUG
+                startParams.Public = true;
+#endif
                 otexServer.Start(startParams);
             }
             catch (Exception exc)
@@ -723,7 +747,7 @@ namespace OTEX.Editor
                 string pw = null;
                 if (App.Arguments.Key("password", ref pw))
                     startParams.Password = new Password(pw);
-                startParams.Public = App.Arguments.Key("public");
+                App.Arguments.Boolean("public", "private", ref startParams.Public);
                 StartServerMode(startParams);
             }
             else
