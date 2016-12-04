@@ -9,10 +9,11 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Drawing;
 using System.Windows.Forms;
+using Marzersoft.Controls;
 
 namespace OTEX.Editor
 {
-    public class ScintillaTextBox : Scintilla, IThemeable, IEditorTextBox
+    public class ScintillaTextBox : Scintilla, IThemeable, IEditorTextBox, IRepaintMarshal
     {
         /////////////////////////////////////////////////////////////////////
         // EVENTS
@@ -92,18 +93,21 @@ namespace OTEX.Editor
                     return;
 
                 //apply user colour
-                userColour = value;
-                SetSelectionBackColor(true, App.Theme == null || App.Theme.IsDark
-                    ? Styles[Style.Default].BackColor.Blend(userColour, 60)
-                    : userColour.Blend(Styles[Style.Default].BackColor, 60));
-                CaretLineBackColor = userColour;
-                EdgeColor = App.Theme == null || App.Theme.IsDark
-                    ? Styles[Style.Default].BackColor.Blend(userColour, 32)
-                    : userColour.Blend(Styles[Style.Default].BackColor, 32);
-                Styles[Style.LineNumber].ForeColor = userColour;
-                Markers[BookmarkMarker].SetBackColor(userColour);
-                for (int i = Marker.FolderEnd; i <= Marker.FolderOpen; i++)
-                    Markers[i].SetBackColor(userColour);
+                SuspendRepaintsWhile(() =>
+                {
+                    userColour = value;
+                    SetSelectionBackColor(true, App.Theme == null || App.Theme.IsDark
+                        ? Styles[Style.Default].BackColor.Blend(userColour, 60)
+                        : userColour.Blend(Styles[Style.Default].BackColor, 60));
+                    CaretLineBackColor = userColour;
+                    EdgeColor = App.Theme == null || App.Theme.IsDark
+                        ? Styles[Style.Default].BackColor.Blend(userColour, 32)
+                        : userColour.Blend(Styles[Style.Default].BackColor, 32);
+                    Styles[Style.LineNumber].ForeColor = userColour;
+                    Markers[BookmarkMarker].SetBackColor(userColour);
+                    for (int i = Marker.FolderEnd; i <= Marker.FolderOpen; i++)
+                        Markers[i].SetBackColor(userColour);
+                });
             }
         }
         private Color userColour = Color.White;
@@ -132,7 +136,8 @@ namespace OTEX.Editor
                     if (currentLanguage == value)
                         return;
                     currentLanguage = value;
-                    UpdateStyles(false);
+                    SuspendRepaintsWhile(() => { UpdateStyles(false); });
+                    
                 }
             }
         }
@@ -153,23 +158,19 @@ namespace OTEX.Editor
         /// <summary>
         /// Are line ending characters visible?
         /// </summary>
+        [Browsable(true),
+            DesignerSerializationVisibility(DesignerSerializationVisibility.Visible),
+            DefaultValue(false)]
         public bool LineEndingsVisible
         {
             get { return ViewEol; }
             set { ViewEol = value; }
         }
 
-        public bool VerticalScrollbarVisible
-        {
-            get { return verticalScrollbarVisible; }
-            private set
-            {
-                if (value == verticalScrollbarVisible)
-                    return;
-                verticalScrollbarVisible = value;
-            }
-        }
-        private volatile bool verticalScrollbarVisible = false;
+        /// <summary>
+        /// Repaint marshal (reference-counted enabling/disabling of painting).
+        /// </summary>
+        private readonly RepaintMarshal repaintMarshal;
 
         /////////////////////////////////////////////////////////////////////
         // CONSTRUCTOR
@@ -231,6 +232,8 @@ namespace OTEX.Editor
 
             if (IsDesignMode)
                 return;
+
+            repaintMarshal = new RepaintMarshal(this);
 
             //hotkeys
             ClearAllCmdKeys();
@@ -336,8 +339,11 @@ namespace OTEX.Editor
             };
             ranges.OnCleared += (hr) =>
             {
-                for (int i = 8; i <= 31; ++i)
-                    Indicators[i].Style = IndicatorStyle.Hidden;
+                SuspendRepaintsWhile(() =>
+                {
+                    for (int i = 8; i <= 31; ++i)
+                        Indicators[i].Style = IndicatorStyle.Hidden;
+                });
             };
 
             //margin click events
@@ -347,17 +353,39 @@ namespace OTEX.Editor
                     ToggleBookmark(LineFromPosition(e.Position));
             };
 
-            //scrollbar
-            Layout += (s, e) =>
-            {
-                VerticalScrollbarVisible = this.VerticalScrollbarVisible();
-            };
-
             //themes
             ApplyTheme(App.Theme);
             App.ThemeChanged += ApplyTheme;
 
             Logger.I("ScintillaNET Editor plugin loaded.");
+        }
+
+        /////////////////////////////////////////////////////////////////////
+        // REPAINT HANDLING
+        /////////////////////////////////////////////////////////////////////
+
+        public void SuspendRepaints()
+        {
+            if (IsDisposed || Disposing)
+                return;
+            this.CrossThreadCheck();
+            repaintMarshal.SuspendRepaints();
+        }
+
+        public void ResumeRepaints(bool redraw = true)
+        {
+            if (IsDisposed || Disposing)
+                return;
+            this.CrossThreadCheck();
+            repaintMarshal.ResumeRepaints(redraw);
+        }
+
+        public void SuspendRepaintsWhile(Action action, bool redraw = true)
+        {
+            if (IsDisposed || Disposing)
+                return;
+            this.CrossThreadCheck();
+            repaintMarshal.SuspendRepaintsWhile(action, redraw);
         }
 
         /////////////////////////////////////////////////////////////////////
@@ -369,17 +397,20 @@ namespace OTEX.Editor
             if (t == null)
                 return;
 
-            lock (currentLanguageLock)
+            SuspendRepaintsWhile(() =>
             {
-                UpdateStyles(true);
-            }
+                lock (currentLanguageLock)
+                {
+                    UpdateStyles(true);
+                }
 
-            Markers[BookmarkMarker].SetForeColor(t.Workspace.Colour);
-            for (int i = Marker.FolderEnd; i <= Marker.FolderOpen; i++)
-                Markers[i].SetForeColor(t.Workspace.Colour);
-            SetFoldMarginHighlightColor(true, t.Workspace.Colour);
-            SetFoldMarginColor(true, t.Workspace.Colour);
-            CaretForeColor = t == null || !t.IsDark ? Color.Black : Color.White;
+                Markers[BookmarkMarker].SetForeColor(t.Workspace.Colour);
+                for (int i = Marker.FolderEnd; i <= Marker.FolderOpen; i++)
+                    Markers[i].SetForeColor(t.Workspace.Colour);
+                SetFoldMarginHighlightColor(true, t.Workspace.Colour);
+                SetFoldMarginColor(true, t.Workspace.Colour);
+                CaretForeColor = t == null || !t.IsDark ? Color.Black : Color.White;
+            });
         }
 
         private void UpdateStyles(bool updateDefaults)
@@ -847,18 +878,22 @@ namespace OTEX.Editor
                 int anchor = AnchorPosition;
                 int anchorLine = LineFromPosition(anchor);
                 int anchorOffset = anchor - Lines[anchorLine].Position;
-                if (CommentRegion(caret, anchor, mode, out int firstLine, out int firstOffset,
-                    out int lastLine, out int lastOffset, out int actualMode))
+
+                SuspendRepaintsWhile(() =>
                 {
-                    if ((caretLine == firstLine && caretOffset >= firstOffset)
-                        || (caretLine == lastLine && caretOffset >= lastOffset))
-                        caretOffset += delta * actualMode;
-                    CurrentPosition = Lines[caretLine].Position + caretOffset;
-                    if ((anchorLine == firstLine && anchorOffset >= firstOffset)
-                        || (anchorLine == lastLine && anchorOffset >= lastOffset))
-                        anchorOffset += delta * actualMode;
-                    AnchorPosition = Lines[anchorLine].Position + anchorOffset;
-                }
+                    if (CommentRegion(caret, anchor, mode, out int firstLine, out int firstOffset,
+                        out int lastLine, out int lastOffset, out int actualMode))
+                    {
+                        if ((caretLine == firstLine && caretOffset >= firstOffset)
+                            || (caretLine == lastLine && caretOffset >= lastOffset))
+                            caretOffset += delta * actualMode;
+                        CurrentPosition = Lines[caretLine].Position + caretOffset;
+                        if ((anchorLine == firstLine && anchorOffset >= firstOffset)
+                            || (anchorLine == lastLine && anchorOffset >= lastOffset))
+                            anchorOffset += delta * actualMode;
+                        AnchorPosition = Lines[anchorLine].Position + anchorOffset;
+                    }
+                });
             }
         }
 
