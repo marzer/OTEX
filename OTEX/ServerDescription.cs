@@ -194,6 +194,7 @@ namespace OTEX
                 throw new ArgumentNullException("listenEndpoint", "listenEndpoint cannot be null");
             if (packet == null)
                 throw new ArgumentNullException("packet", "packet cannot be null");
+            AppKey = packet.AppKey;
             ID = packet.ID;
             ClientCount = packet.ClientCount;
             MaxClients = packet.MaxClients;
