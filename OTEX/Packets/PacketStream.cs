@@ -14,12 +14,11 @@ namespace OTEX.Packets
         // PROPERTIES/VARIABLES
         /////////////////////////////////////////////////////////////////////
 
-        private byte[] buffer = new byte[4096];
         private TcpClient client = null;
         private NetworkStream stream = null;
         private volatile bool connected = false;
         private readonly Timer lastConnectPollTimer = new Timer();
-        private readonly object connectionCheckLock = new object();
+        private readonly object readLock = new object(), writeLock = new object();
 
         /// <summary>
         /// Has this PacketStream been disposed?
@@ -168,52 +167,118 @@ namespace OTEX.Packets
             if (!Connected)
                 throw new IOException("client was not connected");
 
-            //read size
-            int offset = 0;
-            int remaining = 4;
-            while (remaining > 0)
+            byte[] buffer = null;
+            lock (readLock)
             {
-                int readAmount = 0;
-                if (DetectBrokenConnection(() => { readAmount = stream.Read(buffer, offset, remaining); }))
-                {
-                    connected = false;
-                    throw new IOException("client has been disconnected");
-                }
-                remaining -= readAmount;
-                offset += readAmount;
-            }
-            var size = BitConverter.ToInt32(buffer, 0);
+                if (isDisposed)
+                    throw new ObjectDisposedException("OTEX.PacketStream");
+                if (!Connected)
+                    throw new IOException("client was not connected");
 
-            //expand buffer if necessary
-            if (buffer.Length < size)
-                buffer = new byte[size];
-
-            //read packet
-            offset = 0;
-            remaining = size;
-            while (remaining > 0)
-            {
-                int readAmount = 0;
-                if (DetectBrokenConnection(() => { readAmount = stream.Read(buffer, offset, remaining); }))
+                //read size
+                buffer = new byte[4];
+                int offset = 0;
+                int remaining = buffer.Length;
+                while (remaining > 0)
                 {
-                    connected = false;
-                    throw new IOException("client has been disconnected");
+                    int readAmount = 0;
+                    if (DetectBrokenConnection(() => { readAmount = stream.Read(buffer, offset, remaining); }))
+                    {
+                        connected = false;
+                        throw new IOException("client has been disconnected");
+                    }
+                    remaining -= readAmount;
+                    offset += readAmount;
                 }
-                remaining -= readAmount;
-                offset += readAmount;
+
+                //read packet
+                buffer = new byte[BitConverter.ToInt32(buffer, 0)];
+                offset = 0;
+                remaining = buffer.Length;
+                while (remaining > 0)
+                {
+                    int readAmount = 0;
+                    if (DetectBrokenConnection(() => { readAmount = stream.Read(buffer, offset, remaining); }))
+                    {
+                        connected = false;
+                        throw new IOException("client has been disconnected");
+                    }
+                    remaining -= readAmount;
+                    offset += readAmount;
+                }
             }
 
             //deserialize packet
-            byte[] serializedPacket = new byte[size];
-            Array.Copy(buffer, serializedPacket, size);
-            var packet = serializedPacket.Deserialize<Packet>();
-
-            return packet;
+            return buffer.Deserialize<Packet>();
         }
 
         /////////////////////////////////////////////////////////////////////
         // SENDING PACKETS
         /////////////////////////////////////////////////////////////////////
+
+        /// <summary>
+        /// Prepares an OTEX packet object for sending over the TCP stream.
+        /// </summary>
+        /// <typeparam name="T">Payload object type. Must have the [Serializable] attribute.</typeparam>
+        /// <param name="data">Payload object.</param>
+        /// <exception cref="ArgumentException" />
+        /// <exception cref="ArgumentNullException" />
+        /// <exception cref="System.Runtime.Serialization.SerializationException" />
+        /// <exception cref="System.Security.SecurityException" />
+        /// <exception cref="IOException" />
+        /// <exception cref="ObjectDisposedException" />
+        public static Packet Prepare<T>(T data) where T : class, IPacketPayload
+        {
+            if (data == null)
+                throw new ArgumentNullException("data");
+            if (!typeof(T).IsSerializable)
+                throw new ArgumentException("data type must have the [Serializable] attribute", "data");
+
+            return new Packet(data.PacketPayloadType, data.Serialize());
+        }
+
+        /// <summary>
+        /// Sends an OTEX packet object over the TCP stream.
+        /// </summary>
+        /// <param name="data">OTEX packet.</param>
+        /// <exception cref="ArgumentException" />
+        /// <exception cref="ArgumentNullException" />
+        /// <exception cref="ArgumentOutOfRangeException" />
+        /// <exception cref="System.Runtime.Serialization.SerializationException" />
+        /// <exception cref="System.Security.SecurityException" />
+        /// <exception cref="IOException" />
+        /// <exception cref="ObjectDisposedException" />
+        public void Write(Packet packet)
+        {
+            if (isDisposed)
+                throw new ObjectDisposedException("OTEX.PacketStream");
+            if (!Connected)
+                throw new IOException("client was not connected");
+            if (packet == null)
+                throw new ArgumentNullException("packet");
+
+            //packet data
+            var serializedPacket = packet.Serialize();
+            var serializedLength = BitConverter.GetBytes(serializedPacket.Length);
+
+            //combine and send together
+            byte[] output = new byte[serializedLength.Length + serializedPacket.Length];
+            serializedLength.CopyTo(output, 0);
+            serializedPacket.CopyTo(output, serializedLength.Length);
+            lock (writeLock)
+            {
+                if (isDisposed)
+                    throw new ObjectDisposedException("OTEX.PacketStream");
+                if (!Connected)
+                    throw new IOException("client was not connected");
+
+                if (DetectBrokenConnection(() => { stream.Write(output, 0, output.Length); }))
+                {
+                    connected = false;
+                    throw new IOException("client has been disconnected");
+                }
+            }
+        }
 
         /// <summary>
         /// Sends an OTEX packet object over the TCP stream.
@@ -229,29 +294,7 @@ namespace OTEX.Packets
         /// <exception cref="ObjectDisposedException" />
         public void Write<T>(T data) where T : class, IPacketPayload
         {
-            if (isDisposed)
-                throw new ObjectDisposedException("OTEX.PacketStream");
-            if (!Connected)
-                throw new IOException("client was not connected");
-            if (data == null)
-                throw new ArgumentNullException("data");
-            if (!typeof(T).IsSerializable)
-                throw new ArgumentException("data type must have the [Serializable] attribute", "data");
-
-            //packet data
-            Packet packet = new Packet(data.PacketPayloadType, data.Serialize());
-            var serializedPacket = packet.Serialize();
-            var serializedLength = BitConverter.GetBytes(serializedPacket.Length);
-
-            //combine and send together (reduce hitting Nagle's)
-            byte[] output = new byte[serializedLength.Length + serializedPacket.Length];
-            serializedLength.CopyTo(output, 0);
-            serializedPacket.CopyTo(output, serializedLength.Length);
-            if (DetectBrokenConnection(() => { stream.Write(output, 0, output.Length); }))
-            {
-                connected = false;
-                throw new IOException("client has been disconnected");
-            }
+            Write(Prepare(data));
         }
 
         /////////////////////////////////////////////////////////////////////
