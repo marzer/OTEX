@@ -40,6 +40,11 @@ namespace OTEX
         /// </summary>
         public event Action<BufferedClient, bool> OnDocumentChanged;
 
+        /// <summary>
+        /// Triggered when a remote client in the same session disconnects from the server.
+        /// </summary>
+        public event Action<IClient, Guid> OnRemoteDisconnection;
+
         /////////////////////////////////////////////////////////////////////
         // PROPERTIES/VARIABLES
         /////////////////////////////////////////////////////////////////////
@@ -283,6 +288,7 @@ namespace OTEX
             client.OnConnected += (c) => { OnConnected?.Invoke(this); };
             client.OnDisconnected += (c,forced) => { OnDisconnected?.Invoke(this, forced); };
             client.OnRemoteMetadata += (c,id,md) => { OnRemoteMetadata?.Invoke(this,id,md); };
+            client.OnRemoteDisconnection += (c, id) => { OnRemoteDisconnection?.Invoke(this, id); };
             client.OnThreadException += (c, ex) => { NotifyException(ex); };
             client.OnRemoteOperations += (c, ops) =>
             {               
@@ -414,6 +420,7 @@ namespace OTEX
             OnDisconnected = null;
             OnDocumentChanged = null;
             OnRemoteMetadata = null;
+            OnRemoteDisconnection = null;
         }
     }
 }

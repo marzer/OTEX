@@ -341,9 +341,15 @@ namespace OTEX
             /// </summary>
             public volatile bool Kicked = false;
 
-            public ClientData(Guid id)
+            /// <summary>
+            /// The packet stream object for this client.
+            /// </summary>
+            public readonly PacketStream Stream;
+
+            public ClientData(Guid id, PacketStream stream)
             {
                 ID = id;
+                Stream = stream;
             }
         };
 
@@ -719,7 +725,7 @@ namespace OTEX
                                 kvp.Value.OutgoingMetadata[request.ClientID] = request.Metadata;
 
                             //create the internal data for this client (includes list of staged operations)
-                            connectedClients[request.ClientID] = clientData = new ClientData(request.ClientID);
+                            connectedClients[request.ClientID] = clientData = new ClientData(request.ClientID, stream);
                         }
                         else
                             break; //sending ConnectionResponse failed (connection broken)
@@ -808,6 +814,15 @@ namespace OTEX
                 lock (stateLock)
                 {
                     disconnected = connectedClients.Remove(clientData.ID);
+
+                    //send disconnection notification to other clients
+                    var packet = PacketStream.Prepare(new RemoteDisconnection(clientData.ID));
+                    foreach (var kvp in connectedClients)
+                    {
+                        kvp.Value.OutgoingMetadata.Remove(clientData.ID);
+                        if (kvp.Value.Stream.Connected)
+                            CaptureException(() => { kvp.Value.Stream.Write(packet); });
+                    }
                 }
                 if (disconnected)
                 {

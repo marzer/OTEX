@@ -274,6 +274,10 @@ namespace OTEX.Editor
                     }   
                 }
             };
+            otexClient.OnRemoteDisconnection += (c, id) =>
+            {
+                Logger.I("Client: remote client {0} disconnected.", id);
+            };
             otexClient.OnDisconnected += (c, serverSide) =>
             {
                 Logger.I("Client: disconnected{0}.", serverSide ? " (connection closed by server)" : "");

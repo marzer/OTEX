@@ -45,6 +45,11 @@ namespace OTEX
         /// </summary>
         public event Action<Client, IEnumerable<Operation>> OnRemoteOperations;
 
+        /// <summary>
+        /// Triggered when a remote client in the same session disconnects from the server.
+        /// </summary>
+        public event Action<IClient, Guid> OnRemoteDisconnection;
+
         /////////////////////////////////////////////////////////////////////
         // PROPERTIES/VARIABLES
         /////////////////////////////////////////////////////////////////////
@@ -550,6 +555,15 @@ namespace OTEX
                     case DisconnectionRequest.PayloadType: //disconnection request from server
                         return true;
 
+                    case RemoteDisconnection.PayloadType: //another client has disconnected
+                        {
+                            RemoteDisconnection remoteDisconnection = null;
+                            if (CaptureException(() => { remoteDisconnection = packet.Payload.Deserialize<RemoteDisconnection>(); }))
+                                break;
+                            OnRemoteDisconnection?.Invoke(this, remoteDisconnection.ClientID);
+                        }
+                        break;
+
                     case ClientUpdate.PayloadType:  //operation list (4)
                         if (awaitingOperationList)
                         {
@@ -702,6 +716,7 @@ namespace OTEX
             OnDisconnected = null;
             OnRemoteOperations = null;
             OnRemoteMetadata = null;
+            OnRemoteDisconnection = null;
         }
     }
 }

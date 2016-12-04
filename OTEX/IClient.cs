@@ -29,6 +29,11 @@ namespace OTEX
         /// </summary>
         event Action<IClient, bool> OnDisconnected;
 
+        /// <summary>
+        /// Triggered when a remote client in the same session disconnects from the server.
+        /// </summary>
+        event Action<IClient, Guid> OnRemoteDisconnection;
+
         /////////////////////////////////////////////////////////////////////
         // PROPERTIES
         /////////////////////////////////////////////////////////////////////

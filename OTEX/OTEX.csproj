@@ -74,6 +74,7 @@
     <Compile Include="INode.cs" />
     <Compile Include="Packets\ConnectionRequest.cs" />
     <Compile Include="Packets\ConnectionResponse.cs" />
+    <Compile Include="Packets\RemoteDisconnection.cs" />
     <Compile Include="Packets\DisconnectionRequest.cs" />
     <Compile Include="Packets\IClientMetadata.cs" />
     <Compile Include="Packets\IClientUpdate.cs" />
