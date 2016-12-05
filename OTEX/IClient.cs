@@ -18,21 +18,25 @@ namespace OTEX
         event Action<IClient> OnConnected;
 
         /// <summary>
-        /// Triggered when a remote client updates it's metadata.
-        /// Do not call any of this object's methods from this callback or you may deadlock!
+        /// Triggered when a remote client connects to the server.
         /// </summary>
-        event Action<IClient, Guid, byte[]> OnRemoteMetadata;
+        event Action<IClient, RemoteClient> OnRemoteConnection;
+
+        /// <summary>
+        /// Triggered when a remote client updates it's metadata.
+        /// </summary>
+        event Action<IClient, RemoteClient> OnRemoteMetadata;
+
+        /// <summary>
+        /// Triggered when a remote client in the same session disconnects from the server.
+        /// </summary>
+        event Action<IClient, RemoteClient> OnRemoteDisconnection;
 
         /// <summary>
         /// Triggered when the client receives remote operations from the server.
         /// Do not call any of this object's methods from this callback or you may deadlock!
         /// </summary>
         event Action<IClient, bool> OnDisconnected;
-
-        /// <summary>
-        /// Triggered when a remote client in the same session disconnects from the server.
-        /// </summary>
-        event Action<IClient, Guid> OnRemoteDisconnection;
 
         /////////////////////////////////////////////////////////////////////
         // PROPERTIES
@@ -44,29 +48,9 @@ namespace OTEX
         bool Connected { get; }
 
         /// <summary>
-        /// IP Address of server.
+        /// Session information for the current connection.
         /// </summary>
-        IPAddress ServerAddress { get; }
-
-        /// <summary>
-        /// Path of the file being edited on the server.
-        /// </summary>
-        string ServerFilePath { get; }
-
-        /// <summary>
-        /// ID of server.
-        /// </summary>
-        Guid ServerID { get; }
-
-        /// <summary>
-        /// The friendly name of the server.
-        /// </summary>
-        string ServerName { get; }
-
-        /// <summary>
-        /// Server's listen port.
-        /// </summary>
-        ushort ServerPort { get; }
+        ISession Session { get; }
 
         /// <summary>
         /// Time, in seconds, between each request for updates sent to the server

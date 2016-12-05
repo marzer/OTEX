@@ -70,27 +70,29 @@
     <Compile Include="BufferedClient.cs" />
     <Compile Include="Client.cs" />
     <Compile Include="Diff.cs" />
+    <Compile Include="Document.cs" />
     <Compile Include="IClient.cs" />
     <Compile Include="INode.cs" />
+    <Compile Include="ISession.cs" />
     <Compile Include="Packets\ConnectionRequest.cs" />
     <Compile Include="Packets\ConnectionResponse.cs" />
+    <Compile Include="Packets\RemoteConnection.cs" />
     <Compile Include="Packets\RemoteDisconnection.cs" />
     <Compile Include="Packets\DisconnectionRequest.cs" />
-    <Compile Include="Packets\IClientMetadata.cs" />
-    <Compile Include="Packets\IClientUpdate.cs" />
     <Compile Include="Packets\IPacketPayload.cs" />
     <Compile Include="Node.cs" />
-    <Compile Include="Packets\IOperationList.cs" />
     <Compile Include="Packets\Packet.cs" />
     <Compile Include="Operation.cs" />
     <Compile Include="Packets\ClientUpdate.cs" />
     <Compile Include="Packets\PacketStream.cs" />
     <Compile Include="PortRange.cs" />
+    <Compile Include="RemoteClient.cs" />
     <Compile Include="ServerDescription.cs" />
     <Compile Include="Password.cs" />
     <Compile Include="Server.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ServerListener.cs" />
+    <Compile Include="Session.cs" />
     <Compile Include="ThreadController.cs" />
   </ItemGroup>
   <ItemGroup>

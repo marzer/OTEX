@@ -70,7 +70,6 @@
     <Compile Include="IEditorTextBox.cs" />
     <Compile Include="LanguageManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Session.cs" />
     <Compile Include="Settings.cs" />
     <Compile Include="SyntaxColours.cs" />
     <Compile Include="User.cs" />

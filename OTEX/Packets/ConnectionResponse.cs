@@ -7,7 +7,7 @@ namespace OTEX.Packets
     /// Connection response packet sent from an OTEX server to client.
     /// </summary>
     [Serializable]
-    internal sealed class ConnectionResponse : IPacketPayload, IOperationList, IClientMetadata, IClientUpdate
+    internal sealed class ConnectionResponse : IPacketPayload
     {
         /////////////////////////////////////////////////////////////////////
         // PROPERTIES/VARIABLES
@@ -81,29 +81,9 @@ namespace OTEX.Packets
         public ResponseCode Result { get; private set; }
 
         /// <summary>
-        /// Session ID of the server sending the response.
+        /// The server's session state.
         /// </summary>
-        public Guid ServerID { get; private set; }
-
-        /// <summary>
-        /// Path (on the server) of the file being edited by the session.
-        /// </summary>
-        public string FilePath { get; private set; }
-
-        /// <summary>
-        /// The friendly name of the server.
-        /// </summary>
-        public string Name { get; private set; }
-
-        /// <summary>
-        /// List of initial operations.
-        /// </summary>
-        public List<Operation> Operations { get; private set; }
-
-        /// <summary>
-        /// Set of metadata for other connected clients.
-        /// </summary>
-        public Dictionary<Guid, byte[]> Metadata { get; private set; }
+        public Session Session { get; private set; }
 
         /////////////////////////////////////////////////////////////////////
         // CONSTRUCTORS
@@ -112,26 +92,10 @@ namespace OTEX.Packets
         /// <summary>
         /// Constructs an "approved" connection request response.
         /// </summary>
-        /// <param name="serverID">Session ID of the server.</param>
-        /// <param name="filePath">Path (on the server) of the file being edited by the session.</param>
-        /// <param name="name">The friendly name of the server.</param>
-        /// <param name="operations">List of initial operations to send back to the client.</param>
-        /// <param name="metadata">Set of metadata for other connected clients.</param>
-        public ConnectionResponse(Guid serverID, string filePath, string name, List<Operation> operations = null, Dictionary<Guid, byte[]> metadata = null)
+        /// <param name="session">The server's current session (the one the client has just successfully joined).</param>
+        public ConnectionResponse(Session session)
         {
-            if ((ServerID = serverID) == Guid.Empty)
-                throw new ArgumentOutOfRangeException("serverID", "serverID cannot be Guid.Empty");
-            if (metadata != null && metadata.Count > 0)
-            {
-                foreach (var kvp in metadata)
-                    if (kvp.Value != null && kvp.Value.LongLength >= Client.MaxMetadataSize)
-                        throw new ArgumentOutOfRangeException("metadata",
-                            string.Format("metadata byte arrays may not be longer than {0} bytes", Client.MaxMetadataSize));
-                Metadata = metadata;
-            }
-            FilePath = (filePath ?? "").Trim();
-            Name = (name ?? "").Trim();
-            Operations = operations != null && operations.Count > 0 ? operations : null;
+            Session = session ?? throw new ArgumentNullException("session");
             Result = ResponseCode.Approved;
         }
 
@@ -144,12 +108,8 @@ namespace OTEX.Packets
         {
             if (failReason == ResponseCode.Approved || failReason > ResponseCode.Other)
                 throw new ArgumentOutOfRangeException("failReason", "failReason must be one of the negative ResponseCode values.");
-            ServerID = Guid.Empty;
             Result = failReason;
-            FilePath = null;
-            Name = null;
-            Metadata = null;
-            Operations = null;
+            Session = null;
         }
 
         /////////////////////////////////////////////////////////////////////

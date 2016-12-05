@@ -7,7 +7,7 @@ namespace OTEX.Packets
     /// A list of operations and client metadata.
     /// </summary>
     [Serializable]
-    internal sealed class ClientUpdate : IPacketPayload, IOperationList, IClientMetadata, IClientUpdate
+    internal sealed class ClientUpdate : IPacketPayload
     {
         /////////////////////////////////////////////////////////////////////
         // PROPERTIES/VARIABLES
@@ -34,8 +34,10 @@ namespace OTEX.Packets
         /// When sent from the server, this is the list of new remote operations the client needs
         /// to synchronize with other clients. Can be null/empty; this means "There have been no new
         /// remote operations since your last request".
+        /// 
+        /// Guid key corresponds to target document.
         /// </summary>
-        public List<Operation> Operations { get; private set; }
+        public Dictionary<Guid, List<Operation>> Operations { get; private set; }
 
         /// <summary>
         /// When sent from a client, this will contain at most 1 element, which will be the new value
@@ -44,8 +46,10 @@ namespace OTEX.Packets
         /// When sent from a server, this will contain the entire set of changed metadata, so the client
         /// may synchronize it's local replications of remote clients metadata with their new values.
         /// Can be null/empty; this means "there have been no changes to metadata since your last request".
+        /// 
+        /// Guid key corresponds to client.
         /// </summary>
-        public Dictionary<Guid, byte[]> Metadata { get; private set; }
+        public Dictionary<Guid, RemoteClient> Metadata { get; private set; }
 
         /////////////////////////////////////////////////////////////////////
         // CONSTRUCTORS
@@ -57,17 +61,9 @@ namespace OTEX.Packets
         /// <param name="operations">New operations to send.</param>
         /// <param name="metadata">New metadata to send.</param>
         /// <exception cref="ArgumentOutOfRangeException" />
-        public ClientUpdate(List<Operation> operations = null, Dictionary<Guid, byte[]> metadata = null)
+        public ClientUpdate(Dictionary<Guid, List<Operation>> operations = null, Dictionary<Guid, RemoteClient> metadata = null)
         {
-            if (metadata != null && metadata.Count > 0)
-            {
-                foreach (var kvp in metadata)
-                    if (kvp.Value != null && kvp.Value.LongLength >= Client.MaxMetadataSize)
-                        throw new ArgumentOutOfRangeException("metadata",
-                            string.Format("metadata byte arrays may not be longer than {0} bytes", Client.MaxMetadataSize));
-                Metadata = metadata;
-            }
-            
+            Metadata = metadata != null && metadata.Count > 0 ? metadata : null;
             Operations = operations != null && operations.Count > 0 ? operations : null;
         }
     }

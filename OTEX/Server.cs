@@ -28,23 +28,17 @@ namespace OTEX
         /// <summary>
         /// Triggered when a new client connects.
         /// </summary>
-        public event Action<Server, Guid> OnClientConnected;
+        public event Action<Server, RemoteClient> OnClientConnected;
 
         /// <summary>
         /// Triggered when a client disconnects.
         /// </summary>
-        public event Action<Server, Guid> OnClientDisconnected;
+        public event Action<Server, RemoteClient> OnClientDisconnected;
 
         /// <summary>
         /// Triggered when the server is stopped.
         /// </summary>
         public event Action<Server> OnStopped;
-
-        /// <summary>
-        /// Triggered when the master set of operations is synchronized with the
-        /// internal file buffer and flushed to disk.
-        /// </summary>
-        public event Action<Server> OnFileSynchronized;
 
         /////////////////////////////////////////////////////////////////////
         // PROPERTIES/VARIABLES
@@ -61,198 +55,6 @@ namespace OTEX
         public static readonly PortRange AnnouncePorts = new PortRange(55561, 55564);
 
         /// <summary>
-        /// Bundle of parameters for Server.Start (so the parameter list isn't enormous).
-        /// </summary>
-        [Serializable]
-        public sealed class StartParams
-        {           
-            /// <summary>
-            /// Path to the text file you'd like clients to edit/create.
-            /// </summary>
-            public string FilePath = "";
-
-            /// <summary>
-            /// How to handle the file given by Path if it already exists.
-            /// True: reads the file in and uses it's contents as the starting point for the session document;
-            /// False: session document is empty, and the existing file is overwritten when the server syncs to disk.
-            /// </summary>
-            public bool EditMode = true;
-
-            /// <summary>
-            /// Listening for new client connections will bind to this port (supports IPv4 and IPv6).
-            /// </summary>
-            public ushort Port = DefaultPort;
-
-            /// <summary>
-            /// A password required for clients to connect to this session (null == no password required).
-            /// </summary>
-            public Password Password = null;
-
-            /// <summary>
-            /// Advertise the presence of this server so it shows up in local server browsers.
-            /// </summary>
-            public bool Public = false;
-
-            /// <summary>
-            /// The friendly name of the server.
-            /// </summary>
-            public string Name = "";
-
-            /// <summary>
-            /// How many clients are allowed to be connected at once?
-            /// Setting it to 0 means "no limit" (there is an internal maximum limit of 100)
-            /// </summary>
-            public uint MaxClients = 10;
-
-            /// <summary>
-            /// When loading file, how many spaces should tab characters be replaced with?
-            /// Leave as 0 to skip replacement and leave them as-is.
-            /// Useful if paired with a client editor which does not support \t characters
-            /// (e.g. FastColoredTextBox).
-            /// </summary>
-            public uint ReplaceTabsWithSpaces = 0;
-
-            /// <summary>
-            /// Path to plain text file containing list of clients who have been banned from the server.
-            /// If no path is provided, bans will not be read from or written to disk.
-            /// </summary>
-            public string BanListPath = null;
-
-            /// <summary>
-            /// Initial collection of bans. Can be used in tandem with BanListPath; if a file exists, the contents
-            /// will be merged into this set.
-            /// </summary>
-            public readonly HashSet<Guid> BanList = null;
-
-            /// <summary>
-            /// Default constructor.
-            /// </summary>
-            public StartParams()
-            {
-                //
-            }
-
-            /// <summary>
-            /// Internal copy constructor.
-            /// </summary>
-            internal StartParams(StartParams p)
-            {
-                FilePath = p.FilePath;
-                EditMode = p.EditMode;
-                Port = p.Port;
-                Password = p.Password;
-                Public = p.Public;
-                Name = p.Name;
-                MaxClients = p.MaxClients;
-                ReplaceTabsWithSpaces = p.ReplaceTabsWithSpaces.Clamp(0,8);
-                BanListPath = p.BanListPath;
-                BanList = p.BanList == null ? new HashSet<Guid>() : new HashSet<Guid>(p.BanList);
-            }
-        }
-        private volatile StartParams startParams = null;
-
-        /// <summary>
-        /// Path to the local file this server is resposible for editing.
-        /// </summary>
-        public string FilePath
-        {
-            get
-            {
-                if (isDisposed)
-                    throw new ObjectDisposedException("OTEX.Server");
-                return startParams == null ? "" : startParams.FilePath;
-            }
-        }
-
-        /// <summary>
-        /// Port to listen on.
-        /// </summary>
-        public ushort Port
-        {
-            get
-            {
-                if (isDisposed)
-                    throw new ObjectDisposedException("OTEX.Server");
-                return startParams == null ? (ushort)DefaultPort : startParams.Port;
-            }
-        }
-
-        /// <summary>
-        /// Is this server broadcasting its presence?
-        /// </summary>
-        public bool Public
-        {
-            get
-            {
-                if (isDisposed)
-                    throw new ObjectDisposedException("OTEX.Server");
-                return startParams == null ? false : startParams.Public;
-            }
-        }
-
-        /// <summary>
-        /// Does this server require a password?
-        /// </summary>
-        public bool RequiresPassword
-        {
-            get
-            {
-                if (isDisposed)
-                    throw new ObjectDisposedException("OTEX.Server");
-                return startParams == null ? false : startParams.Password != null;
-            }
-        }
-
-        /// <summary>
-        /// The friendly name of the server.
-        /// </summary>
-        public string Name
-        {
-            get
-            {
-                if (isDisposed)
-                    throw new ObjectDisposedException("OTEX.Server");
-                return startParams == null ? "" : startParams.Name;
-            }
-        }
-
-        /// <summary>
-        /// Master list of operations, used for synchronizing newly-connected clients.
-        /// </summary>
-        private readonly List<Operation> masterOperations = new List<Operation>();
-
-        /// <summary>
-        /// How many clients are currently connected?
-        /// </summary>
-        public uint ClientCount
-        {
-            get
-            {
-                if (isDisposed)
-                    throw new ObjectDisposedException("OTEX.Server");
-                return (uint)connectedClients.Count;
-            }
-        }
-
-        /// <summary>
-        /// How many clients are allowed to be connected at once?
-        /// </summary>
-        public uint MaxClients
-        {
-            get
-            {
-                if (isDisposed)
-                    throw new ObjectDisposedException("OTEX.Server");
-                return startParams == null ? 10u : startParams.MaxClients;
-            }
-        }
-
-        /// <summary>
-        /// Lock object for operations and clients state;
-        /// </summary>
-        private readonly object stateLock = new object();
-
-        /// <summary>
         /// has this server been disposed?
         /// </summary>
         public bool IsDisposed
@@ -262,9 +64,20 @@ namespace OTEX
         private volatile bool isDisposed = false;
 
         /// <summary>
-        /// Master thread for listening for new clients and controlling sub-threads.
+        /// The currently running session.
         /// </summary>
-        private Thread thread = null;
+        public ISession Session
+        {
+            get
+            {
+                if (isDisposed)
+                    throw new ObjectDisposedException("OTEX.Client");
+                return session;
+            }
+        }
+        private Session session = null;
+        private volatile bool killSession = false;
+        private readonly object sessionLock = new object();
 
         /// <summary>
         /// Is the server currently running?
@@ -275,89 +88,20 @@ namespace OTEX
             {
                 if (isDisposed)
                     throw new ObjectDisposedException("OTEX.Server");
-                return running;
+                return session != null;
             }
         }
-        private volatile bool running = false;
 
         /// <summary>
-        /// Lock object for running state.
+        /// Lock object for documents, operations and clients.
         /// </summary>
-        private readonly object runningLock = new object();
+        private readonly object stateLock = new object();
+
+        /// <summary>
+        /// Master thread for listening for new clients and controlling sub-threads.
+        /// </summary>
+        private Thread thread = null;
         
-        /// <summary>
-        /// Contents of the file at last sync.
-        /// </summary>
-        private volatile string fileContents = "";
-
-        /// <summary>
-        /// Starting operation index for next sync.
-        /// </summary>
-        private volatile int fileSyncIndex = 0;
-
-        /// <summary>
-        /// Line ending scheme used by loaded file (defaults to CRLF on windows).
-        /// </summary>
-        public string FileLineEndings
-        {
-            get
-            {
-                if (isDisposed)
-                    throw new ObjectDisposedException("OTEX.Server");
-                return fileLineEnding;
-            }
-        }
-        private volatile string fileLineEnding = Environment.NewLine;
-
-        /// <summary>
-        /// Data for each client connected to the server.
-        /// </summary>
-        private class ClientData
-        {
-            /// <summary>
-            /// Client's ID.
-            /// </summary>
-            public readonly Guid ID;
-
-            /// <summary>
-            /// Staging list for storing outgoing operations.
-            /// </summary>
-            public readonly List<Operation> OutgoingOperations = new List<Operation>();
-
-            /// <summary>
-            /// Metadata attached to this client, if any.
-            /// </summary>
-            public byte[] Metadata = null;
-
-            /// <summary>
-            /// Staging list for storing outgoing metadata updates.
-            /// </summary>
-            public readonly Dictionary<Guid, byte[]> OutgoingMetadata
-                = new Dictionary<Guid, byte[]>();
-
-            /// <summary>
-            /// Has this client been kicked from the server? This will be true if the server calls Ban()
-            /// or Kick() with this client's ID while the server is running.
-            /// </summary>
-            public volatile bool Kicked = false;
-
-            /// <summary>
-            /// The packet stream object for this client.
-            /// </summary>
-            public readonly PacketStream Stream;
-
-            public ClientData(Guid id, PacketStream stream)
-            {
-                ID = id;
-                Stream = stream;
-            }
-        };
-
-        /// <summary>
-        /// All currently connected clients.
-        /// </summary>
-        private readonly Dictionary<Guid, ClientData> connectedClients = new Dictionary<Guid, ClientData>();
-
         /////////////////////////////////////////////////////////////////////
         // CONSTRUCTION
         /////////////////////////////////////////////////////////////////////
@@ -381,7 +125,7 @@ namespace OTEX
         /// <summary>
         /// Starts the server. Does nothing if the server is already running.
         /// </summary>
-        /// <param name="startParams">Configuration of this session.</param>
+        /// <param name="session">Configuration of this session.</param>
         /// <exception cref="ArgumentNullException" />
         /// <exception cref="ArgumentException" />
         /// <exception cref="ArgumentOutOfRangeException" />
@@ -390,135 +134,75 @@ namespace OTEX
         /// <exception cref="PathTooLongException" />
         /// <exception cref="FileNotFoundException" />
         /// <exception cref="IOException" />
-        public void Start(StartParams startParams)
+        public void Start(Session session)
         {
             if (isDisposed)
                 throw new ObjectDisposedException("OTEX.Server");
 
-            if (!running)
+            if (this.session == null)
             {
-                lock (runningLock)
+                if (session == null)
+                    throw new ArgumentNullException("session");
+
+                lock (sessionLock)
                 {
                     if (isDisposed)
                         throw new ObjectDisposedException("OTEX.Server");
 
-                    if (!running)
+                    if (this.session != null)
+                        return;
+
+                    //copy session (do not keep reference to input)
+                    session = new Session(session);
+                    session.ID = ID;
+
+                    //attempt to initialize session (throws on failure)
+                    session.Initialize();
+
+                    //network initialization
+                    TcpListener tcpListener = null;
+                    UdpClient announcer = null;
+                    try
                     {
-                        if (startParams == null)
-                            throw new ArgumentNullException("startParams");
+                        //create tcp listener
+                        tcpListener = new TcpListener(IPAddress.IPv6Any, session.Port);
+                        tcpListener.Server.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, false);
+                        tcpListener.AllowNatTraversal(true);
+                        tcpListener.Start();
 
-                        //copy params (do not keep reference to input)
-                        StartParams tempParams = new StartParams(startParams);
-
-                        //validate params
-                        tempParams.FilePath = (tempParams.FilePath ?? "").Trim();
-                        if (tempParams.Port < 1024 || AnnouncePorts.Contains(tempParams.Port))
-                            throw new ArgumentOutOfRangeException("startParams.Port",
-                                string.Format("Port must be between 1024-{0} and {1}-65535.",
-                                    AnnouncePorts.First-1, AnnouncePorts.Last+1));
-                        if ((tempParams.Name = (tempParams.Name ?? "").Trim()).Length > 32)
-                            tempParams.Name = tempParams.Name.Substring(0, 32);
-                        if (tempParams.MaxClients == 0 || tempParams.MaxClients > 100u)
-                            tempParams.MaxClients = 100u;
-                        if ((tempParams.BanListPath = (tempParams.BanListPath ?? "").Trim()).Length > 0)
+                        if (session.Public)
                         {
-                            if (!File.Exists(tempParams.BanListPath) && Directory.Exists(tempParams.BanListPath))
-                                throw new FileNotFoundException("startParams.BanListPath", "Given path is a directory");
-                            bool immediateFlush = tempParams.BanList.Count > 0;
-                            if (File.Exists(tempParams.BanListPath))
-                            {
-                                var lines = File.ReadAllLines(tempParams.BanListPath, tempParams.BanListPath.DetectEncoding());
-                                for (int i = 0; i < lines.Length; ++i)
-                                {
-                                    if ((lines[i] = lines[i].Trim()).Length == 0)
-                                        continue;
-                                    Guid guid;
-                                    if (lines[i].TryParse(out guid))
-                                        tempParams.BanList.Add(guid);
-                                }
-                            }
-                            if (immediateFlush)
-                                FlushBanList();
+                            //create udp client
+                            announcer = new UdpClient();
+                            announcer.EnableBroadcast = true;
+                            announcer.AllowNatTraversal(true);
                         }
-                        this.startParams = tempParams;
-
-                        //session initialization
-                        TcpListener tcpListener = null;
-                        UdpClient announcer = null;
-                        try
-                        {
-                            
-                            if (this.startParams.FilePath.Length > 0 && this.startParams.EditMode && File.Exists(FilePath))
-                            {
-                                //read file
-                                fileContents = File.ReadAllText(FilePath, FilePath.DetectEncoding());
-
-                                //replace tabs with spaces
-                                if (this.startParams.ReplaceTabsWithSpaces > 0)
-                                    fileContents = fileContents.Replace("\t",
-                                        new string(' ', (int)this.startParams.ReplaceTabsWithSpaces));
-
-                                //detect line ending type
-                                int crlfCount = RegularExpressions.CrLf.Split(fileContents).Length;
-                                string fileContentsNoCRLF = RegularExpressions.CrLf.Replace(fileContents, "");
-                                int crCount = RegularExpressions.Cr.Split(fileContentsNoCRLF).Length;
-                                int lfCount = RegularExpressions.CrLf.Split(fileContentsNoCRLF).Length;
-                                if (crlfCount > crCount && crlfCount > lfCount)
-                                    fileLineEnding = "\r\n";
-                                else if (crCount > crlfCount && crCount > lfCount)
-                                    fileLineEnding = "\r";
-                                else if (lfCount > crlfCount && lfCount > crCount)
-                                    fileLineEnding = "\n";
-                                else //??
-                                    fileLineEnding = Environment.NewLine;
-                                fileContentsNoCRLF = null;
-
-                                //normalize line endings
-                                fileContents = fileContents.NormalizeLineEndings();
-                               
-                                //add initial operation
-                                masterOperations.Add(new Operation(ID, 0, fileContents));
-                                ++fileSyncIndex;
-                            }
-
-                            //create tcp listener
-                            tcpListener = new TcpListener(IPAddress.IPv6Any, Port);
-                            tcpListener.Server.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, false);
-                            tcpListener.AllowNatTraversal(true);
-                            tcpListener.Start();
-
-                            if (this.startParams.Public)
-                            {
-                                //create udp client
-                                announcer = new UdpClient();
-                                announcer.EnableBroadcast = true;
-                                announcer.AllowNatTraversal(true);
-                            }
-                        }
-                        catch (Exception)
-                        {
-                            if (tcpListener != null)
-                            {
-                                try { tcpListener.Stop(); } catch (Exception) { };
-                            }
-                            if (announcer != null)
-                            {
-                                try { announcer.Close(); } catch (Exception) { };
-                            }
-                            ClearRunningState();
-                            throw;
-                        }
-                        running = true;
-
-                        //create thread
-                        thread = new Thread(ControlThread);
-                        thread.Name = "OTEX Server ControlThread";
-                        thread.IsBackground = false;
-                        thread.Start(new object[] { tcpListener, announcer });
-
-                        //fire event
-                        OnStarted?.Invoke(this);
                     }
+                    catch (Exception)
+                    {
+                        if (tcpListener != null)
+                        {
+                            try { tcpListener.Stop(); } catch (Exception) { };
+                        }
+                        if (announcer != null)
+                        {
+                            try { announcer.Close(); } catch (Exception) { };
+                        }
+                        throw;
+                    }
+
+                    //session initialized OK, store it
+                    this.session = session;
+                    killSession = false;
+
+                    //create thread
+                    thread = new Thread(ControlThread);
+                    thread.Name = "OTEX Server ControlThread";
+                    thread.IsBackground = false;
+                    thread.Start(new object[] { tcpListener, announcer });
+
+                    //fire event
+                    OnStarted?.Invoke(this);
                 }
             }
         }
@@ -537,7 +221,7 @@ namespace OTEX
             var announceTimer = new Marzersoft.Timer();
             var announceEndpoints = new List<IPEndPoint>();
 
-            while (running)
+            while (session != null && !killSession)
             {
                 Thread.Sleep(1);
 
@@ -557,7 +241,7 @@ namespace OTEX
                 }
 
                 //announce
-                if (startParams.Public && announceTimer.Seconds >= 1.0)
+                if (session.Public && announceTimer.Seconds >= 1.0)
                 {
                     CaptureException(() =>
                     {
@@ -577,10 +261,10 @@ namespace OTEX
                 }
 
                 //flush file contents to disk periodically
-                if (startParams.FilePath.Length > 0 && flushTimer.Seconds >= 15.0)
+                if (flushTimer.Seconds >= 15.0)
                 {
                     lock (stateLock)
-                        CaptureException(() => { FlushDocument(); });
+                        CaptureException(() => { session.FlushDocuments(); });
                     flushTimer.Reset();
                 }
             }
@@ -595,8 +279,7 @@ namespace OTEX
                 thread.Join();
 
             //final flush to disk
-            if (startParams.FilePath.Length > 0)
-                CaptureException(() => { FlushDocument(); });
+            CaptureException(() => { session.FlushDocuments(); });
         }
 
         /////////////////////////////////////////////////////////////////////
@@ -605,20 +288,20 @@ namespace OTEX
 
         private void ClientThread(object tcpClientObject)
         {
-            TcpClient client = tcpClientObject as TcpClient;
+            TcpClient tcpClient = tcpClientObject as TcpClient;
 
             //create packet stream
             PacketStream stream = null;
-            if (CaptureException(() => { stream = new PacketStream(client); }))
+            if (CaptureException(() => { stream = new PacketStream(tcpClient); }))
                 return;
 
             //read from stream
             bool clientSideDisconnect = false;
-            ClientData clientData = null;
-            while (running && stream.Connected)
+            RemoteClient client = null;
+            while (session != null && !killSession && stream.Connected)
             {
-                //check banned flag
-                if (clientData != null && clientData.Kicked)
+                //check kicked flag
+                if (client != null && client.Kicked)
                     break;
                 
                 //check if client has sent data
@@ -633,12 +316,12 @@ namespace OTEX
                 if (CaptureException(() => { packet = stream.Read(); }))
                     break;
 
-                //check banned flag again (in case it changed during the packet read)
-                if (clientData != null && clientData.Kicked)
+                //check kicked flag again (in case it changed during the packet read)
+                if (client != null && client.Kicked)
                     break;
 
                 //is this the first packet from a new client?
-                if (clientData == null)
+                if (client == null)
                 {
                     //check packet type
                     //if it's not a connection request, abort (the client is in a bad state)
@@ -668,7 +351,7 @@ namespace OTEX
                     }
 
                     //check password
-                    if (startParams.Password != request.Password)
+                    if (session.Password != request.Password)
                     {
                         CaptureException(() =>
                         {
@@ -680,7 +363,7 @@ namespace OTEX
                     lock (stateLock)
                     {
                         //check ban list
-                        if (startParams.BanList.Contains(request.ClientID))
+                        if (session.BanList.Contains(request.ClientID))
                         {
                             CaptureException(() =>
                             {
@@ -690,7 +373,7 @@ namespace OTEX
                         }
 
                         //duplicate id (already connected... shouldn't happen?)
-                        if (connectedClients.TryGetValue(request.ClientID, out var cl))
+                        if (session.Clients.TryGetValue(request.ClientID, out var cl))
                         {
                             CaptureException(() =>
                             {
@@ -700,7 +383,7 @@ namespace OTEX
                         }
 
                         //too many connections already
-                        if (connectedClients.Count >= startParams.MaxClients)
+                        if (session.Clients.Count >= session.ClientLimit)
                         {
                             CaptureException(() =>
                             {
@@ -709,30 +392,29 @@ namespace OTEX
                             break;
                         }
 
-                        //get outgoing set of metadata for other clients for initial sync
-                        //(doubles as client list)
-                        Dictionary<Guid, byte[]> metadata = new Dictionary<Guid, byte[]>();
-                        foreach (var kvp in connectedClients)
-                            metadata[kvp.Key] = kvp.Value.Metadata;
-
-                        //send response with initial sync list and metadata for other clients
-                        if (!CaptureException(() => { stream.Write(new ConnectionResponse(ID,startParams.FilePath,
-                            startParams.Name, masterOperations, metadata)); }))
+                        //send response with session state snapshot
+                        if (!CaptureException(() => { stream.Write(new ConnectionResponse(session)); }))
                         {
-                            //add metadata to outgoing list of other clients
-                            //(doubles as connection notification)
-                            foreach (var kvp in connectedClients)
-                                kvp.Value.OutgoingMetadata[request.ClientID] = request.Metadata;
+                            //create RemoteClient data for this client
+                            client = new RemoteClient(request, stream);
+                            foreach (var kvp in session.documents)
+                                client.OutgoingOperations[kvp.Key] = new List<Operation>();
 
-                            //create the internal data for this client (includes list of staged operations)
-                            connectedClients[request.ClientID] = clientData = new ClientData(request.ClientID, stream);
+                            //send connection notification to other clients
+                            var outgoingPacket = PacketStream.Prepare(new RemoteConnection(client));
+                            foreach (var kvp in session.Clients)
+                                if (kvp.Value.Stream.Connected)
+                                    CaptureException(() => { kvp.Value.Stream.Write(outgoingPacket); });
+
+                            //add new client to session
+                            session.Clients[client.ID] = client;
                         }
                         else
                             break; //sending ConnectionResponse failed (connection broken)
                     }
 
                     //notify
-                    OnClientConnected?.Invoke(this, clientData.ID);
+                    OnClientConnected?.Invoke(this, client);
                 }
                 else //initial handshake sync has been performed, handle normal requests
                 {
@@ -755,48 +437,56 @@ namespace OTEX
                                     //if this oplist is not an empty request
                                     if (incoming.Operations != null && incoming.Operations.Count > 0)
                                     {
-                                        //perform SLOT(OB,SIB) (3b)
-                                        if (clientData.OutgoingOperations.Count > 0)
-                                            Operation.SymmetricLinearTransform(incoming.Operations, clientData.OutgoingOperations);
+                                        foreach (var kvp in incoming.Operations)
+                                        {
+                                            if (kvp.Value != null && kvp.Value.Count > 0
+                                                && session.documents.TryGetValue(kvp.Key, out var doc))
+                                            {
+                                                //perform SLOT(OB,SIB) (3b)
+                                                Operation.SymmetricLinearTransform(kvp.Value,
+                                                        client.OutgoingOperations[doc.ID]);
 
-                                        //append incoming ops to master and to all other outgoing (3c)
-                                        masterOperations.AddRange(incoming.Operations);
-                                        foreach (var kvp in connectedClients)
-                                            if (!kvp.Key.Equals(clientData.ID))
-                                                kvp.Value.OutgoingOperations.AddRange(incoming.Operations);
+                                                //append incoming ops to master and to all other outgoing (3c)
+                                                doc.MasterOperations.AddRange(kvp.Value);
+                                                foreach (var ckvp in session.Clients)
+                                                    if (ckvp.Key != client.ID)
+                                                        ckvp.Value.OutgoingOperations[doc.ID].AddRange(kvp.Value);
+                                            }
+                                        }
                                     }
 
                                     //handle incoming metadata
                                     if (incoming.Metadata != null && incoming.Metadata.Count > 0)
                                     {
                                         //get metadata array
-                                        if (!incoming.Metadata.TryGetValue(clientData.ID, out var metadata))
+                                        if (!incoming.Metadata.TryGetValue(client.ID, out var md))
                                             break; //shouldn't happen; clients only send their own
 
                                         //compare it to existing metadata
-                                        if ((metadata == null && clientData.Metadata != null)
-                                            || (metadata != null && (clientData.Metadata == null
-                                                || !metadata.MemoryEquals(clientData.Metadata))))
+                                        if ((md.metadata == null && client.metadata != null)
+                                            || (md.metadata != null && (client.metadata == null
+                                                || !md.metadata.MemoryEquals(client.metadata))))
                                         {
                                             //update client metadata
-                                            clientData.Metadata = metadata;
+                                            client.metadata = md.metadata;
 
                                             //add to staging lists for other clients
-                                            foreach (var kvp in connectedClients)
-                                                if (!kvp.Key.Equals(clientData.ID))
-                                                    kvp.Value.OutgoingMetadata[clientData.ID] = clientData.Metadata;
+                                            foreach (var kvp in session.Clients)
+                                                if (!kvp.Key.Equals(client.ID))
+                                                    kvp.Value.OutgoingMetadata[client.ID] = md;
                                         }
                                     }
 
                                     //send response
                                     CaptureException(() => { stream.Write(
-                                        new ClientUpdate(clientData.OutgoingOperations, clientData.OutgoingMetadata)); });
+                                        new ClientUpdate(client.OutgoingOperations, client.OutgoingMetadata)); });
 
                                     //clear outgoing packet list (3d)
-                                    clientData.OutgoingOperations.Clear();
+                                    foreach (var kvp in client.OutgoingOperations)
+                                        kvp.Value.Clear();
 
                                     //clear outgoing metadata list
-                                    clientData.OutgoingMetadata.Clear();
+                                    client.OutgoingMetadata.Clear();
                                 }
                             }
                             break;
@@ -808,18 +498,18 @@ namespace OTEX
             }
 
             //remove the internal data for this client
-            if (clientData != null)
+            if (client != null)
             {
                 bool disconnected = false;
                 lock (stateLock)
                 {
-                    disconnected = connectedClients.Remove(clientData.ID);
+                    disconnected = session.Clients.Remove(client.ID);
 
                     //send disconnection notification to other clients
-                    var packet = PacketStream.Prepare(new RemoteDisconnection(clientData.ID));
-                    foreach (var kvp in connectedClients)
+                    var packet = PacketStream.Prepare(new RemoteDisconnection(client.ID));
+                    foreach (var kvp in session.Clients)
                     {
-                        kvp.Value.OutgoingMetadata.Remove(clientData.ID);
+                        kvp.Value.OutgoingMetadata.Remove(client.ID);
                         if (kvp.Value.Stream.Connected)
                             CaptureException(() => { kvp.Value.Stream.Write(packet); });
                     }
@@ -829,43 +519,13 @@ namespace OTEX
                     //if the client has not requested a disconnection themselves, send them one
                     if (!clientSideDisconnect)
                         CaptureException(() => { stream.Write(new DisconnectionRequest()); });
-                    OnClientDisconnected?.Invoke(this, clientData.ID);
+                    OnClientDisconnected?.Invoke(this, client);
                 }
             }
 
             //close stream and tcp client
             stream.Dispose();
-            client.Close();
-        }
-
-        /////////////////////////////////////////////////////////////////////
-        // SYNC OPERATIONS TO FILE
-        /////////////////////////////////////////////////////////////////////
-
-        /// <summary>
-        /// Applies the output of all new operations to the internal file contents string, then
-        /// writes the new contents to disk.
-        /// </summary>
-        private void FlushDocument()
-        {
-            //flush pending operations to the file contents
-            while (fileSyncIndex < masterOperations.Count)
-            {
-                if (!masterOperations[fileSyncIndex].IsNoop)
-                    fileContents = masterOperations[fileSyncIndex].Execute(fileContents);
-                ++fileSyncIndex;
-            }
-
-            //check line ending normalization
-            var fileOutput = fileContents;
-            if (!fileLineEnding.Equals(Environment.NewLine))
-                fileOutput = fileContents.Replace(Environment.NewLine, fileLineEnding);
-
-            //write contents to disk
-            File.WriteAllText(FilePath, fileOutput);
-
-            //trigger event
-            OnFileSynchronized?.Invoke(this);
+            tcpClient.Close();
         }
 
         /////////////////////////////////////////////////////////////////////
@@ -885,37 +545,25 @@ namespace OTEX
                 throw new ObjectDisposedException("OTEX.Server");
             if (id == Guid.Empty)
                 throw new ArgumentOutOfRangeException("id", "id cannot be Guid.Empty");
-            if (!running)
+            if (session == null || killSession)
                 throw new InvalidOperationException("Server is not running.");
 
             lock (stateLock)
             {
                 if (isDisposed)
                     throw new ObjectDisposedException("OTEX.Server");
-                if (!running)
+                if (session == null || killSession)
                     throw new InvalidOperationException("Server is not running.");
 
-                if (connectedClients.TryGetValue(id, out ClientData client))
+                if (session.Clients.TryGetValue(id, out RemoteClient client))
                     client.Kicked = true; //will cause it to be disconnected by the main thread
 
                 if (ban)
                 {
-                    startParams.BanList.Add(id);
-                    if (startParams.BanListPath.Length > 0)
-                        FlushBanList();
+                    session.BanList.Add(id);
+                    session.FlushBanList();
                 }
             }
-        }
-
-        /// <summary>
-        /// Writes the list of bans to disk.
-        /// </summary>
-        private void FlushBanList()
-        {
-            StringBuilder sb = new StringBuilder();
-            foreach (var ban in startParams.BanList)
-                sb.AppendLine(ban.ToString());
-            File.WriteAllText(startParams.BanListPath, sb.ToString());
         }
 
         /////////////////////////////////////////////////////////////////////
@@ -923,38 +571,23 @@ namespace OTEX
         /////////////////////////////////////////////////////////////////////
 
         /// <summary>
-        /// Clears internal running state.
-        /// </summary>
-        private void ClearRunningState()
-        {
-            //stop listening for new connections
-            if (thread != null)
-            {
-                thread.Join();
-                thread = null;
-            }
-
-            //clear session state
-            connectedClients.Clear();
-            masterOperations.Clear();
-            fileContents = "";
-            fileSyncIndex = 0;
-            startParams = null;
-        }
-
-        /// <summary>
         /// Stops the server. 
         /// </summary>
         public void Stop()
         {
-            if (running)
+            if (session != null)
             {
-                lock (runningLock)
+                lock (sessionLock)
                 {
-                    if (running)
+                    if (session != null)
                     {
-                        running = false;
-                        ClearRunningState();
+                        killSession = true;
+                        if (thread != null)
+                        {
+                            thread.Join();
+                            thread = null;
+                        }
+                        session = null;
                         OnStopped?.Invoke(this);
                     }
                 }
@@ -985,7 +618,6 @@ namespace OTEX
             base.ClearEventListeners();
             OnClientConnected = null;
             OnClientDisconnected = null;
-            OnFileSynchronized = null;
             OnStarted = null;
             OnStopped = null;
         }

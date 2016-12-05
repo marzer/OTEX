@@ -62,12 +62,6 @@ namespace OTEX
         public bool RequiresPassword { get; private set; }
 
         /// <summary>
-        /// Is the document a temporary one?
-        /// (i.e. not backed by a file, will be lost when the server is shutdown)
-        /// </summary>
-        public bool TemporaryDocument { get; private set; }
-
-        /// <summary>
         /// How many clients are currently connected?
         /// </summary>
         public uint ClientCount { get; private set; }
@@ -75,7 +69,7 @@ namespace OTEX
         /// <summary>
         /// How many clients are allowed to be connected at once?
         /// </summary>
-        public uint MaxClients { get; private set; }
+        public uint ClientLimit { get; private set; }
 
         /// <summary>
         /// Where did the packet come from?
@@ -171,12 +165,11 @@ namespace OTEX
                 throw new ArgumentNullException("server", "server cannot be null");
             AppKey = server.AppKey;
             ID = server.ID;
-            ClientCount = server.ClientCount;
-            MaxClients = server.MaxClients;
-            RequiresPassword = server.RequiresPassword;
-            Port = server.Port;
-            Name = server.Name ?? "";
-            TemporaryDocument = (server.FilePath ?? "").Length == 0;
+            ClientCount = server.Session.ClientCount;
+            ClientLimit = server.Session.ClientLimit;
+            RequiresPassword = (server.Session as Session).Password != null;
+            Port = server.Session.Port;
+            Name = server.Session.Name;
             endPoint = null;
             lastUpdateTimer = null;
             lastPingTimer = null;
@@ -197,11 +190,10 @@ namespace OTEX
             AppKey = packet.AppKey;
             ID = packet.ID;
             ClientCount = packet.ClientCount;
-            MaxClients = packet.MaxClients;
+            ClientLimit = packet.ClientLimit;
             RequiresPassword = packet.RequiresPassword;
             Port = packet.Port;
             Name = packet.Name ?? "";
-            TemporaryDocument = packet.TemporaryDocument;
             endPoint = listenEndpoint;
             lastUpdateTimer = new Marzersoft.Timer();
             lastPingTimer = new Marzersoft.Timer();
@@ -237,14 +229,12 @@ namespace OTEX
                 throw new ArgumentOutOfRangeException("packet", "port did not match");
             if (!listenEndpoint.Equals(endPoint))
                 throw new ArgumentOutOfRangeException("listenEndpoint", "listenEndpoint did not match");
-            if (TemporaryDocument != packet.TemporaryDocument)
-                throw new ArgumentOutOfRangeException("packet", "temporaryDocument did not match");
 
             bool changed = false;
             if (changed = (packet.ClientCount != ClientCount))
                 ClientCount = packet.ClientCount;
-            if (changed = (packet.MaxClients != MaxClients))
-                MaxClients = packet.MaxClients;
+            if (changed = (packet.ClientLimit != ClientLimit))
+                ClientLimit = packet.ClientLimit;
             if (changed = (packet.RequiresPassword != RequiresPassword))
                 RequiresPassword = packet.RequiresPassword;
             if (changed = (!Name.Equals(packet.Name)))

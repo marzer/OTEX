@@ -166,9 +166,9 @@ namespace OTEX.Editor
             logoutButton.Visible = false;
             logoutButton.Click += (b) =>
             {
-                if (otexServer.Running && otexServer.ClientCount > 1 &&
+                if (otexServer.Running && otexServer.Session.ClientCount > 1 &&
                     !Logger.WarningQuestion(this,"You are currently running in server mode. "
-                    + "Leaving the session will disconnect the other {0} connected users.\n\nLeave session?", otexServer.ClientCount - 1))
+                    + "Leaving the session will disconnect the other {0} connected users.\n\nLeave session?", otexServer.Session.ClientCount - 1))
                     return;
 
                 otexClient.Disconnect();
@@ -187,7 +187,7 @@ namespace OTEX.Editor
             };
             otexServer.OnStarted += (s) =>
             {
-                Logger.I("Server: started for {0} on port {1}", s.FilePath.Length > 0 ? s.FilePath : "a temporary document", s.Port);
+                Logger.I("Server: started on port {0}", s.Session.Port);
             };
             otexServer.OnClientConnected += (s, id) =>
             {
@@ -200,10 +200,6 @@ namespace OTEX.Editor
             otexServer.OnStopped += (s) =>
             {
                 Logger.I("Server: stopped.");
-            };
-            otexServer.OnFileSynchronized += (s) =>
-            {
-                Logger.I("Server: file synchronized.");
             };
 
             // CREATE OTEX CLIENT //////////////////////////////////////////////////////////////////
@@ -218,7 +214,7 @@ namespace OTEX.Editor
             };
             otexClient.OnConnected += (c) =>
             {
-                Logger.I("Client: connected to {0}:{1}.", c.ServerAddress, c.ServerPort);
+                Logger.I("Client: connected to {0}:{1}.", c.Session.Address, c.Session.Port);
                 this.Execute(() =>
                 {
                     firstOperationsSinceConnecting = true;
@@ -227,7 +223,7 @@ namespace OTEX.Editor
                     tbEditor.ClearText();
                     tbEditor.ClearUndoHistory();
                     tbEditor.DiffEvents = true;
-                    tbEditor.Language = languageManager[c.ServerFilePath];
+                    tbEditor.Language = languageManager[c.Session.Documents.First().Value.Path];
 
                     mainPaginator.ActivePageKey = "editor";
                     (tbEditor as Control).Focus();
@@ -235,7 +231,7 @@ namespace OTEX.Editor
                     flpUsers.Users.Clear().Add(localUser);
                 }, false);
             };
-            otexClient.OnRemoteOperations += (c,operations) =>
+            otexClient.OnRemoteOperations += (c, doc, operations) =>
             {
                 this.Execute(() =>
                 {
@@ -260,43 +256,58 @@ namespace OTEX.Editor
                     tbEditor.DiffEvents = true;
                 }, false);
             };
-            otexClient.OnRemoteMetadata += (c, id, md) =>
+            otexClient.OnRemoteConnection += (c, rc) =>
             {
-                if (md != null)
-                {
-                    lock (remoteUsers)
-                    {
-                        if (remoteUsers.TryGetValue(id, out var remoteUser))
-                            remoteUser.Update(md);
-                        else
-                        {
-                            remoteUsers[id] = remoteUser = new User(id, md);
-                            remoteUser.OnColourChanged += (u) =>
-                            {
-                                this.Execute(() => { tbEditor.SetHighlightRange(u.ID, u.SelectionStart, u.SelectionEnd, u.Colour); });
-                            };
-                            remoteUser.OnSelectionChanged += (u) =>
-                            {
-                                this.Execute(() => { tbEditor.SetHighlightRange(u.ID, u.SelectionStart, u.SelectionEnd, u.Colour); });
-                            };
-                            this.Execute(() => { flpUsers.Users.Add(remoteUser); }, false);
-                        }
-                        this.Execute(() => { tbEditor.SetHighlightRange(remoteUser.ID, remoteUser.SelectionStart,
-                            remoteUser.SelectionEnd, remoteUser.Colour); });
-                    }   
-                }
-            };
-            otexClient.OnRemoteDisconnection += (c, id) =>
-            {
-                Logger.I("Client: remote client {0} disconnected.", id);
-
-                User user = null;
                 lock (remoteUsers)
                 {
-                    if (!remoteUsers.TryGetValue(id, out user))
-                        return;
+                    var remoteUser = remoteUsers[rc.ID] =  new User(rc.ID, rc.Metadata);
+                    remoteUser.OnColourChanged += (u) =>
+                    {
+                        this.Execute(() => { tbEditor.SetHighlightRange(u.ID, u.SelectionStart, u.SelectionEnd, u.Colour); });
+                    };
+                    remoteUser.OnSelectionChanged += (u) =>
+                    {
+                        this.Execute(() => { tbEditor.SetHighlightRange(u.ID, u.SelectionStart, u.SelectionEnd, u.Colour); });
+                    };
+                    this.Execute(() =>
+                    {
+                        tbEditor.SetHighlightRange(remoteUser.ID, remoteUser.SelectionStart,
+                            remoteUser.SelectionEnd, remoteUser.Colour);
+                        flpUsers.Users.Add(remoteUser);
+                    }, false);
                 }
-                this.Execute(() => { flpUsers.Users.Remove(user); }, false);
+            };
+            otexClient.OnRemoteMetadata += (c, rc) =>
+            {
+                lock (remoteUsers)
+                {
+                    if (remoteUsers.TryGetValue(rc.ID, out var remoteUser))
+                    {
+                        remoteUser.Update(rc.Metadata);
+                        this.Execute(() =>
+                        {
+                            tbEditor.SetHighlightRange(remoteUser.ID, remoteUser.SelectionStart,
+                                remoteUser.SelectionEnd, remoteUser.Colour);
+                        });
+                    }
+                }
+            };
+            otexClient.OnRemoteDisconnection += (c, rc) =>
+            {
+                Logger.I("Client: remote client {0} disconnected.", rc.ID);
+
+                lock (remoteUsers)
+                {
+                    if (remoteUsers.TryGetValue(rc.ID, out var remoteUser))
+                    {
+                        remoteUsers.Remove(rc.ID);
+                        this.Execute(() =>
+                        {
+                            tbEditor.SetHighlightRange(remoteUser.ID, 0, 0, remoteUser.Colour);
+                            flpUsers.Users.Remove(remoteUser);
+                        }, false);
+                    }
+                }
             };
             otexClient.OnDisconnected += (c, serverSide) =>
             {
@@ -357,8 +368,8 @@ namespace OTEX.Editor
                     Logger.I("ServerListener: new server {0}: {1}", s.ID, s.EndPoint);
                     this.Execute(() =>
                     {
-                        var row = dgvServers.AddRow(s.Name.Length > 0 ? s.Name : "OTEX Server", s.TemporaryDocument ? "Yes" : "", s.EndPoint.Address,
-                            s.EndPoint.Port, s.RequiresPassword ? "Yes" : "", string.Format("{0} / {1}",s.ClientCount, s.MaxClients), 0);
+                        var row = dgvServers.AddRow(s.Name.Length > 0 ? s.Name : "OTEX Server", s.EndPoint.Address,
+                            s.EndPoint.Port, s.RequiresPassword ? "Yes" : "", string.Format("{0} / {1}",s.ClientCount, s.ClientLimit), 0);
                         row.Tag = s;
                         s.Tag = row;
                     });
@@ -368,8 +379,8 @@ namespace OTEX.Editor
                         Logger.I("ServerDescription: {0} updated.", sd.ID);
                         this.Execute(() =>
                         {
-                            (s.Tag as DataGridViewRow).Update(s.Name.Length > 0 ? s.Name : "OTEX Server", s.TemporaryDocument ? "Yes" : "", s.EndPoint.Address,
-                                s.EndPoint.Port, s.RequiresPassword ? "Yes" : "", string.Format("{0} / {1}", s.ClientCount, s.MaxClients), 0);
+                            (s.Tag as DataGridViewRow).Update(s.Name.Length > 0 ? s.Name : "OTEX Server", s.EndPoint.Address,
+                                s.EndPoint.Port, s.RequiresPassword ? "Yes" : "", string.Format("{0} / {1}", s.ClientCount, s.ClientLimit), 0);
                         });
                     };
 
@@ -401,12 +412,12 @@ namespace OTEX.Editor
             tbEditor.OnInsertion += (tb, offset, text) =>
             {
                 if (otexClient.Connected)
-                    otexClient.Insert(offset, text);
+                    otexClient.Insert(otexClient.Session.Documents.First().Key, offset, text);
             };
             tbEditor.OnDeletion += (tb, offset, length) =>
             {
                 if (otexClient.Connected)
-                    otexClient.Delete(offset, length);
+                    otexClient.Delete(otexClient.Session.Documents.First().Key, offset, length);
             };
             tbEditor.OnSelection += (tb, start, end) =>
             {
@@ -438,7 +449,7 @@ namespace OTEX.Editor
                 Logger.I("LanguageManager: loaded {0} languages.", c);
                 if (otexClient.Connected)
                 {
-                    this.Execute(() => { tbEditor.Language = lm[otexClient.ServerFilePath]; });
+                    this.Execute(() => { tbEditor.Language = lm[otexClient.Session.Documents.First().Value.Path]; });
                 }
             };
 
@@ -573,17 +584,16 @@ namespace OTEX.Editor
         // SERVER MODE
         /////////////////////////////////////////////////////////////////////
 
-        private void StartServerMode(Server.StartParams startParams)
+        private void StartServerMode(Session session)
         {
             //start server
             try
             {
-                startParams.ReplaceTabsWithSpaces = 4;
-                startParams.Port = Server.DefaultPort + 1;
+                session.Port = Server.DefaultPort + 1;
 #if DEBUG
-                startParams.Public = true;
+                session.Public = true;
 #endif
-                otexServer.Start(startParams);
+                otexServer.Start(session);
             }
             catch (Exception exc)
             {
@@ -600,7 +610,7 @@ namespace OTEX.Editor
             try
             {
                 otexClient.Metadata = localUser.Serialize();
-                otexClient.Connect(IPAddress.Loopback, startParams.Port, null);
+                otexClient.Connect(IPAddress.Loopback, session.Port, null);
             }
             catch (Exception exc)
             {
@@ -622,7 +632,8 @@ namespace OTEX.Editor
 
             //started ok, set title text
             Text = string.Format("Hosting {0} - {1}",
-                otexClient.ServerFilePath.Length == 0 ? "a temporary document" : Path.GetFileName(otexClient.ServerFilePath),
+                otexClient.Session.Documents.First().Value.Temporary ? "a temporary document"
+                : Path.GetFileName(otexClient.Session.Documents.First().Value.Path),
                 App.Name);
         }
 
@@ -701,9 +712,10 @@ namespace OTEX.Editor
                 this.Execute(() =>
                 {
                     Text = string.Format("Editing {0} ({1}) - {2}",
-                        otexClient.ServerFilePath.Length == 0 ? "a temporary document" : Path.GetFileName(otexClient.ServerFilePath),
-                        otexClient.ServerName.Length == 0 ? lastConnectionEndpoint.ToString() : string.Format("{0}, {1}",
-                            otexClient.ServerName, lastConnectionEndpoint),
+                        otexClient.Session.Documents.First().Value.Temporary ? "a temporary document"
+                        : Path.GetFileName(otexClient.Session.Documents.First().Value.Path),
+                       otexClient.Session.Name.Length == 0 ? lastConnectionEndpoint.ToString() : string.Format("{0}, {1}",
+                            otexClient.Session.Name, lastConnectionEndpoint),
                         App.Name);
                 });
 
@@ -735,20 +747,27 @@ namespace OTEX.Editor
                 return;
             languageManager.Load(Path.Combine(App.ExecutableDirectory, "..\\languages.xml"));
 
-            var path = App.Arguments.OrphanedValues.LastOrDefault();
-            if (path != null && File.Exists(path.Value))
+            var arg = App.Arguments.OrphanedValues.LastOrDefault();
+            if (arg != null && File.Exists(arg.Value))
             {
-                Server.StartParams startParams = new Server.StartParams();
-                startParams.FilePath = path.Value;
+                Session session = new Session();
+                session.AddDocument(arg.Value, Document.ConflictResolutionStrategy.Edit, 4);
 
-                App.Arguments.Key("port", ref startParams.Port);
-                App.Arguments.Key("name", ref startParams.Name);
-                App.Arguments.Key("maxclients", ref startParams.MaxClients);
-                string pw = null;
-                if (App.Arguments.Key("password", ref pw))
-                    startParams.Password = new Password(pw);
-                App.Arguments.Boolean("public", "private", ref startParams.Public);
-                StartServerMode(startParams);
+                ushort port = 0;
+                if (App.Arguments.Key("port", ref port))
+                    session.Port = port;
+                string str = "";
+                if (App.Arguments.Key("name", ref str))
+                    session.Name = str;
+                uint lim = 0;
+                if (App.Arguments.Key("clientlimit", ref lim))
+                    session.ClientLimit = lim;
+                if (App.Arguments.Key("password", ref str))
+                    session.Password = new Password(str);
+                bool pub = true;
+                App.Arguments.Boolean("public", "private", ref pub);
+                session.Public = pub;
+                StartServerMode(session);
             }
             else
                 mainPaginator.ActivePageKey = "menu";
@@ -767,28 +786,31 @@ namespace OTEX.Editor
         private void btnServerNew_Click(object sender, EventArgs e)
         {
             if (dlgServerCreateNew.ShowDialog() == DialogResult.OK)
-                StartServerMode(new Server.StartParams()
-                    {
-                        FilePath = dlgServerCreateNew.FileName,
-                        EditMode = false,
-                        Public = true
-                    });
+            {
+                Session session = new Session();
+                session.AddDocument(dlgServerCreateNew.FileName, Document.ConflictResolutionStrategy.Replace, 4);
+                session.Public = true;
+                StartServerMode(session);
+            }
         }
 
         private void btnServerExisting_Click(object sender, EventArgs e)
         {
             if (dlgServerOpenExisting.ShowDialog() == DialogResult.OK)
-                StartServerMode(new Server.StartParams()
-                    {
-                        FilePath = dlgServerOpenExisting.FileName,
-                        EditMode = true,
-                        Public = true
-                    });
+            {
+                Session session = new Session();
+                session.AddDocument(dlgServerOpenExisting.FileName, Document.ConflictResolutionStrategy.Edit, 4);
+                session.Public = true;
+                StartServerMode(session);
+            }
         }
 
         private void btnServerTemporary_Click(object sender, EventArgs e)
         {
-            StartServerMode(new Server.StartParams() { FilePath = "" });
+            Session session = new Session();
+            session.AddDocument("Temporary Document");
+            session.Public = true;
+            StartServerMode(session);
         }
 
         private void btnClientConnect_Click(object sender, EventArgs e)
@@ -812,9 +834,9 @@ namespace OTEX.Editor
 
         private void EditorForm_FormClosing(object sender, FormClosingEventArgs e)
         {
-            if (otexServer.Running && otexServer.ClientCount > 1 &&
+            if (otexServer.Running && otexServer.Session.ClientCount > 1 &&
                 !Logger.WarningQuestion(this, "You are currently running in server mode. "
-                + "Closing the application will disconnect the other {0} connected users.\n\nClose OTEX Editor?", otexServer.ClientCount-1))
+                + "Closing the application will disconnect the other {0} connected users.\n\nClose OTEX Editor?", otexServer.Session.ClientCount - 1))
                 e.Cancel = true;
         }
 
@@ -991,7 +1013,7 @@ namespace OTEX.Editor
                 return;
             }
 
-            adminSeparator.Visible = adminToolStripMenuItem.Visible = (otexClient.ServerID == otexServer.ID);
+            adminSeparator.Visible = adminToolStripMenuItem.Visible = (otexClient.Session.ID == otexServer.ID);
         }
 
         private void kickToolStripMenuItem_Click(object sender, EventArgs e)

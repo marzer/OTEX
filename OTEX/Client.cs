@@ -28,27 +28,30 @@ namespace OTEX
         public event Action<IClient> OnConnected;
 
         /// <summary>
-        /// Triggered when a remote client updates it's metadata.
-        /// Do not call any of this object's methods from this callback or you may deadlock!
+        /// Triggered when a remote client connects to the server.
         /// </summary>
-        public event Action<IClient, Guid, byte[]> OnRemoteMetadata;
+        public event Action<IClient, RemoteClient> OnRemoteConnection;
+
+        /// <summary>
+        /// Triggered when a remote client updates it's metadata.
+        /// </summary>
+        public event Action<IClient, RemoteClient> OnRemoteMetadata;
+
+        /// <summary>
+        /// Triggered when the client receives a bundle of remote operations from the server.
+        /// </summary>
+        public event Action<Client, Guid, IEnumerable<Operation>> OnRemoteOperations;
+
+        /// <summary>
+        /// Triggered when a remote client in the same session disconnects from the server.
+        /// </summary>
+        public event Action<IClient, RemoteClient> OnRemoteDisconnection;
 
         /// <summary>
         /// Triggered when the client is disconnected from an OTEX server.
         /// Boolean parameter is true if the disconnection was forced by the server.
         /// </summary>
         public event Action<IClient, bool> OnDisconnected;
-
-        /// <summary>
-        /// Triggered when the client receives remote operations from the server.
-        /// Do not call any of this object's methods from this callback or you may deadlock!
-        /// </summary>
-        public event Action<Client, IEnumerable<Operation>> OnRemoteOperations;
-
-        /// <summary>
-        /// Triggered when a remote client in the same session disconnects from the server.
-        /// </summary>
-        public event Action<IClient, Guid> OnRemoteDisconnection;
 
         /////////////////////////////////////////////////////////////////////
         // PROPERTIES/VARIABLES
@@ -77,86 +80,25 @@ namespace OTEX
             {
                 if (isDisposed)
                     throw new ObjectDisposedException("OTEX.Client");
-                return connected;
+                return session != null;
             }
-        }
-        private volatile bool connected = false;
-        private volatile bool clientSideDisconnection = false;
+        }   
 
         /// <summary>
-        /// Lock object for connected state.
+        /// Session information for the current connection.
         /// </summary>
-        private readonly object connectedLock = new object();
-
-        /// <summary>
-        /// IP Address of server.
-        /// </summary>
-        public IPAddress ServerAddress
+        public ISession Session
         {
             get
             {
                 if (isDisposed)
                     throw new ObjectDisposedException("OTEX.Client");
-                return serverAddress;
+                return session;
             }
         }
-        private volatile IPAddress serverAddress;
-
-        /// <summary>
-        /// Server's listen port.
-        /// </summary>
-        public ushort ServerPort
-        {
-            get
-            {
-                if (isDisposed)
-                    throw new ObjectDisposedException("OTEX.Client");
-                return serverPort;
-            }
-        }
-        private volatile ushort serverPort;
-
-        /// <summary>
-        /// Path of the file being edited on the server.
-        /// </summary>
-        public string ServerFilePath
-        {
-            get
-            {
-                if (isDisposed)
-                    throw new ObjectDisposedException("OTEX.Client");
-                return serverFilePath;
-            }
-        }
-        private volatile string serverFilePath;
-
-        /// <summary>
-        /// The friendly name of the server.
-        /// </summary>
-        public string ServerName
-        {
-            get
-            {
-                if (isDisposed)
-                    throw new ObjectDisposedException("OTEX.Client");
-                return serverName;
-            }
-        }
-        private volatile string serverName;
-
-        /// <summary>
-        /// ID of server.
-        /// </summary>
-        public Guid ServerID
-        {
-            get
-            {
-                if (isDisposed)
-                    throw new ObjectDisposedException("OTEX.Client");
-                return serverID;
-            }
-        }
-        private Guid serverID = Guid.Empty;
+        private Session session = null;
+        private volatile bool killSession = false;
+        private readonly object sessionLock = new object();
 
         /// <summary>
         /// Thread for managing client connection.
@@ -171,12 +113,14 @@ namespace OTEX
         /// <summary>
         /// Staging list for storing outgoing operations.
         /// </summary>
-        private readonly List<Operation> outgoingOperations = new List<Operation>();
+        private readonly Dictionary<Guid, List<Operation>> outgoingOperations
+            = new Dictionary<Guid, List<Operation>>();
 
         /// <summary>
         /// Staging list for storing incoming operations.
         /// </summary>
-        private readonly List<Operation> incomingOperations = new List<Operation>();
+        private readonly Dictionary<Guid, List<Operation>> incomingOperations
+            = new Dictionary<Guid, List<Operation>>();
 
         /// <summary>
         /// Lock object for operations;
@@ -348,98 +292,105 @@ namespace OTEX
             if (isDisposed)
                 throw new ObjectDisposedException("OTEX.Client");
 
-            if (!connected)
+            if (session == null)
             {
-                lock (connectedLock)
+                lock (sessionLock)
                 {
                     if (isDisposed)
                         throw new ObjectDisposedException("OTEX.Client");
-                    if (connected)
+                    if (session != null)
                         throw new InvalidOperationException("Client is already connected to a server. Call Disconnect() first.");
+ 
+                    //check endpoint
+                    if (endpoint == null)
+                        throw new ArgumentNullException("endpoint");
+                    if (endpoint.Port < 1024 || Server.AnnouncePorts.Contains(endpoint.Port))
+                        throw new ArgumentOutOfRangeException("endpoint.Port",
+                            string.Format("Port must be between 1024-{0} or {1}-65535.",
+                                Server.AnnouncePorts.First - 1, Server.AnnouncePorts.Last + 1));
+                    if (endpoint.Address.Equals(IPAddress.Any) || endpoint.Address.Equals(IPAddress.Broadcast)
+                        || endpoint.Address.Equals(IPAddress.None) || endpoint.Address.Equals(IPAddress.IPv6Any)
+                        || endpoint.Address.Equals(IPAddress.IPv6None))
+                        throw new ArgumentOutOfRangeException("endpoint.Address", "Address cannot be Any, None or Broadcast.");
 
-                    if (!connected)
+                    //session connection
+                    TcpClient tcpClient = null;
+                    PacketStream packetStream = null;
+                    Packet responsePacket = null;
+                    ConnectionResponse response = null;
+                    try
                     {
-                        //check endpoint
-                        if (endpoint == null)
-                            throw new ArgumentNullException("endpoint");
-                        if (endpoint.Port < 1024 || Server.AnnouncePorts.Contains(endpoint.Port))
-                            throw new ArgumentOutOfRangeException("endpoint.Port",
-                                string.Format("Port must be between 1024-{0} or {1}-65535.",
-                                    Server.AnnouncePorts.First - 1, Server.AnnouncePorts.Last + 1));
-                        if (endpoint.Address.Equals(IPAddress.Any) || endpoint.Address.Equals(IPAddress.Broadcast)
-                            || endpoint.Address.Equals(IPAddress.None) || endpoint.Address.Equals(IPAddress.IPv6Any)
-                            || endpoint.Address.Equals(IPAddress.IPv6None))
-                            throw new ArgumentOutOfRangeException("endpoint.Address", "Address cannot be Any, None or Broadcast.");
+                        //establish tcp connection
+                        tcpClient = new TcpClient(AddressFamily.InterNetworkV6);
+                        tcpClient.Client.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, false);
+                        tcpClient.Connect(endpoint);
+                        packetStream = new PacketStream(tcpClient);
 
-                        //session connection
-                        TcpClient tcpClient = null;
-                        PacketStream packetStream = null;
-                        Packet responsePacket = null;
-                        ConnectionResponse response = null;
-                        try
+                        //get metadata
+                        byte[] md = null;
+                        lock (metadataLock)
                         {
-                            //establish tcp connection
-                            tcpClient = new TcpClient(AddressFamily.InterNetworkV6);
-                            tcpClient.Client.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, false);
-                            tcpClient.Connect(endpoint);
-                            packetStream = new PacketStream(tcpClient);
-
-                            //get metadata
-                            byte[] md = null;
-                            lock (metadataLock)
-                            {
-                                md = metadata;
-                                metadataChanged = false;
-                            }
-
-                            //send connection request packet
-                            packetStream.Write(new ConnectionRequest(AppKey, ID, md, password));
-
-                            //get response
-                            responsePacket = packetStream.Read();
-                            if (responsePacket.PayloadType != ConnectionResponse.PayloadType)
-                                throw new InvalidDataException("unexpected response packet type");
-                            response = responsePacket.Payload.Deserialize<ConnectionResponse>();
-                            if (response.Result != ConnectionResponse.ResponseCode.Approved)
-                                throw new IOException(string.Format("Rejected: {0}", ConnectionResponse.Describe(response.Result)));
-                            if (response.ServerID == Guid.Empty)
-                                throw new InvalidDataException("response.ServerID was Guid.Empty");
-                        }
-                        catch (Exception)
-                        {
-                            if (packetStream != null)
-                                packetStream.Dispose();
-                            if (tcpClient != null)
-                                tcpClient.Close();
-                            throw;
+                            md = metadata;
+                            metadataChanged = false;
                         }
 
-                        //set connected state
-                        connected = true;
-                        clientSideDisconnection = false;
-                        serverPort = (ushort)endpoint.Port;
-                        serverAddress = endpoint.Address;
-                        serverFilePath = response.FilePath ?? "";
-                        serverName = response.Name ?? "";
-                        serverID = response.ServerID;
-                        awaitingOperationList = false;
+                        //send connection request packet
+                        packetStream.Write(new ConnectionRequest(AppKey, ID, md, password));
 
-                        //fire events
-                        OnConnected?.Invoke(this);
-                        InvokeRemoteOperations(response.Operations, true);
-                        if (response.Metadata != null && response.Metadata.Count > 0 && OnRemoteMetadata != null)
-                        {
-                            foreach (var md in response.Metadata)
-                                OnRemoteMetadata?.Invoke(this, md.Key, md.Value);
-                        }
-
-                        //create management thread
-                        thread = new Thread(ControlThread);
-                        thread.Name = "OTEX Client ControlThread";
-                        thread.IsBackground = false;
-                        thread.Start(new object[]{ tcpClient, packetStream });
-
+                        //get response
+                        responsePacket = packetStream.Read();
+                        if (responsePacket.PayloadType != ConnectionResponse.PayloadType)
+                            throw new InvalidDataException("unexpected response packet type");
+                        response = responsePacket.Payload.Deserialize<ConnectionResponse>();
+                        if (response.Result != ConnectionResponse.ResponseCode.Approved)
+                            throw new IOException(string.Format("Rejected: {0}", ConnectionResponse.Describe(response.Result)));                     
                     }
+                    catch (Exception)
+                    {
+                        if (packetStream != null)
+                            packetStream.Dispose();
+                        if (tcpClient != null)
+                            tcpClient.Close();
+                        throw;
+                    }
+
+                    //connected ok
+                    killSession = false;
+                    awaitingOperationList = false;
+                    foreach (var kvp in response.Session.documents)
+                    {
+                        incomingOperations[kvp.Key] = new List<Operation>();
+                        outgoingOperations[kvp.Key] = new List<Operation>();
+                    }
+                    response.Session.address = endpoint.Address;
+                    ++response.Session.RemoteClientCount; //self
+                    response.Session.ReadOnly = true;
+                    var clients = response.Session.Clients;
+                    response.Session.Clients = null;
+                    session = response.Session;
+                    
+                    //fire events
+                    OnConnected?.Invoke(this);
+                    foreach (var kvp in session.documents)
+                    {
+                        if (kvp.Value.MasterOperations != null && kvp.Value.MasterOperations.Count > 0)
+                        {
+                            OnRemoteOperations?.Invoke(this, kvp.Key, kvp.Value.MasterOperations);
+                            kvp.Value.MasterOperations.Clear();
+                        }
+                        kvp.Value.MasterOperations = null;
+                    }
+                    foreach (var kvp in clients)
+                    {
+                        ++session.RemoteClientCount;
+                        OnRemoteConnection?.Invoke(this, kvp.Value);
+                    }
+
+                    //create management thread
+                    thread = new Thread(ControlThread);
+                    thread.Name = "OTEX Client ControlThread";
+                    thread.IsBackground = false;
+                    thread.Start(new object[]{ tcpClient, packetStream });
                 }
             }
         }
@@ -451,11 +402,11 @@ namespace OTEX
         private void ControlThread(object o)
         {
             var objs = o as object[];
-            var client = objs[0] as TcpClient;
+            var tcpClient = objs[0] as TcpClient;
             var stream = objs[1] as PacketStream;
             var lastOpsRequestTimer = new Marzersoft.Timer();
 
-            while (!clientSideDisconnection && stream.Connected)
+            while (!killSession && stream.Connected)
             {
                 Thread.Sleep(1);
                 
@@ -463,9 +414,9 @@ namespace OTEX
                 //(returns true if the server has asked us to disconnect)
                 if (Listen(stream, lastOpsRequestTimer))
                 {
-                    //override clientSideDisconnection so we don't send
+                    //override killSession so we don't send
                     //unnecessarily send a disconnection to the server
-                    clientSideDisconnection = false;
+                    killSession = false;
                     break;
                 }
 
@@ -475,64 +426,59 @@ namespace OTEX
                     lock (operationsLock)
                     {
                         //merge adjacent operations
-                        int s = 0;
-                        while (s < (outgoingOperations.Count - 1))
-                        {
-                            if (outgoingOperations[s].Merge(outgoingOperations[s + 1]))
-                                outgoingOperations.RemoveAt(s + 1);
-                            else
-                                ++s;
-                        }
+                        Operation.Merge(outgoingOperations);
 
                         //perform SLOT(OB,CIB) (1)
-                        if (outgoingOperations.Count > 0 && incomingOperations.Count > 0)
-                        {
-                            Operation.SymmetricLinearTransform(outgoingOperations, incomingOperations);
-
-                            //prune any operations which are now no-ops
-                            outgoingOperations.RemoveAll((op) => { return op.IsNoop; });
-                        }
+                        Operation.SymmetricLinearTransform(outgoingOperations, incomingOperations);
+                        if (Operation.Merge(outgoingOperations))
+                            Operation.Trim(outgoingOperations);
 
                         //send metadata update
-                        Dictionary<Guid, byte[]> md = null;
+                        Dictionary<Guid, RemoteClient> md = null;
                         lock (metadataLock)
                         {
                             if (metadataChanged)
                             {
                                 metadataChanged = false;
-                                md = new Dictionary<Guid, byte[]>();
-                                md[ID] = metadata;
+                                md = new Dictionary<Guid, RemoteClient>();
+                                md[ID] = new RemoteClient(ID, metadata);
                             }
                         }
 
                         //send request (2)
                         if (CaptureException(() =>{ stream.Write(new ClientUpdate(outgoingOperations, md)); }))
                             break;
-
                         awaitingOperationList = true;
 
                         //clear outgoing packet list (1)
-                        if (outgoingOperations.Count > 0)
-                            outgoingOperations.Clear();
+                        foreach (var kvp in outgoingOperations)
+                            kvp.Value.Clear();
 
-                        //apply any incoming operations (also clears list)
-                        InvokeRemoteOperations(incomingOperations);
+                        //apply any incoming operations and clear list
+                        foreach (var kvp in incomingOperations)
+                        {
+                            if (kvp.Value.Count > 0)
+                            {
+                                OnRemoteOperations?.Invoke(this, kvp.Key, kvp.Value);
+                                kvp.Value.Clear();
+                            }
+                        }
                     }
                 }
             }
 
             //disconnect
-            connected = false;
-            if (clientSideDisconnection) //tell the server the user is disconnecting client-side
+            session = null;
+            if (killSession) //tell the server the user is disconnecting client-side
                 CaptureException(() => { stream.Write(new DisconnectionRequest()); });
             stream.Dispose();
-            client.Close();
+            tcpClient.Close();
             outgoingOperations.Clear();
             incomingOperations.Clear();
 
             //fire event
-            OnDisconnected?.Invoke(this, !clientSideDisconnection);
-            clientSideDisconnection = false;
+            OnDisconnected?.Invoke(this, !killSession);
+            killSession = false;
         }
 
         /// <summary>
@@ -555,12 +501,23 @@ namespace OTEX
                     case DisconnectionRequest.PayloadType: //disconnection request from server
                         return true;
 
+                    case RemoteConnection.PayloadType: //another client has connected
+                        {
+                            RemoteConnection rcon = null;
+                            if (CaptureException(() => { rcon = packet.Payload.Deserialize<RemoteConnection>(); }))
+                                break;
+                            ++session.RemoteClientCount;
+                            OnRemoteConnection?.Invoke(this, rcon.Client);
+                        }
+                        break;
+
                     case RemoteDisconnection.PayloadType: //another client has disconnected
                         {
                             RemoteDisconnection remoteDisconnection = null;
                             if (CaptureException(() => { remoteDisconnection = packet.Payload.Deserialize<RemoteDisconnection>(); }))
                                 break;
-                            OnRemoteDisconnection?.Invoke(this, remoteDisconnection.ClientID);
+                            --session.RemoteClientCount;
+                            OnRemoteDisconnection?.Invoke(this, new RemoteClient(remoteDisconnection.ClientID, null));
                         }
                         break;
 
@@ -574,13 +531,23 @@ namespace OTEX
 
                             //get incoming operations
                             if (update.Operations != null && update.Operations.Count > 0)
-                                incomingOperations.AddRange(update.Operations);
+                            {
+                                lock (operationsLock)
+                                {
+                                    foreach (var kvp in update.Operations)
+                                    {
+                                        if (kvp.Value != null && kvp.Value.Count > 0
+                                            && incomingOperations.TryGetValue(kvp.Key, out var doc))
+                                            doc.AddRange(kvp.Value);
+                                    }
+                                }
+                            }
 
                             //get incoming metadata
                             if (update.Metadata != null && update.Metadata.Count > 0 && OnRemoteMetadata != null)
                             {
                                 foreach (var md in update.Metadata)
-                                    OnRemoteMetadata?.Invoke(this, md.Key, md.Value);
+                                    OnRemoteMetadata?.Invoke(this, md.Value);
                             }
 
                             //reset request timer so the wait interval starts from now
@@ -593,33 +560,21 @@ namespace OTEX
         }
 
         /////////////////////////////////////////////////////////////////////
-        // INVOKE REMOTE OPERATIONS
-        /////////////////////////////////////////////////////////////////////
-
-        private void InvokeRemoteOperations(List<Operation> ops, bool forced = false)
-        {
-            if ((ops != null && ops.Count() > 0) || forced)
-            {
-                OnRemoteOperations.Invoke(this, ops ?? new List<Operation>());
-                if (ops != null)
-                    ops.Clear();
-            }
-        }
-
-        /////////////////////////////////////////////////////////////////////
         // SEND LOCAL OPERATIONS
         /////////////////////////////////////////////////////////////////////
 
         /// <summary>
         /// Send a notification to the server that some text was inserted at the client end.
         /// </summary>
+        /// <param name="documentID">ID of the document the insertion applies to.</param>
         /// <param name="offset">The index of the insertion.</param>
         /// <param name="text">The text that was inserted.</param>
         /// <exception cref="ArgumentException" />
+        /// <exception cref="ArgumentOutOfRangeException" />
         /// <exception cref="ArgumentNullException" />
         /// <exception cref="ObjectDisposedException" />
         /// <exception cref="InvalidOperationException" />
-        public void Insert(uint offset, string text)
+        public void Insert(Guid documentID, uint offset, string text)
         {
             if (isDisposed)
                 throw new ObjectDisposedException("OTEX.Client");
@@ -627,39 +582,44 @@ namespace OTEX
                 throw new ArgumentNullException("text");
             if (text.Length == 0)
                 throw new ArgumentException("insert text cannot be blank", "text");
-            if (!connected)
+            if (session == null)
                 throw new InvalidOperationException("cannot send an operation without being connected");
 
             lock (operationsLock)
             {
                 if (isDisposed)
                     throw new ObjectDisposedException("OTEX.Client");
-                outgoingOperations.Add(new Operation(ID, (int)offset, text));
+                if (session == null)
+                    throw new InvalidOperationException("cannot send an operation without being connected");
+                outgoingOperations[documentID].Add(new Operation(ID, (int)offset, text));
             }
         }
 
         /// <summary>
         /// Send a notification to the server that some text was deleted at the client end.
         /// </summary>
+        /// <param name="documentID">ID of the document the deletion applies to.</param>
         /// <param name="offset">The index of the deletion.</param>
         /// <param name="length">The length of the deleted range.</param>
         /// <exception cref="ArgumentOutOfRangeException" />
         /// <exception cref="ObjectDisposedException" />
         /// <exception cref="InvalidOperationException" />
-        public void Delete(uint offset, uint length)
+        public void Delete(Guid documentID, uint offset, uint length)
         {
             if (isDisposed)
                 throw new ObjectDisposedException("OTEX.Client");
             if (length == 0)
                 throw new ArgumentOutOfRangeException("length", "deletion length cannot be zero");
-            if (!connected)
+            if (session == null)
                 throw new InvalidOperationException("cannot send an operation without being connected");
 
             lock (operationsLock)
             {
                 if (isDisposed)
                     throw new ObjectDisposedException("OTEX.Client");
-                outgoingOperations.Add(new Operation(ID, (int)offset, (int)length));
+                if (session == null)
+                    throw new InvalidOperationException("cannot send an operation without being connected");
+                outgoingOperations[documentID].Add(new Operation(ID, (int)offset, (int)length));
             }
         }
 
@@ -673,13 +633,13 @@ namespace OTEX
         /// </summary>
         public void Disconnect()
         {
-            if (connected && !clientSideDisconnection)
+            if (session != null && !killSession)
             {
-                lock (connectedLock)
+                lock (sessionLock)
                 {
-                    if (connected && !clientSideDisconnection)
+                    if (session != null && !killSession)
                     {
-                        clientSideDisconnection = true;
+                        killSession = true;
                         if (thread != null)
                         {
                             thread.Join();
@@ -714,6 +674,7 @@ namespace OTEX
             base.ClearEventListeners();
             OnConnected = null;
             OnDisconnected = null;
+            OnRemoteConnection = null;
             OnRemoteOperations = null;
             OnRemoteMetadata = null;
             OnRemoteDisconnection = null;

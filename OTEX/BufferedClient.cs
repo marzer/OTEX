@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
@@ -23,10 +24,19 @@ namespace OTEX
         public event Action<IClient> OnConnected;
 
         /// <summary>
-        /// Triggered when a remote client updates it's metadata.
-        /// Do not call any of this object's methods from this callback or you may deadlock!
+        /// Triggered when a remote client connects to the server.
         /// </summary>
-        public event Action<IClient, Guid, byte[]> OnRemoteMetadata;
+        public event Action<IClient, RemoteClient> OnRemoteConnection;
+
+        /// <summary>
+        /// Triggered when a remote client updates it's metadata.
+        /// </summary>
+        public event Action<IClient, RemoteClient> OnRemoteMetadata;
+
+        /// <summary>
+        /// Triggered when a remote client in the same session disconnects from the server.
+        /// </summary>
+        public event Action<IClient, RemoteClient> OnRemoteDisconnection;
 
         /// <summary>
         /// Triggered when the client is disconnected from an OTEX server.
@@ -36,14 +46,10 @@ namespace OTEX
 
         /// <summary>
         /// Triggered when the buffered client's internal text has been changed.
+        /// Guid is the document ID.
         /// Bool parameter is true if the change was from a remote client.
         /// </summary>
-        public event Action<BufferedClient, bool> OnDocumentChanged;
-
-        /// <summary>
-        /// Triggered when a remote client in the same session disconnects from the server.
-        /// </summary>
-        public event Action<IClient, Guid> OnRemoteDisconnection;
+        public event Action<BufferedClient, Guid, bool> OnDocumentChanged;
 
         /////////////////////////////////////////////////////////////////////
         // PROPERTIES/VARIABLES
@@ -98,67 +104,15 @@ namespace OTEX
         }
 
         /// <summary>
-        /// IP Address of server.
+        /// Session information for the current connection.
         /// </summary>
-        public IPAddress ServerAddress
+        public ISession Session
         {
             get
             {
                 if (isDisposed)
                     throw new ObjectDisposedException("OTEX.BufferedClient");
-                return client.ServerAddress;
-            }
-        }
-
-        /// <summary>
-        /// Server's listen port.
-        /// </summary>
-        public ushort ServerPort
-        {
-            get
-            {
-                if (isDisposed)
-                    throw new ObjectDisposedException("OTEX.BufferedClient");
-                return client.ServerPort;
-            }
-        }
-
-        /// <summary>
-        /// Path of the file being edited on the server.
-        /// </summary>
-        public string ServerFilePath
-        {
-            get
-            {
-                if (isDisposed)
-                    throw new ObjectDisposedException("OTEX.BufferedClient");
-                return client.ServerFilePath;
-            }
-        }
-
-        /// <summary>
-        /// The friendly name of the server.
-        /// </summary>
-        public string ServerName
-        {
-            get
-            {
-                if (isDisposed)
-                    throw new ObjectDisposedException("OTEX.BufferedClient");
-                return client.ServerName;
-            }
-        }
-
-        /// <summary>
-        /// ID of server.
-        /// </summary>
-        public Guid ServerID
-        {
-            get
-            {
-                if (isDisposed)
-                    throw new ObjectDisposedException("OTEX.BufferedClient");
-                return client.ServerID;
+                return client.Session;
             }
         }
 
@@ -212,16 +166,26 @@ namespace OTEX
         private readonly Client client;
 
         /// <summary>
-        /// Contents of the document. Setting this property will perform a diff comparision
+        /// Contents of the document(s). Setting this property will perform a diff comparision
         /// between the new value and the old value, and send off OT operations as necessary.
         /// </summary>
-        public string Document
+        public string this[Guid id]
         {
             get
             {
                 if (isDisposed)
                     throw new ObjectDisposedException("OTEX.BufferedClient");
-                return document;
+                if (id == Guid.Empty)
+                    throw new ArgumentOutOfRangeException("id", "id cannot be Guid.Empty");
+                if (documents.Count > 0)
+                {
+                    lock (documents)
+                    {
+                        if (documents.Count > 0 && documents.TryGetValue(id, out var document))
+                            return document;
+                    }
+                }
+                return null;
             }
             set
             {
@@ -229,47 +193,55 @@ namespace OTEX
                     throw new ObjectDisposedException("OTEX.BufferedClient");
                 if (!Connected)
                     throw new InvalidOperationException("cannot update document without being connected");
+                if (id == Guid.Empty)
+                    throw new ArgumentOutOfRangeException("id", "id cannot be Guid.Empty");
                 var input = value ?? "";
 
-                lock (documentLock)
+                if (documents.Count > 0)
                 {
-                    if (isDisposed)
-                        throw new ObjectDisposedException("OTEX.BufferedClient");
-                    if (!Connected)
-                        throw new InvalidOperationException("cannot update document without being connected");
-
-                    //check for equality
-                    if (input.Equals(document))
-                        return;
-
-                    //do diff on two versions of text
-                    var diffs = Diff.Calculate(document.ToCharArray(), input.ToCharArray());
-
-                    //convert changes into operations
-                    foreach (var diff in diffs)
+                    lock (documents)
                     {
-                        //skip unchanged characters
-                        uint position = (uint)Math.Min(diff.InsertStart, document.Length);
+                        if (isDisposed)
+                            throw new ObjectDisposedException("OTEX.BufferedClient");
+                        if (!Connected)
+                            throw new InvalidOperationException("cannot update document without being connected");
 
-                        //process a deletion
-                        if (diff.DeleteLength > 0)
-                            client.Delete(position, diff.DeleteLength);
+                        if (documents.Count > 0 && documents.TryGetValue(id, out var document))
+                        {
+                            //check for equality
+                            if (input.Equals(document))
+                                return;
 
-                        //process an insertion
-                        if (position < (diff.InsertStart + diff.InsertLength))
-                            client.Insert(position, document.Substring((int)position, (int)diff.InsertLength));
+                            //do diff on two versions of text
+                            var diffs = Diff.Calculate(document.ToCharArray(), input.ToCharArray());
+
+                            //convert changes into operations
+                            foreach (var diff in diffs)
+                            {
+                                //skip unchanged characters
+                                uint position = (uint)Math.Min(diff.InsertStart, document.Length);
+
+                                //process a deletion
+                                if (diff.DeleteLength > 0)
+                                    client.Delete(id, position, diff.DeleteLength);
+
+                                //process an insertion
+                                if (position < (diff.InsertStart + diff.InsertLength))
+                                    client.Insert(id, position, document.Substring((int)position, (int)diff.InsertLength));
+                            }
+
+                            //update value fire event
+                            documents[id] = input;
+                            OnDocumentChanged?.Invoke(this, id, false);
+                            return;
+                        }
                     }
-
-                    //update value fire event
-                    document = input;
-                    OnDocumentChanged?.Invoke(this, false);
-
                 }
-                
+                throw new ArgumentOutOfRangeException("id","document ID did not match any document in the session");
             }
         }
-        private volatile string document = "";
-        private readonly object documentLock = new object();
+        private readonly Dictionary<Guid, string> documents
+            = new Dictionary<Guid, string>();
 
         /////////////////////////////////////////////////////////////////////
         // CONSTRUCTION
@@ -285,28 +257,38 @@ namespace OTEX
         public BufferedClient(AppKey key, Guid? guid = null)
         {
             client = new Client(key, guid);
-            client.OnConnected += (c) => { OnConnected?.Invoke(this); };
-            client.OnDisconnected += (c,forced) => { OnDisconnected?.Invoke(this, forced); };
-            client.OnRemoteMetadata += (c,id,md) => { OnRemoteMetadata?.Invoke(this,id,md); };
-            client.OnRemoteDisconnection += (c, id) => { OnRemoteDisconnection?.Invoke(this, id); };
             client.OnThreadException += (c, ex) => { NotifyException(ex); };
-            client.OnRemoteOperations += (c, ops) =>
+            client.OnConnected += (c) =>
+            {
+                lock (documents)
+                {
+                    documents.Clear();
+                    foreach (var kvp in client.Session.Documents)
+                        documents[kvp.Key] = "";
+                }
+                OnConnected?.Invoke(this);
+            };
+            client.OnRemoteConnection += (c, rc) => { OnRemoteConnection?.Invoke(this, rc); };
+            client.OnRemoteMetadata += (c, rc) => { OnRemoteMetadata?.Invoke(this, rc); };
+            client.OnRemoteDisconnection += (c, rc) => { OnRemoteDisconnection?.Invoke(this, rc); };
+            client.OnDisconnected += (c,forced) => { OnDisconnected?.Invoke(this, forced); };
+            client.OnRemoteOperations += (c, doc, ops) =>
             {               
-                lock (documentLock)
+                lock (documents)
                 {
                     //execute operations
-                    string newDocument = document;
+                    string document = documents[doc];
                     foreach (var op in ops)
                         if (!op.IsNoop)
-                            newDocument = op.Execute(newDocument);
+                            document = op.Execute(document);
 
                     //check equality (might have been all no-ops)
-                    if (document.Equals(newDocument))
+                    if (documents[doc].Equals(document))
                         return;
 
                     //update value fire event
-                    document = newDocument;
-                    OnDocumentChanged?.Invoke(this, true);
+                    documents[doc] = document;
+                    OnDocumentChanged?.Invoke(this, doc, true);
                 }
             };
         }
