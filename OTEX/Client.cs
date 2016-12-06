@@ -375,8 +375,9 @@ namespace OTEX
                     {
                         if (kvp.Value.MasterOperations != null && kvp.Value.MasterOperations.Count > 0)
                         {
-                            OnRemoteOperations?.Invoke(this, kvp.Key, kvp.Value.MasterOperations);
+                            var ops = new List<Operation>(kvp.Value.MasterOperations);
                             kvp.Value.MasterOperations.Clear();
+                            OnRemoteOperations?.Invoke(this, kvp.Key, ops);
                         }
                         kvp.Value.MasterOperations = null;
                     }
@@ -459,8 +460,9 @@ namespace OTEX
                         {
                             if (kvp.Value.Count > 0)
                             {
-                                OnRemoteOperations?.Invoke(this, kvp.Key, kvp.Value);
+                                var ops = new List<Operation>(kvp.Value);
                                 kvp.Value.Clear();
+                                OnRemoteOperations?.Invoke(this, kvp.Key, ops);
                             }
                         }
                     }

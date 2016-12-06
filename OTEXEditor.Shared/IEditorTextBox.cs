@@ -55,6 +55,16 @@ namespace OTEX.Editor
         /// </summary>
         bool LineEndingsVisible { get; set; }
 
+        /// <summary>
+        /// The starting position of the user's selection.
+        /// </summary>
+        uint SelectionStart { get; }
+
+        /// <summary>
+        /// The ending position of the user's selection.
+        /// </summary>
+        uint SelectionEnd { get; }
+
         /////////////////////////////////////////////////////////////////////
         // METHODS
         /////////////////////////////////////////////////////////////////////

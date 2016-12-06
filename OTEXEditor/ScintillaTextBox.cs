@@ -172,6 +172,22 @@ namespace OTEX.Editor
         /// </summary>
         private readonly RepaintMarshal repaintMarshal;
 
+        /// <summary>
+        /// The starting position of the user's selection.
+        /// </summary>
+        uint IEditorTextBox.SelectionStart
+        {
+            get { return (uint)CurrentPosition; }
+        }
+
+        /// <summary>
+        /// The ending position of the user's selection.
+        /// </summary>
+        uint IEditorTextBox.SelectionEnd
+        {
+            get { return (uint)AnchorPosition; }
+        }
+
         /////////////////////////////////////////////////////////////////////
         // CONSTRUCTOR
         /////////////////////////////////////////////////////////////////////

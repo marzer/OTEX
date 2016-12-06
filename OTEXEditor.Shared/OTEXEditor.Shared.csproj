@@ -65,7 +65,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Editor.cs" />
+    <Compile Include="Shared.cs" />
     <Compile Include="HighlightRanges.cs" />
     <Compile Include="IEditorTextBox.cs" />
     <Compile Include="LanguageManager.cs" />

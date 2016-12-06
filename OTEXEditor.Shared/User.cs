@@ -16,7 +16,7 @@ namespace OTEX.Editor
     /// with other OTEX clients via "metadata".
     /// </summary>
     [Serializable]
-    public sealed class User : IEquatable<User>, IComparable<User>, IComparable
+    public sealed class User : IDisposable, IEquatable<User>, IComparable<User>, IComparable
     {
         /////////////////////////////////////////////////////////////////////
         // EVENTS
@@ -39,6 +39,15 @@ namespace OTEX.Editor
         /////////////////////////////////////////////////////////////////////
 
         /// <summary>
+        /// Has this User been disposed?
+        /// </summary>
+        public bool IsDisposed
+        {
+            get { return disposed; }
+        }
+        private volatile bool disposed = false;
+
+        /// <summary>
         /// This user's ID (from OTEXClient.ID).
         /// </summary>
         public Guid ID
@@ -49,12 +58,22 @@ namespace OTEX.Editor
         private Guid id = Guid.Empty;
 
         /// <summary>
+        /// The ID of the document containing the user's selection.
+        /// </summary>
+        public Guid SelectionDocument
+        {
+            get { return selectionDocument; }
+            set { SetSelection(value, selectionStart, selectionEnd); }
+        }
+        private Guid selectionDocument = Guid.Empty;
+
+        /// <summary>
         /// The start index of this user's selection.
         /// </summary>
         public uint SelectionStart
         {
             get { return selectionStart; }
-            set { SetSelection(value, selectionEnd); }
+            set { SetSelection(selectionDocument, value, selectionEnd); }
         }
         private uint selectionStart = 0;
 
@@ -64,7 +83,7 @@ namespace OTEX.Editor
         public uint SelectionEnd
         {
             get { return selectionEnd; }
-            set { SetSelection(selectionStart, value); }
+            set { SetSelection(selectionDocument, selectionStart, value); }
         }
         private uint selectionEnd = 0;
 
@@ -182,7 +201,7 @@ namespace OTEX.Editor
 
             //update
             ColourIntegerInternal = remote.colour;
-            SetSelectionInternal(remote.selectionStart, remote.selectionEnd);
+            SetSelectionInternal(remote.selectionDocument, remote.selectionStart, remote.selectionEnd);
         }
 
         /////////////////////////////////////////////////////////////////////
@@ -193,23 +212,25 @@ namespace OTEX.Editor
         /// Sets the selection range of this user. Use this instead of the individual setters if updating
         /// start and end at the same time as this will only fire the OnSelectionChanged event once.
         /// </summary>
+        /// <param name="document">The ID of the document containing the selection.</param>
         /// <param name="start">The start index of this user's selection.</param>
         /// <param name="end">The end index of this user's selection.</param>
-        public void SetSelection(uint start, uint end)
+        public void SetSelection(Guid document, uint start, uint end)
         {
             if (!IsLocal)
                 throw new InvalidOperationException("You cannot manually set values for remote users (use Update() instead).");
-            SetSelectionInternal(start, end);
+            SetSelectionInternal(document, start, end);
         }
 
         /// <summary>
         /// Internal setter for selection range (to prevent manual setting on remote clients).
         /// </summary>
-        private void SetSelectionInternal(uint start, uint end)
+        private void SetSelectionInternal(Guid document, uint start, uint end)
         {
-            if (start == selectionStart && end == selectionEnd)
+            if (document == selectionDocument && start == selectionStart && end == selectionEnd)
                 return;
 
+            selectionDocument = document;
             selectionStart = start;
             selectionEnd = end;
             OnSelectionChanged?.Invoke(this);
@@ -266,6 +287,19 @@ namespace OTEX.Editor
             if (ReferenceEquals(this, other))
                 return 0;
             return ID.CompareTo(other.ID);
+        }
+
+        /////////////////////////////////////////////////////////////////////
+        // DISPOSE
+        /////////////////////////////////////////////////////////////////////
+
+        public void Dispose()
+        {
+            if (disposed)
+                return;
+            disposed = true;
+            OnColourChanged = null;
+            OnSelectionChanged = null;
         }
     }
 }

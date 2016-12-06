@@ -9,7 +9,7 @@ namespace OTEX.Editor
     /// <summary>
     /// Static constants for OTEX Editor applications.
     /// </summary>
-    public static class Editor
+    public static class Shared
     {
         /// <summary>
         /// App Key for OTEX Editor apps.

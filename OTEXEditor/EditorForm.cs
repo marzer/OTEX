@@ -19,28 +19,30 @@ namespace OTEX.Editor
         // PROPERTIES/VARIABLES
         /////////////////////////////////////////////////////////////////////
 
-        private IEditorTextBox tbEditor = null;
-        private IRepaintMarshal tbEditorRepaintMarshal = null;
-        private LanguageManager languageManager = null;
-        private Server otexServer = null;
-        private Client otexClient = null;
-        private ServerListener otexServerListener = null;
+        private readonly Dictionary<Guid, Editor> editors
+            = new Dictionary<Guid, Editor>();
+        internal Editor activeEditor;
+        internal readonly LanguageManager languageManager;
+        private readonly Server otexServer;
+        internal readonly Client otexClient;
+        private readonly ServerListener otexServerListener;
         private volatile Thread clientConnectingThread = null;
-        private volatile bool closing = false, firstOperationsSinceConnecting = false;
+        private volatile bool closing = false;
         private FlyoutForm passwordForm = null;
         private volatile IPEndPoint lastConnectionEndpoint = null;
         private volatile Password lastConnectionPassword = null;
         private volatile bool lastConnectionReturnToServerBrowser = false;
-        private ITitleBarButton logoutButton = null, settingsButton = null, usersButton = null;
+        private TitleBarButton logoutButton = null, settingsButton = null, usersButton = null;
         private volatile bool settingsLoaded = false;
         private Paginator mainPaginator = null, sidePaginator = null;
-        private readonly User localUser;
+        internal readonly User localUser;
         private readonly Dictionary<Guid, User> remoteUsers = new Dictionary<Guid, User>();
-        private readonly PluginFactory plugins;
-        private readonly Dictionary<Keys, Action> customKeyBindings
-            = new Dictionary<Keys, Action>();
+        internal readonly PluginFactory plugins;
+        private readonly Dictionary<Keys, Action<IEditorTextBox>> singleEditorBindings
+            = new Dictionary<Keys, Action<IEditorTextBox>>(),
+            globalEditorBindings = new Dictionary<Keys, Action<IEditorTextBox>>();
         private volatile bool suspendTitleBarButtonEvents = false;
-        private readonly Settings settings;
+        internal readonly Settings settings;
 
         /// <summary>
         /// List of allowed user colours.
@@ -78,7 +80,7 @@ namespace OTEX.Editor
             var instanceID = App.UserID;
 #if DEBUG
             string argID = null;
-            if (App.Arguments.Key("id", ref argID))
+            if (App.Arguments.Value("id", ref argID))
             {
                 if (argID.Trim().ToLower().Equals("random"))
                     instanceID = Guid.NewGuid();
@@ -148,20 +150,22 @@ namespace OTEX.Editor
             //text
             Text = App.Name;
             //settings menu
-            settingsButton = AddTitleBarButton();
-            settingsButton.ToggleCheckedOnClick = true;
+            settingsButton = new TitleBarButton(this);
+            settingsButton.ToggleMode = true;
             settingsButton.Tag = panSettings;
             panSettings.Tag = settingsButton;
             settingsButton.CheckedChanged += TitleBarButton_CheckedChanged;
             //users menu
-            usersButton = AddTitleBarButton();
-            usersButton.ToggleCheckedOnClick = true;
+            usersButton = new TitleBarButton(this);
+            usersButton.ToggleMode = true;
             usersButton.Tag = flpUsers;
+            usersButton.Offset += settingsButton.Width;
             flpUsers.Tag = usersButton;
             usersButton.CheckedChanged += TitleBarButton_CheckedChanged;
             usersButton.Visible = false;
             //logout button
-            logoutButton = AddTitleBarButton(false);
+            logoutButton = new TitleBarButton(this);
+            logoutButton.RightAligned = false;
             logoutButton.Colour = ColorTranslator.FromHtml("#DF3F26");
             logoutButton.Visible = false;
             logoutButton.Click += (b) =>
@@ -176,7 +180,7 @@ namespace OTEX.Editor
             };
 
             // CREATE OTEX SERVER //////////////////////////////////////////////////////////////////
-            otexServer = new Server(Editor.AppKey, instanceID);
+            otexServer = new Server(Shared.AppKey, instanceID);
             otexServer.OnThreadException += (s, e) =>
             {
                 Logger.W("Server: {0}: {1}", e.InnerException.GetType().FullName, e.InnerException.Message);
@@ -203,7 +207,7 @@ namespace OTEX.Editor
             };
 
             // CREATE OTEX CLIENT //////////////////////////////////////////////////////////////////
-            otexClient = new Client(Editor.AppKey, instanceID);
+            otexClient = new Client(Shared.AppKey, instanceID);
             otexClient.OnThreadException += (c, e) =>
             {
                 Logger.W("Client: {0}: {1}", e.InnerException.GetType().Name, e.InnerException.Message);
@@ -217,43 +221,12 @@ namespace OTEX.Editor
                 Logger.I("Client: connected to {0}:{1}.", c.Session.Address, c.Session.Port);
                 this.Execute(() =>
                 {
-                    firstOperationsSinceConnecting = true;
-
-                    tbEditor.DiffEvents = false;
-                    tbEditor.ClearText();
-                    tbEditor.ClearUndoHistory();
-                    tbEditor.DiffEvents = true;
-                    tbEditor.Language = languageManager[c.Session.Documents.First().Value.Path];
-
-                    mainPaginator.ActivePageKey = "editor";
-                    (tbEditor as Control).Focus();
+                    mainPaginator.ActivePageKey = "editors";
                     usersButton.Visible = logoutButton.Visible = true;
                     flpUsers.Users.Clear().Add(localUser);
-                }, false);
-            };
-            otexClient.OnRemoteOperations += (c, doc, operations) =>
-            {
-                this.Execute(() =>
-                {
-                    tbEditor.DiffEvents = false;
-                    if (tbEditorRepaintMarshal != null)
-                        tbEditorRepaintMarshal.SuspendRepaints();
-                    foreach (var operation in operations)
-                    {
-                        if (operation.IsInsertion)
-                            tbEditor.InsertText((uint)operation.Offset, operation.Text);
-                        else if (operation.IsDeletion)
-                            tbEditor.DeleteText((uint)operation.Offset, (uint)operation.Length);
-                    }
 
-                    if (firstOperationsSinceConnecting)
-                    {
-                        tbEditor.ClearUndoHistory();
-                        firstOperationsSinceConnecting = false;
-                    }
-                    if (tbEditorRepaintMarshal != null)
-                        tbEditorRepaintMarshal.ResumeRepaints(true);
-                    tbEditor.DiffEvents = true;
+                    foreach (var doc in c.Session.Documents)
+                        editors[doc.Key] = new Editor(this, doc.Value);
                 }, false);
             };
             otexClient.OnRemoteConnection += (c, rc) =>
@@ -263,19 +236,35 @@ namespace OTEX.Editor
                     var remoteUser = remoteUsers[rc.ID] =  new User(rc.ID, rc.Metadata);
                     remoteUser.OnColourChanged += (u) =>
                     {
-                        this.Execute(() => { tbEditor.SetHighlightRange(u.ID, u.SelectionStart, u.SelectionEnd, u.Colour); });
+                        this.Execute(() =>
+                        {
+                            foreach (var editor in editors)
+                                editor.Value.UpdateRemoteUser(u);
+                        });
                     };
                     remoteUser.OnSelectionChanged += (u) =>
                     {
-                        this.Execute(() => { tbEditor.SetHighlightRange(u.ID, u.SelectionStart, u.SelectionEnd, u.Colour); });
+                        this.Execute(() =>
+                        {
+                            foreach (var editor in editors)
+                                editor.Value.UpdateRemoteUser(u);
+                        });
                     };
                     this.Execute(() =>
                     {
-                        tbEditor.SetHighlightRange(remoteUser.ID, remoteUser.SelectionStart,
-                            remoteUser.SelectionEnd, remoteUser.Colour);
+                        foreach (var editor in editors)
+                            editor.Value.UpdateRemoteUser(remoteUser);
                         flpUsers.Users.Add(remoteUser);
                     }, false);
                 }
+            };
+            otexClient.OnRemoteOperations += (c, id, ops) =>
+            {
+                this.Execute(() =>
+                {
+                    if (editors.TryGetValue(id, out var editor))
+                        editor.RemoteOperations(ops);
+                });
             };
             otexClient.OnRemoteMetadata += (c, rc) =>
             {
@@ -286,8 +275,8 @@ namespace OTEX.Editor
                         remoteUser.Update(rc.Metadata);
                         this.Execute(() =>
                         {
-                            tbEditor.SetHighlightRange(remoteUser.ID, remoteUser.SelectionStart,
-                                remoteUser.SelectionEnd, remoteUser.Colour);
+                            foreach (var editor in editors)
+                                editor.Value.UpdateRemoteUser(remoteUser);
                         });
                     }
                 }
@@ -301,11 +290,8 @@ namespace OTEX.Editor
                     if (remoteUsers.TryGetValue(rc.ID, out var remoteUser))
                     {
                         remoteUsers.Remove(rc.ID);
-                        this.Execute(() =>
-                        {
-                            tbEditor.SetHighlightRange(remoteUser.ID, 0, 0, remoteUser.Colour);
-                            flpUsers.Users.Remove(remoteUser);
-                        }, false);
+                        this.Execute(() => { flpUsers.Users.Remove(remoteUser); });
+                        remoteUser.Dispose();
                     }
                 }
             };
@@ -314,15 +300,19 @@ namespace OTEX.Editor
                 Logger.I("Client: disconnected{0}.", serverSide ? " (connection closed by server)" : "");
                 lock (remoteUsers)
                 {
+                    foreach (var ru in remoteUsers)
+                        ru.Value.Dispose();
                     remoteUsers.Clear();
                 }
                 if (!closing)
                 {
-                    localUser.SetSelection(0, 0);
+                    localUser.SetSelection(Guid.Empty, 0, 0);
                     this.Execute(() =>
                     {
                         flpUsers.Users.Clear();
-                        tbEditor.ClearHighlightRanges();
+                        foreach (var editor in editors)
+                            editor.Value.Dispose();
+                        editors.Clear();
 
                         //client mode (in server mode, client always disconnects first)
                         if (serverSide)
@@ -341,9 +331,6 @@ namespace OTEX.Editor
                         else
                             mainPaginator.ActivePageKey = "menu";
 
-                        Text = App.Name;
-                        tbEditor.ClearText();
-                        tbEditor.ClearUndoHistory();
 
                         usersButton.Checked = false;
                         usersButton.Visible = logoutButton.Visible = false;
@@ -354,7 +341,7 @@ namespace OTEX.Editor
             // CREATE OTEX SERVER LISTENER /////////////////////////////////////////////////////////
             try
             {
-                otexServerListener = new ServerListener(Editor.AppKey, otexServer.ID);
+                otexServerListener = new ServerListener(Shared.AppKey, otexServer.ID);
                 otexServerListener.OnThreadException += (sl, e) =>
                 {
                     Logger.W("ServerListener: {0}: {1}", e.InnerException.GetType().FullName, e.InnerException.Message);
@@ -404,35 +391,17 @@ namespace OTEX.Editor
                     exc.Message);
             }
 
-            // CREATE TEXT EDITOR //////////////////////////////////////////////////////////////////
-            tbEditor = plugins.CreateByConfig<IEditorTextBox>("editor", "plugins.editor", true, false, true, "", false);
-            if (tbEditor == null)
-                tbEditor = new ScintillaTextBox();
-            tbEditorRepaintMarshal = tbEditor as IRepaintMarshal;
-            tbEditor.OnInsertion += (tb, offset, text) =>
-            {
-                if (otexClient.Connected)
-                    otexClient.Insert(otexClient.Session.Documents.First().Key, offset, text);
-            };
-            tbEditor.OnDeletion += (tb, offset, length) =>
-            {
-                if (otexClient.Connected)
-                    otexClient.Delete(otexClient.Session.Documents.First().Key, offset, length);
-            };
-            tbEditor.OnSelection += (tb, start, end) =>
-            {
-                localUser.SetSelection(start, end);
-            };
-            customKeyBindings[Keys.Control | Keys.W] = () => { tbEditor.LineEndingsVisible = !tbEditor.LineEndingsVisible; };
-            customKeyBindings[Keys.Control | Keys.Q] = () => { tbEditor.ToggleCommentSelection(); };
-            customKeyBindings[Keys.Control | Keys.B] = () => { tbEditor.ToggleBookmark(); };
-            customKeyBindings[Keys.F2] = () => { tbEditor.NextBookmark(); };
-            customKeyBindings[Keys.Shift | Keys.F2] = () => { tbEditor.PreviousBookmark(); };
-            customKeyBindings[Keys.Control | Keys.Subtract] = () => { tbEditor.DecreaseZoom(); };
-            customKeyBindings[Keys.Control | Keys.Add] = () => { tbEditor.IncreaseZoom(); };
-            customKeyBindings[Keys.Control | Keys.NumPad0] = () => { tbEditor.ResetZoom(); };
-            customKeyBindings[Keys.Control | Keys.U] = () => { tbEditor.UppercaseSelection(); };
-            customKeyBindings[Keys.Control | Keys.Shift | Keys.U] = () => { tbEditor.LowercaseSelection(); };
+            // KEY BINDINGS ////////////////////////////////////////////////////////////////////////
+            globalEditorBindings[Keys.Control | Keys.W] = (tb) => { tb.LineEndingsVisible = !tb.LineEndingsVisible; };
+            singleEditorBindings[Keys.Control | Keys.Q] = (tb) => { tb.ToggleCommentSelection(); };
+            singleEditorBindings[Keys.Control | Keys.B] = (tb) => { tb.ToggleBookmark(); };
+            singleEditorBindings[Keys.F2] = (tb) => { tb.NextBookmark(); };
+            singleEditorBindings[Keys.Shift | Keys.F2] = (tb) => { tb.PreviousBookmark(); };
+            singleEditorBindings[Keys.Control | Keys.Subtract] = (tb) => { tb.DecreaseZoom(); };
+            singleEditorBindings[Keys.Control | Keys.Add] = (tb) => { tb.IncreaseZoom(); };
+            singleEditorBindings[Keys.Control | Keys.NumPad0] = (tb) => { tb.ResetZoom(); };
+            singleEditorBindings[Keys.Control | Keys.U] = (tb) => { tb.UppercaseSelection(); };
+            singleEditorBindings[Keys.Control | Keys.Shift | Keys.U] = (tb) => { tb.LowercaseSelection(); };
 
             // CREATE LANGUAGE MANAGER /////////////////////////////////////////////////////////////
             languageManager = new LanguageManager();
@@ -447,10 +416,6 @@ namespace OTEX.Editor
             languageManager.OnLoaded += (lm, c) =>
             {
                 Logger.I("LanguageManager: loaded {0} languages.", c);
-                if (otexClient.Connected)
-                {
-                    this.Execute(() => { tbEditor.Language = lm[otexClient.Session.Documents.First().Value.Path]; });
-                }
             };
 
             // CREATE LOCAL USER ///////////////////////////////////////////////////////////////////
@@ -464,11 +429,9 @@ namespace OTEX.Editor
             }
             else
                 cbClientColour.SelectedIndex = selectedColourIndex;
-            tbEditor.UserColour = localUser.Colour;
             localUser.OnColourChanged += (u) =>
             {
                 otexClient.Metadata = u.Serialize();
-                this.Execute(() => { tbEditor.UserColour = u.Colour; });
             };
             //selection changed
             localUser.OnSelectionChanged += (u) => { otexClient.Metadata = u.Serialize(); };
@@ -481,11 +444,6 @@ namespace OTEX.Editor
             //line length ruler
             cbLineLength.Checked = settings.RulerVisible;
             nudLineLength.Value = settings.RulerOffset;
-            tbEditor.SetRuler(settings.RulerVisible, settings.RulerOffset);
-            settings.OnRulerChanged += (u) =>
-            {
-                tbEditor.SetRuler(settings.RulerVisible, settings.RulerOffset);
-            };
             //last direct connection address
             tbClientAddress.Text = settings.LastDirectConnection;
             //theme
@@ -544,7 +502,7 @@ namespace OTEX.Editor
             mainPaginator.Add("menu", panMenuPage);
             mainPaginator.Add("connecting", panConnectingPage);
             mainPaginator.Add("servers", panServerBrowserPage);
-            mainPaginator.Add("editor", tbEditor as Control);
+            mainPaginator.Add("editors", panEditors);
             mainPaginator.PageDeactivated += (s, k, p) =>
             {
                 splitter.SuspendRepaints();
@@ -584,11 +542,13 @@ namespace OTEX.Editor
         // SERVER MODE
         /////////////////////////////////////////////////////////////////////
 
-        private void StartServerMode(Session session)
+        private void StartServerMode(Session session, string password = "")
         {
             //start server
             try
             {
+                if (password.Length > 0)
+                    session.Password = new Password(password);
                 session.Port = Server.DefaultPort + 1;
 #if DEBUG
                 session.Public = true;
@@ -629,12 +589,6 @@ namespace OTEX.Editor
             lastConnectionEndpoint = null;
             lastConnectionPassword = null;
             lastConnectionReturnToServerBrowser = false;
-
-            //started ok, set title text
-            Text = string.Format("Hosting {0} - {1}",
-                otexClient.Session.Documents.First().Value.Temporary ? "a temporary document"
-                : Path.GetFileName(otexClient.Session.Documents.First().Value.Path),
-                App.Name);
         }
 
         /////////////////////////////////////////////////////////////////////
@@ -709,16 +663,6 @@ namespace OTEX.Editor
 
                 //started ok
                 lastConnectionReturnToServerBrowser = false;
-                this.Execute(() =>
-                {
-                    Text = string.Format("Editing {0} ({1}) - {2}",
-                        otexClient.Session.Documents.First().Value.Temporary ? "a temporary document"
-                        : Path.GetFileName(otexClient.Session.Documents.First().Value.Path),
-                       otexClient.Session.Name.Length == 0 ? lastConnectionEndpoint.ToString() : string.Format("{0}, {1}",
-                            otexClient.Session.Name, lastConnectionEndpoint),
-                        App.Name);
-                });
-
                 clientConnectingThread = null;
             });
             clientConnectingThread.IsBackground = false;
@@ -732,9 +676,16 @@ namespace OTEX.Editor
 
         protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
         {
-            if (customKeyBindings.TryGetValue(keyData, out var customBinding))
+            Action<IEditorTextBox> binding = null;
+            if (singleEditorBindings.TryGetValue(keyData, out binding))
             {
-                customBinding();
+                binding(activeEditor.TextBox);
+                return true;
+            }
+            if (globalEditorBindings.TryGetValue(keyData, out binding))
+            {
+                foreach (var editor in editors)
+                    binding(editor.Value.TextBox);
                 return true;
             }
             return base.ProcessCmdKey(ref msg, keyData);
@@ -747,27 +698,45 @@ namespace OTEX.Editor
                 return;
             languageManager.Load(Path.Combine(App.ExecutableDirectory, "..\\languages.xml"));
 
-            var arg = App.Arguments.OrphanedValues.LastOrDefault();
-            if (arg != null && File.Exists(arg.Value))
+            string[] edits = null;
+            App.Arguments.Values("edit", ref edits);
+            string[] news = null;
+            App.Arguments.Values("new", ref news);
+            string[] temps = null;
+            App.Arguments.Values("temp", ref temps);
+            if (edits != null || temps != null || news != null)
             {
                 Session session = new Session();
-                session.AddDocument(arg.Value, Document.ConflictResolutionStrategy.Edit, 4);
-
+                if (edits != null)
+                {
+                    foreach (var f in edits)
+                        session.AddDocument(f, Document.ConflictResolutionStrategy.Edit, 4);
+                }
+                if (news != null)
+                {
+                    foreach (var f in news)
+                        session.AddDocument(f, Document.ConflictResolutionStrategy.Replace, 4);
+                }
+                if (temps != null)
+                {
+                    foreach (var f in temps)
+                        session.AddDocument(f);
+                }
                 ushort port = 0;
-                if (App.Arguments.Key("port", ref port))
+                if (App.Arguments.Value("port", ref port))
                     session.Port = port;
                 string str = "";
-                if (App.Arguments.Key("name", ref str))
+                if (App.Arguments.Value("name", ref str))
                     session.Name = str;
                 uint lim = 0;
-                if (App.Arguments.Key("clientlimit", ref lim))
+                if (App.Arguments.Value("maxclients", ref lim))
                     session.ClientLimit = lim;
-                if (App.Arguments.Key("password", ref str))
-                    session.Password = new Password(str);
+                string pass = "";
+                App.Arguments.Value("password", ref pass);
                 bool pub = true;
                 App.Arguments.Boolean("public", "private", ref pub);
                 session.Public = pub;
-                StartServerMode(session);
+                StartServerMode(session, pass);
             }
             else
                 mainPaginator.ActivePageKey = "menu";
@@ -799,7 +768,8 @@ namespace OTEX.Editor
             if (dlgServerOpenExisting.ShowDialog() == DialogResult.OK)
             {
                 Session session = new Session();
-                session.AddDocument(dlgServerOpenExisting.FileName, Document.ConflictResolutionStrategy.Edit, 4);
+                foreach (var file in dlgServerOpenExisting.FileNames)
+                    session.AddDocument(file, Document.ConflictResolutionStrategy.Edit, 4);
                 session.Public = true;
                 StartServerMode(session);
             }
@@ -859,32 +829,21 @@ namespace OTEX.Editor
                 clientConnectingThread = null;
             }
             if (otexServerListener != null)
-            {
                 otexServerListener.Dispose();
-                otexServerListener = null;
-            }
             if (otexClient != null)
-            {
                 otexClient.Dispose();
-                otexClient = null;
-            }
             if (otexServer != null)
-            {
                 otexServer.Dispose();
-                otexServer = null;
-            }
             if (passwordForm != null)
             {
                 passwordForm.Dispose();
                 passwordForm = null;
             }
             if (languageManager != null)
-            {
                 languageManager.Dispose();
-                languageManager = null;
-            }
             App.Config.Flush();
-            customKeyBindings.Clear();
+            singleEditorBindings.Clear();
+            globalEditorBindings.Clear();
             base.OnClosed(e);
         }
 
@@ -984,7 +943,7 @@ namespace OTEX.Editor
         {
             if (sidePaginator.ActivePage == null)
                 return;
-            var button = sidePaginator.ActivePage.Tag as ITitleBarButton;
+            var button = sidePaginator.ActivePage.Tag as TitleBarButton;
             if (button == null)
                 return;
 
@@ -1029,58 +988,6 @@ namespace OTEX.Editor
             }
         }
 
-        /*
-        int IThemedListBoxItem.MeasureItemHeight(ThemedListBox host, MeasureItemEventArgs e)
-        {
-            return 48;
-        }
-
-        void IThemedListBoxItem.DrawListboxItem(DrawItemEventArgs e)
-        {
-            using (var brush = new SolidBrush(Colour))
-                e.Graphics.FillRectangle(brush, 8, 8, 36, 36);
-
-            var textRect = new Rectangle(52, 8, e.Bounds.Width - 60, 36);
-            using (var format = new StringFormat())
-            {
-                format.Alignment = StringAlignment.Near;
-                format.LineAlignment = StringAlignment.Near;
-                format.FormatFlags |= StringFormatFlags.NoWrap;
-
-                using (var brush = new SolidBrush(e.ForeColor))
-                    e.Graphics.DrawString(IsLocal ? "You" : "User", e.Font, brush, textRect);
-            }
-        }*/
-
-        /*
-    private void lbUsers_MeasureItem(object sender, MeasureItemEventArgs e)
-    {
-        if (e.Index >= 0)
-            e.ItemHeight = 48;
-    }
-
-    private void lbUsers_DrawItem(object sender, DrawItemEventArgs e)
-    {
-        if (e.Index < 0)
-            return;
-
-        var user = (sender as ListBox).Items[e.Index] as User;
-        if (user == null)
-            throw new InvalidOperationException("non-User item added to users list");
-
-        using (var brush = new SolidBrush(user.Colour))
-            e.Graphics.FillRectangle(brush, 8, 8, 36, 36);
-        var textRect = new Rectangle(52, 8, e.Bounds.Width - 60, 36);
-        using (var brush = new SolidBrush(lbUsers.ForeColor))
-            e.Graphics.DrawString(user.IsLocal ? "You" : "User", e.Font, brush, textRect);
-    }
-
-    private void lbUsers_SelectedIndexChanged(object sender, EventArgs e)
-    {
-        lbUsers.Refresh();
-    }
-    */
-
         private void nudClientUpdateInterval_ValueChanged(object sender, EventArgs e)
         {
             if (settingsLoaded)
@@ -1103,7 +1010,7 @@ namespace OTEX.Editor
             panConnectingPage.ResumeLayout(true);
         }
 
-        private void TitleBarButton_CheckedChanged(ITitleBarButton b)
+        private void TitleBarButton_CheckedChanged(TitleBarButton b)
         {
             if (suspendTitleBarButtonEvents)
                 return;
@@ -1114,7 +1021,7 @@ namespace OTEX.Editor
             {
                 suspendTitleBarButtonEvents = true;
                 if (currentPage != null)
-                    (currentPage.Tag as ITitleBarButton).Checked = false;
+                    (currentPage.Tag as TitleBarButton).Checked = false;
                 sidePaginator.ActivePage = buttonPage;
                 splitter.ShowPanel(2);
                 suspendTitleBarButtonEvents = false;

@@ -214,6 +214,7 @@ namespace OTEX
 
                 //add initial operation
                 MasterOperations.Add(new Operation(Guid.Empty, 0, Contents));
+                ++SyncIndex;
             }
             return true;
         }

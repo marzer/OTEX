@@ -36,8 +36,6 @@ namespace OTEX
         {
             get
             {
-                if (!ReadOnly)
-                    throw new InvalidOperationException("Getting Documents as read-only is only valid client-side");
                 if (documentsReadOnly == null)
                     documentsReadOnly = new ReadOnlyDictionary<Guid, Document>(documents);
                 return documentsReadOnly;
@@ -302,11 +300,19 @@ namespace OTEX
             if (documents.Count == 0)
                 throw new ArgumentOutOfRangeException("Documents", "session must contain at least one document");
             var docs = new List<Document>();
+            var paths = new HashSet<string>();
             foreach (var kvp in documents)
             {
                 if (!kvp.Value.Initialize())
                     continue;
                 docs.Add(kvp.Value);
+                if (!kvp.Value.Temporary)
+                {
+                    var p = Path.GetFullPath(kvp.Value.Path).ToLower();
+                    if (paths.Contains(p))
+                        throw new ArgumentOutOfRangeException("Documents", string.Format("duplicate file: {0}", kvp.Value.Path));
+                    paths.Add(p);
+                }
             }
             if (documents.Count == 0)
                 throw new ArgumentOutOfRangeException("Documents", "session must contain at least one document (all were skipped)");

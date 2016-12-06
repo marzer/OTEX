@@ -88,6 +88,7 @@
             this.kickToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.banToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.flpUsers = new OTEX.Editor.UserList();
+            this.panEditors = new Marzersoft.Themes.ThemedPanel();
             this.panMenu.SuspendLayout();
             this.panMenuButtons.SuspendLayout();
             this.panServerBrowserPage.SuspendLayout();
@@ -453,6 +454,7 @@
             // 
             // dlgServerOpenExisting
             // 
+            this.dlgServerOpenExisting.Multiselect = true;
             this.dlgServerOpenExisting.Title = "Select an existing file to collaboratively edit";
             // 
             // dlgServerCreateNew
@@ -512,7 +514,7 @@
             this.panMenuPage.Controls.Add(this.lblAbout);
             this.panMenuPage.Controls.Add(this.lblVersion);
             this.panMenuPage.Controls.Add(this.lblDebug);
-            this.panMenuPage.Location = new System.Drawing.Point(475, 15);
+            this.panMenuPage.Location = new System.Drawing.Point(619, 12);
             this.panMenuPage.Name = "panMenuPage";
             this.panMenuPage.Size = new System.Drawing.Size(427, 345);
             this.panMenuPage.TabIndex = 5;
@@ -783,7 +785,7 @@
             // 
             this.splitter.FixedPanel = System.Windows.Forms.FixedPanel.Panel2;
             this.splitter.IsSplitterFixed = true;
-            this.splitter.Location = new System.Drawing.Point(657, 394);
+            this.splitter.Location = new System.Drawing.Point(678, 391);
             this.splitter.Margin = new System.Windows.Forms.Padding(0);
             this.splitter.Name = "splitter";
             // 
@@ -791,7 +793,7 @@
             // 
             this.splitter.Panel2.Controls.Add(this.sideSplitter);
             this.splitter.Size = new System.Drawing.Size(351, 100);
-            this.splitter.SplitterDistance = 109;
+            this.splitter.SplitterDistance = 118;
             this.splitter.SplitterWidth = 1;
             this.splitter.TabIndex = 9;
             this.splitter.TabStop = false;
@@ -815,7 +817,7 @@
             // sideSplitter.Panel2
             // 
             this.sideSplitter.Panel2.Padding = new System.Windows.Forms.Padding(2, 0, 0, 0);
-            this.sideSplitter.Size = new System.Drawing.Size(241, 100);
+            this.sideSplitter.Size = new System.Drawing.Size(232, 100);
             this.sideSplitter.SplitterDistance = 34;
             this.sideSplitter.SplitterWidth = 1;
             this.sideSplitter.TabIndex = 0;
@@ -827,7 +829,7 @@
             this.lblSideBar.Location = new System.Drawing.Point(2, 4);
             this.lblSideBar.Margin = new System.Windows.Forms.Padding(0);
             this.lblSideBar.Name = "lblSideBar";
-            this.lblSideBar.Size = new System.Drawing.Size(239, 30);
+            this.lblSideBar.Size = new System.Drawing.Size(230, 30);
             this.lblSideBar.TabIndex = 108;
             this.lblSideBar.Text = "<sidebar>";
             this.lblSideBar.TextAlign = System.Drawing.ContentAlignment.BottomLeft;
@@ -899,11 +901,20 @@
             this.flpUsers.TabIndex = 10;
             this.flpUsers.WrapContents = false;
             // 
+            // panEditors
+            // 
+            this.panEditors.Location = new System.Drawing.Point(376, 236);
+            this.panEditors.Margin = new System.Windows.Forms.Padding(0);
+            this.panEditors.Name = "panEditors";
+            this.panEditors.Size = new System.Drawing.Size(200, 100);
+            this.panEditors.TabIndex = 11;
+            // 
             // EditorForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1074, 478);
+            this.Controls.Add(this.panEditors);
             this.Controls.Add(this.flpUsers);
             this.Controls.Add(this.splitter);
             this.Controls.Add(this.panSettings);
@@ -1001,6 +1012,7 @@
         private System.Windows.Forms.ToolStripMenuItem kickToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem banToolStripMenuItem;
         private System.Windows.Forms.Label lblDebug;
+        internal Marzersoft.Themes.ThemedPanel panEditors;
     }
 }
 
