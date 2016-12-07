@@ -35,6 +35,7 @@ namespace OTEX.Editor
         private TitleBarButton logoutButton = null, settingsButton = null, usersButton = null;
         private volatile bool settingsLoaded = false;
         private Paginator mainPaginator = null, sidePaginator = null;
+        internal readonly Paginator editorPaginator = null;
         internal readonly User localUser;
         private readonly Dictionary<Guid, User> remoteUsers = new Dictionary<Guid, User>();
         internal readonly PluginFactory plugins;
@@ -503,10 +504,6 @@ namespace OTEX.Editor
             mainPaginator.Add("connecting", panConnectingPage);
             mainPaginator.Add("servers", panServerBrowserPage);
             mainPaginator.Add("editors", panEditors);
-            mainPaginator.PageDeactivated += (s, k, p) =>
-            {
-                splitter.SuspendRepaints();
-            };
             mainPaginator.PageActivated += (s, k, p) =>
             {
                 if (p == null)
@@ -521,7 +518,6 @@ namespace OTEX.Editor
                         PositionConnectingPageControls();
                         break;
                 }
-                splitter.ResumeRepaints();
             };
             mainPaginator.ActivePageKey = "menu";
 
@@ -536,6 +532,9 @@ namespace OTEX.Editor
                     return;
                 lblSideBar.Text = k.Nameify();
             };
+
+            // CONFIGURE EDITOR PAGINATOR //////////////////////////////////////////////////////////
+            editorPaginator = new Paginator(panEditors);
         }
 
         /////////////////////////////////////////////////////////////////////
@@ -813,6 +812,20 @@ namespace OTEX.Editor
         protected override void OnClosed(EventArgs e)
         {
             closing = true;
+
+            //clear key bindings
+            singleEditorBindings.Clear();
+            globalEditorBindings.Clear();
+
+            //dispose network objects
+            if (otexServerListener != null)
+                otexServerListener.Dispose();
+            if (otexClient != null)
+                otexClient.Dispose();
+            if (otexServer != null)
+                otexServer.Dispose();
+
+            //dispose ui
             if (mainPaginator != null)
             {
                 mainPaginator.Dispose();
@@ -823,17 +836,13 @@ namespace OTEX.Editor
                 sidePaginator.Dispose();
                 sidePaginator = null;
             }
+            if (editorPaginator != null)
+                editorPaginator.Dispose();
             if (clientConnectingThread != null)
             {
                 clientConnectingThread.Join();
                 clientConnectingThread = null;
             }
-            if (otexServerListener != null)
-                otexServerListener.Dispose();
-            if (otexClient != null)
-                otexClient.Dispose();
-            if (otexServer != null)
-                otexServer.Dispose();
             if (passwordForm != null)
             {
                 passwordForm.Dispose();
@@ -841,9 +850,10 @@ namespace OTEX.Editor
             }
             if (languageManager != null)
                 languageManager.Dispose();
+
+            //flush config
             App.Config.Flush();
-            singleEditorBindings.Clear();
-            globalEditorBindings.Clear();
+
             base.OnClosed(e);
         }
 

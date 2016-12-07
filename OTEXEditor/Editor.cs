@@ -52,9 +52,9 @@ namespace OTEX.Editor
         public readonly TitleBarTab Tab;
 
         /// <summary>
-        /// The parent control hosting the editor control;
+        /// The paginator hosting the editor control.
         /// </summary>
-        public readonly Control Parent;
+        public readonly Paginator Paginator;
 
         /// <summary>
         /// The language manager.
@@ -93,7 +93,7 @@ namespace OTEX.Editor
             LanaguageManager = form.languageManager ?? throw new ArgumentNullException("form.languageManager");
             Client = form.otexClient ?? throw new ArgumentNullException("form.otexClient");
             User = form.localUser ?? throw new ArgumentNullException("form.localUser");
-            Parent = form.panEditors ?? throw new ArgumentNullException("form.panEditors");
+            Paginator = form.editorPaginator ?? throw new ArgumentNullException("form.editorPaginator");
             Settings = form.settings ?? throw new ArgumentNullException("form.settings");
             ID = Document.ID;
 
@@ -109,15 +109,9 @@ namespace OTEX.Editor
             TextBox = textBox;
             RepaintMarshal = TextBox as IRepaintMarshal;
             TextBox.Language = LanaguageManager[document.Path];
-            {
-                var control = textBox as Control;
-                control.Visible = Tab.Active;
-                control.Tag = this;
-                control.Dock = DockStyle.Fill;
-                Parent.Controls.Add(control);
-            }
             TextBox.UserColour = User.Colour;
             TextBox.SetRuler(Settings.RulerVisible, Settings.RulerOffset);
+            Paginator.Add(ID.ToString(), textBox as Control, Tab.Active);           
 
             //subscribe to events
             TextBox.OnInsertion += TextBox_OnInsertion;
@@ -126,7 +120,6 @@ namespace OTEX.Editor
             LanaguageManager.OnLoaded += LanguageManager_OnLoaded;
             Client.OnRemoteDisconnection += Client_OnRemoteDisconnection;
             Tab.Activated += Tab_Activated;
-            Tab.Deactivated += Tab_Deactivated;
             User.OnColourChanged += User_OnColourChanged;
             Settings.OnRulerChanged += Settings_OnRulerChanged;
         }
@@ -153,14 +146,9 @@ namespace OTEX.Editor
         // TAB EVENTS
         /////////////////////////////////////////////////////////////////////
 
-        private void Tab_Deactivated(TitleBarTab tab)
-        {
-            (TextBox as Control).Visible = false;
-        }
-
         private void Tab_Activated(TitleBarTab tab)
         {
-            (TextBox as Control).Visible = true;
+            Paginator.ActivePage = TextBox as Control;
             Form.activeEditor = this;
             User.SetSelection(ID, TextBox.SelectionStart, TextBox.SelectionEnd);
         }
@@ -180,8 +168,6 @@ namespace OTEX.Editor
         public void RemoteOperations(IEnumerable<Operation> ops)
         {
             TextBox.DiffEvents = false;
-            if (RepaintMarshal != null)
-                RepaintMarshal.SuspendRepaints();
             foreach (var operation in ops)
             {
                 if (operation.IsInsertion)
@@ -189,15 +175,14 @@ namespace OTEX.Editor
                 else if (operation.IsDeletion)
                     TextBox.DeleteText((uint)operation.Offset, (uint)operation.Length);
             }
-            (TextBox as Control).Visible = Tab.Active;
-            if (RepaintMarshal != null)
-                RepaintMarshal.ResumeRepaints(true);
             TextBox.DiffEvents = true;
         }
 
         private void Client_OnRemoteDisconnection(IClient sender, RemoteClient remoteClient)
         {
-            Form.Execute(() => { TextBox.SetHighlightRange(remoteClient.ID, 0, 0, Color.Black); });
+            Form.Execute(() => {
+                TextBox.SetHighlightRange(remoteClient.ID, 0, 0, Color.Black);
+            });
         }
 
         /////////////////////////////////////////////////////////////////////
@@ -228,8 +213,11 @@ namespace OTEX.Editor
 
         private void LanguageManager_OnLoaded(LanguageManager sender, int languageCount)
         {
-            if (languageCount > 0)
-                TextBox.Language = sender[Document.Path];
+            Form.Execute(() =>
+            {
+                if (languageCount > 0)
+                    TextBox.Language = sender[Document.Path];
+            });
         }
 
         /////////////////////////////////////////////////////////////////////
@@ -250,11 +238,10 @@ namespace OTEX.Editor
             TextBox.OnDeletion -= TextBox_OnDeletion;
             TextBox.OnSelection -= TextBox_OnSelection;
             Tab.Activated -= Tab_Activated;
-            Tab.Deactivated -= Tab_Deactivated;
             Client.OnRemoteDisconnection -= Client_OnRemoteDisconnection;
 
             //destroy editor
-            Parent.Controls.Remove(TextBox as Control);
+            Paginator.Remove(TextBox as Control);
             var disposable = (TextBox as IDisposable);
             if (disposable != null)
                 disposable.Dispose();
