@@ -97,8 +97,8 @@ namespace OTEX.Editor
                 {
                     userColour = value;
                     SetSelectionBackColor(true, App.Theme == null || App.Theme.IsDark
-                        ? Styles[Style.Default].BackColor.Blend(userColour, 60)
-                        : userColour.Blend(Styles[Style.Default].BackColor, 60));
+                        ? Styles[Style.Default].BackColor.Blend(userColour, 40)
+                        : userColour.Blend(Styles[Style.Default].BackColor, 40));
                     CaretLineBackColor = userColour;
                     EdgeColor = App.Theme == null || App.Theme.IsDark
                         ? Styles[Style.Default].BackColor.Blend(userColour, 32)
@@ -372,8 +372,6 @@ namespace OTEX.Editor
             //themes
             ApplyTheme(App.Theme);
             App.ThemeChanged += ApplyTheme;
-
-            Logger.I("ScintillaNET Editor plugin loaded.");
         }
 
         /////////////////////////////////////////////////////////////////////
@@ -453,8 +451,8 @@ namespace OTEX.Editor
                 Styles[Style.IndentGuide].ForeColor = App.Theme.Workspace.HighContrast.Colour;
 
                 //selection colour
-                SetSelectionBackColor(true, App.Theme == null || App.Theme.IsDark ? Styles[Style.Default].BackColor.Blend(userColour, 60)
-                    : userColour.Blend(Styles[Style.Default].BackColor, 60));
+                SetSelectionBackColor(true, App.Theme == null || App.Theme.IsDark ? Styles[Style.Default].BackColor.Blend(userColour, 40)
+                    : userColour.Blend(Styles[Style.Default].BackColor, 40));
 
                 //line length indicator
                 EdgeColor = App.Theme == null || App.Theme.IsDark ? Styles[Style.Default].BackColor.Blend(userColour, 32)
