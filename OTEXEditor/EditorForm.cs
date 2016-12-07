@@ -56,6 +56,7 @@ namespace OTEX.Editor
             = new Lazy<IReadOnlyList<Color>>(() =>
             {
                 List<Color> colours = new List<Color>();
+                colours.Add(ColorTranslator.FromHtml("#999999"));
                 colours.Add(ColorTranslator.FromHtml("#ec7063"));
                 colours.Add(ColorTranslator.FromHtml("#af7ac5"));
                 colours.Add(ColorTranslator.FromHtml("#5dade2"));
@@ -194,13 +195,13 @@ namespace OTEX.Editor
             {
                 Logger.I("Server: started on port {0}", s.Session.Port);
             };
-            otexServer.OnClientConnected += (s, id) =>
+            otexServer.OnClientConnected += (s, rc) =>
             {
-                Logger.I("Server: client {0} connected.", id);
+                Logger.I("Server: client {0} connected.", rc.ID);
             };
-            otexServer.OnClientDisconnected += (s, id) =>
+            otexServer.OnClientDisconnected += (s, rc) =>
             {
-                Logger.I("Server: client {0} disconnected.", id);
+                Logger.I("Server: client {0} disconnected.", rc.ID);
             };
             otexServer.OnStopped += (s) =>
             {
