@@ -485,13 +485,13 @@ namespace OTEX.Editor
                     lblAbout.Font = t.Font.Underline;
 
                     settingsButton.Colour = t.Accent(0).Colour;
-                    settingsButton.Image = App.Images.Resource("cog" + (t.IsDark ? "" : "_black"),
-                        App.Assembly, "OTEX.Editor");
+                    settingsButton.Image = App.Images.Resource("cog", App.Assembly, "OTEX.Editor");
+                    settingsButton.InvertImage = settingsButton.InvertImageWhenChecked = !t.IsDark;
 
                     usersButton.Colour = t.Accent(1).Colour;
-
-                    logoutButton.Image = App.Images.Resource("logout" + (t.IsDark ? "" : "_black"),
-                        App.Assembly, "OTEX.Editor");
+                    
+                    logoutButton.Image = App.Images.Resource("logout", App.Assembly, "OTEX.Editor");
+                    logoutButton.InvertImage = logoutButton.InvertImageWhenChecked = !t.IsDark;
 
                     sideSplitter.Panel1.Refresh();
 

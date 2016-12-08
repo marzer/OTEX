@@ -106,8 +106,6 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="OTEX.ico" />
-    <None Include="Resources\logout_black.png" />
-    <None Include="Resources\cog_black.png" />
     <None Include="Resources\logout.png" />
     <None Include="Resources\cog.png" />
   </ItemGroup>
