@@ -5,6 +5,7 @@ using System.IO;
 using Marzersoft;
 using System.Security.AccessControl;
 using System.Security;
+using System.Text;
 
 namespace OTEX
 {
@@ -89,6 +90,12 @@ namespace OTEX
         /// Master list of operations, used for synchronizing newly-connected clients.
         /// </summary>
         internal List<Operation> MasterOperations = null;
+
+        /// <summary>
+        /// File stream to local file.
+        /// </summary>
+        [NonSerialized]
+        private FileStream fileStream = null;
 
         /////////////////////////////////////////////////////////////////////
         // CONSTRUCTORS
@@ -175,46 +182,64 @@ namespace OTEX
             if (!Directory.Exists(dir))
                 throw new DirectoryNotFoundException("File's directory did not exist");
             //if (!dir.HasPermissions(FileSystemRights.WriteData))
-              //  throw new SecurityException("User does not have sufficient file system rights.");
-            if (!File.Exists(path))
-            {
-                MasterOperations = new List<Operation>();
-                return true;
-            }
-            if (ConflictResolution == ConflictResolutionStrategy.Skip)
+            //  throw new SecurityException("User does not have sufficient file system rights.");
+            bool fileExists = File.Exists(path);
+            if (fileExists && ConflictResolution == ConflictResolutionStrategy.Skip)
                 return false;
 
+            //create list of operations
             MasterOperations = new List<Operation>();
-            if (ConflictResolution == ConflictResolutionStrategy.Edit)
+
+            //open file exclusively
+            fileStream = File.Open(path, ConflictResolution == ConflictResolutionStrategy.Edit
+                ? FileMode.OpenOrCreate : FileMode.Create, FileAccess.ReadWrite, FileShare.Read);
+
+            try
             {
                 //read file
-                Contents = File.ReadAllText(path, path.DetectEncoding());
+                if (fileExists && ConflictResolution == ConflictResolutionStrategy.Edit)
+                {
+                    //read from stream
+                    fileStream.Seek(0, SeekOrigin.Begin);
+                    byte[] fileData = new byte[fileStream.Length];
+                    fileStream.Read(fileData, 0, (int)fileStream.Length);
+                    Contents = fileData.DetectEncoding().GetString(fileData);
 
-                //replace tabs with spaces
-                if (TabWidth > 0)
-                    Contents = Contents.Replace("\t", new string(' ', (int)TabWidth));
+                    //replace tabs with spaces
+                    if (TabWidth > 0)
+                        Contents = Contents.Replace("\t", new string(' ', (int)TabWidth));
 
-                //detect line ending type
-                int crlfCount = RegularExpressions.CrLf.Split(Contents).Length;
-                string fileContentsNoCRLF = RegularExpressions.CrLf.Replace(Contents, "");
-                int crCount = RegularExpressions.Cr.Split(fileContentsNoCRLF).Length;
-                int lfCount = RegularExpressions.CrLf.Split(fileContentsNoCRLF).Length;
-                if (crlfCount > crCount && crlfCount > lfCount)
-                    LineEndings = "\r\n";
-                else if (crCount > crlfCount && crCount > lfCount)
-                    LineEndings = "\r";
-                else if (lfCount > crlfCount && lfCount > crCount)
-                    LineEndings = "\n";
-                else //??
+                    //detect line ending type
+                    int crlfCount = RegularExpressions.CrLf.Split(Contents).Length;
+                    string fileContentsNoCRLF = RegularExpressions.CrLf.Replace(Contents, "");
+                    int crCount = RegularExpressions.Cr.Split(fileContentsNoCRLF).Length;
+                    int lfCount = RegularExpressions.CrLf.Split(fileContentsNoCRLF).Length;
+                    if (crlfCount > crCount && crlfCount > lfCount)
+                        LineEndings = "\r\n";
+                    else if (crCount > crlfCount && crCount > lfCount)
+                        LineEndings = "\r";
+                    else if (lfCount > crlfCount && lfCount > crCount)
+                        LineEndings = "\n";
+                    else //??
+                        LineEndings = Environment.NewLine;
+
+                    //normalize line endings
+                    Contents = Contents.NormalizeLineEndings();
+
+                    //add initial operation
+                    MasterOperations.Add(new Operation(Guid.Empty, 0, Contents));
+                    ++SyncIndex;
+                }
+                else
+                {
+                    Contents = "";
                     LineEndings = Environment.NewLine;
-                fileContentsNoCRLF = null;
-
-                //normalize line endings
-                Contents = Contents.NormalizeLineEndings();
-
-                //add initial operation
-                MasterOperations.Add(new Operation(Guid.Empty, 0, Contents));
-                ++SyncIndex;
+                }
+            }
+            catch (Exception)
+            {
+                fileStream.Dispose();
+                throw;
             }
             return true;
         }
@@ -246,7 +271,27 @@ namespace OTEX
                 fileOutput = Contents.Replace(Environment.NewLine, LineEndings);
 
             //write contents to disk
-            File.WriteAllText(Path, fileOutput);
+            var fileData = Encoding.UTF8.GetBytes(fileOutput);
+            fileStream.Seek(0, SeekOrigin.Begin);
+            fileStream.SetLength(fileData.Length);
+            fileStream.Write(fileData, 0, fileData.Length);
+            fileStream.Flush();
+        }
+
+        /////////////////////////////////////////////////////////////////////
+        // SERVER-SIDE FILE CLOSING
+        /////////////////////////////////////////////////////////////////////
+
+        /// <summary>
+        /// Closes exclusive locks on document files.
+        /// </summary>
+        internal void CloseDocument()
+        {
+            if (fileStream != null)
+            {
+                fileStream.Dispose();
+                fileStream = null;
+            }
         }
     }
 }

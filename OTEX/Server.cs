@@ -280,6 +280,9 @@ namespace OTEX
 
             //final flush to disk
             CaptureException(() => { session.FlushDocuments(); });
+
+            //close session document locks
+            session.CloseDocuments();
         }
 
         /////////////////////////////////////////////////////////////////////

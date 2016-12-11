@@ -301,53 +301,61 @@ namespace OTEX
                 throw new ArgumentOutOfRangeException("Documents", "session must contain at least one document");
             var docs = new List<Document>();
             var paths = new HashSet<string>();
-            foreach (var kvp in documents)
+            try
             {
-                if (!kvp.Value.Initialize())
-                    continue;
-                docs.Add(kvp.Value);
-                if (!kvp.Value.Temporary)
+                foreach (var kvp in documents)
                 {
-                    var p = Path.GetFullPath(kvp.Value.Path).ToLower();
-                    if (paths.Contains(p))
-                        throw new ArgumentOutOfRangeException("Documents", string.Format("duplicate file: {0}", kvp.Value.Path));
-                    paths.Add(p);
+                    if (!kvp.Value.Initialize())
+                        continue;
+                    docs.Add(kvp.Value);
+                    if (!kvp.Value.Temporary)
+                    {
+                        var p = Path.GetFullPath(kvp.Value.Path).ToLower();
+                        if (paths.Contains(p))
+                            throw new ArgumentOutOfRangeException("Documents", string.Format("duplicate file: {0}", kvp.Value.Path));
+                        paths.Add(p);
+                    }
+                }
+                if (documents.Count == 0)
+                    throw new ArgumentOutOfRangeException("Documents", "session must contain at least one document (all were skipped)");
+                documents.Clear();
+                foreach (var doc in docs)
+                    documents[doc.ID] = doc;
+
+                //load ban list
+                if (BanListPath.Length > 0)
+                {
+                    BanListPath = Path.GetFullPath(BanListPath);
+                    if (Directory.Exists(BanListPath))
+                        throw new FileNotFoundException("BanListPath was a directory", BanListPath);
+                    var dir = Path.GetDirectoryName(BanListPath);
+                    if (!Directory.Exists(dir))
+                        throw new DirectoryNotFoundException("BanListPath's directory did not exist");
+                    if (!dir.HasPermissions(FileSystemRights.CreateFiles | FileSystemRights.Write))
+                        throw new SecurityException("User does not have sufficient file system rights.");
+
+                    if (File.Exists(BanListPath))
+                    {
+                        var initialCount = BanList.Count;
+                        var lines = File.ReadAllLines(BanListPath, BanListPath.DetectEncoding());
+                        for (int i = 0; i < lines.Length; ++i)
+                        {
+                            if ((lines[i] = lines[i].Trim()).Length == 0)
+                                continue;
+                            Guid guid;
+                            if (lines[i].TryParse(out guid))
+                                BanList.Add(guid);
+                        }
+
+                        if (initialCount > 0)
+                            FlushBanList();
+                    }
                 }
             }
-            if (documents.Count == 0)
-                throw new ArgumentOutOfRangeException("Documents", "session must contain at least one document (all were skipped)");
-            documents.Clear();
-            foreach (var doc in docs)
-                documents[doc.ID] = doc;
-
-            //load ban list
-            if (BanListPath.Length > 0)
+            catch (Exception)
             {
-                BanListPath = Path.GetFullPath(BanListPath);
-                if (Directory.Exists(BanListPath))
-                    throw new FileNotFoundException("BanListPath was a directory", BanListPath);
-                var dir = Path.GetDirectoryName(BanListPath);
-                if (!Directory.Exists(dir))
-                    throw new DirectoryNotFoundException("BanListPath's directory did not exist");
-                if (!dir.HasPermissions(FileSystemRights.CreateFiles | FileSystemRights.Write))
-                    throw new SecurityException("User does not have sufficient file system rights.");
-
-                if (File.Exists(BanListPath))
-                {
-                    var initialCount = BanList.Count;
-                    var lines = File.ReadAllLines(BanListPath, BanListPath.DetectEncoding());
-                    for (int i = 0; i < lines.Length; ++i)
-                    {
-                        if ((lines[i] = lines[i].Trim()).Length == 0)
-                            continue;
-                        Guid guid;
-                        if (lines[i].TryParse(out guid))
-                            BanList.Add(guid);
-                    }
-
-                    if (initialCount > 0)
-                        FlushBanList();
-                }
+                CloseDocuments();
+                throw;
             }
         }
 
@@ -377,6 +385,19 @@ namespace OTEX
         {
             foreach (var kvp in documents)
                 kvp.Value.FlushDocument();
+        }
+
+        /////////////////////////////////////////////////////////////////////
+        // SERVER-SIDE FILE CLOSING
+        /////////////////////////////////////////////////////////////////////
+
+        /// <summary>
+        /// Closes exclusive locks on document files.
+        /// </summary>
+        internal void CloseDocuments()
+        {
+            foreach (var kvp in documents)
+                kvp.Value.CloseDocument();
         }
     }
 }
