@@ -3,6 +3,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 
@@ -96,7 +97,7 @@ namespace OTEX.Editor
         }
 
         static Server server = null;
-        static volatile bool stop = false;
+        static volatile bool stop = false, stopped = false;
         static volatile object consoleLock = new object();
         static bool requiresPassword = false;
 
@@ -174,7 +175,6 @@ namespace OTEX.Editor
                 Guid instanceID = Guid.NewGuid();
                 if (args.Value("id", ref str))
                     str.TryParse(out instanceID);
-
                 string[] strs = null;
                 if (args.Values("edit", ref strs))
                 {
@@ -196,6 +196,16 @@ namespace OTEX.Editor
                     foreach (var b in strs)
                         if (str.TryParse(out var banId))
                             session.AddBan(banId);
+                }
+                var orphans = args.OrphanedValues;
+                foreach (var orphan in orphans)
+                {
+                    try
+                    {
+                        var path = Path.GetFullPath(orphan.Value); //throws on failure
+                        session.AddDocument(path, Document.ConflictResolutionStrategy.Edit, 4);
+                    }
+                    catch (Exception) { continue; }
                 }
 
                 //create server
@@ -229,11 +239,17 @@ namespace OTEX.Editor
                 {
                     Out("Server stopped.");
                 };
-                Console.CancelKeyPress += (s, e) =>
+                Native.AddConsoleHandler((type) =>
                 {
                     stop = true;
-                    e.Cancel = true;
-                };
+                    //loop, waiting for stopped
+                    while (!stopped)
+                        Thread.Sleep(250);
+
+                    return type != Native.CtrlTypes.CTRL_BREAK_EVENT
+                    && type != Native.CtrlTypes.CTRL_LOGOFF_EVENT
+                    && type != Native.CtrlTypes.CTRL_SHUTDOWN_EVENT;
+                });
 
                 //start server
                 server.Start(session);
@@ -258,6 +274,7 @@ namespace OTEX.Editor
 
             //dispose server (also stops it)
             server.Dispose();
+            stopped = true;
 
             //exit
             return 0;
