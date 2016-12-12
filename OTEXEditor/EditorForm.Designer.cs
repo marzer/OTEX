@@ -94,9 +94,9 @@
             this.panSettings = new System.Windows.Forms.TableLayoutPanel();
             this.label7 = new System.Windows.Forms.Label();
             this.label8 = new System.Windows.Forms.Label();
-            this.flpUsers = new OTEX.Editor.UserList();
-            this.lblDebug = new System.Windows.Forms.Label();
             this.lblAbout = new System.Windows.Forms.Label();
+            this.lblDebug = new System.Windows.Forms.Label();
+            this.flpUsers = new OTEX.Editor.UserList();
             this.panJoin.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dgvServers)).BeginInit();
             this.panServerPassword.SuspendLayout();
@@ -793,7 +793,7 @@
             // 
             this.splitter.Panel2.Controls.Add(this.sideSplitter);
             this.splitter.Size = new System.Drawing.Size(432, 100);
-            this.splitter.SplitterDistance = 140;
+            this.splitter.SplitterDistance = 143;
             this.splitter.SplitterWidth = 1;
             this.splitter.TabIndex = 9;
             this.splitter.TabStop = false;
@@ -817,7 +817,7 @@
             // sideSplitter.Panel2
             // 
             this.sideSplitter.Panel2.Padding = new System.Windows.Forms.Padding(2, 0, 0, 0);
-            this.sideSplitter.Size = new System.Drawing.Size(291, 100);
+            this.sideSplitter.Size = new System.Drawing.Size(288, 100);
             this.sideSplitter.SplitterDistance = 34;
             this.sideSplitter.SplitterWidth = 1;
             this.sideSplitter.TabIndex = 0;
@@ -831,7 +831,7 @@
             this.lblSideBar.Location = new System.Drawing.Point(2, 4);
             this.lblSideBar.Margin = new System.Windows.Forms.Padding(0);
             this.lblSideBar.Name = "lblSideBar";
-            this.lblSideBar.Size = new System.Drawing.Size(289, 30);
+            this.lblSideBar.Size = new System.Drawing.Size(286, 30);
             this.lblSideBar.TabIndex = 108;
             this.lblSideBar.Text = "<sidebar>";
             this.lblSideBar.TextAlign = System.Drawing.ContentAlignment.BottomLeft;
@@ -1028,17 +1028,19 @@
             this.label8.Text = "Line endings:";
             this.label8.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
-            // flpUsers
+            // lblAbout
             // 
-            this.flpUsers.AutoScroll = true;
-            this.flpUsers.ContextMenuStrip = this.cmUsers;
-            this.flpUsers.FlowDirection = System.Windows.Forms.FlowDirection.TopDown;
-            this.flpUsers.Location = new System.Drawing.Point(480, 12);
-            this.flpUsers.Margin = new System.Windows.Forms.Padding(0);
-            this.flpUsers.Name = "flpUsers";
-            this.flpUsers.Size = new System.Drawing.Size(34, 37);
-            this.flpUsers.TabIndex = 10;
-            this.flpUsers.WrapContents = false;
+            this.lblAbout.AutoSize = true;
+            this.lblAbout.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.lblAbout.Dock = System.Windows.Forms.DockStyle.Bottom;
+            this.lblAbout.Location = new System.Drawing.Point(0, 267);
+            this.lblAbout.Margin = new System.Windows.Forms.Padding(0, 10, 0, 10);
+            this.lblAbout.Name = "lblAbout";
+            this.lblAbout.Size = new System.Drawing.Size(105, 13);
+            this.lblAbout.TabIndex = 120;
+            this.lblAbout.TabStop = true;
+            this.lblAbout.Text = "About";
+            this.lblAbout.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
             // lblDebug
             // 
@@ -1054,25 +1056,23 @@
             this.lblDebug.Text = "<guid>";
             this.lblDebug.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
-            // lblAbout
+            // flpUsers
             // 
-            this.lblAbout.AutoSize = true;
-            this.lblAbout.Cursor = System.Windows.Forms.Cursors.Hand;
-            this.lblAbout.Dock = System.Windows.Forms.DockStyle.Bottom;
-            this.lblAbout.Location = new System.Drawing.Point(0, 267);
-            this.lblAbout.Margin = new System.Windows.Forms.Padding(0, 10, 0, 10);
-            this.lblAbout.Name = "lblAbout";
-            this.lblAbout.Size = new System.Drawing.Size(105, 13);
-            this.lblAbout.TabIndex = 120;
-            this.lblAbout.TabStop = true;
-            this.lblAbout.Text = "About";
-            this.lblAbout.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            this.flpUsers.AutoScroll = true;
+            this.flpUsers.ContextMenuStrip = this.cmUsers;
+            this.flpUsers.FlowDirection = System.Windows.Forms.FlowDirection.TopDown;
+            this.flpUsers.Location = new System.Drawing.Point(480, 12);
+            this.flpUsers.Margin = new System.Windows.Forms.Padding(0);
+            this.flpUsers.Name = "flpUsers";
+            this.flpUsers.Size = new System.Drawing.Size(34, 37);
+            this.flpUsers.TabIndex = 10;
+            this.flpUsers.WrapContents = false;
             // 
             // EditorForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1444, 703);
+            this.ClientSize = new System.Drawing.Size(1452, 706);
             this.Controls.Add(this.panSettings);
             this.Controls.Add(this.panHostTempName);
             this.Controls.Add(this.panHost);
