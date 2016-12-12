@@ -61,13 +61,10 @@
             this.lblHostSettings = new Marzersoft.Themes.ThemedLabel();
             this.btnHostStart = new Marzersoft.Themes.ThemedButton();
             this.lblHostDocuments = new Marzersoft.Themes.ThemedLabel();
-            this.lblAbout = new System.Windows.Forms.Label();
-            this.lblDebug = new System.Windows.Forms.Label();
             this.panConnectingPage = new System.Windows.Forms.Panel();
             this.panConnectingContent = new System.Windows.Forms.Panel();
             this.btnConnectingReconnect = new Marzersoft.Themes.ThemedButton();
             this.btnConnectingBack = new Marzersoft.Themes.ThemedButton();
-            this.panSettings = new System.Windows.Forms.Panel();
             this.label6 = new System.Windows.Forms.Label();
             this.cbTheme = new Marzersoft.Themes.ThemedComboBox();
             this.nudLineLength = new Marzersoft.Themes.ThemedNumericUpDown();
@@ -93,14 +90,19 @@
             this.tbHostTempName = new Marzersoft.Themes.ThemedTextBox();
             this.panHostTempName = new System.Windows.Forms.Panel();
             this.lblHostTempName = new Marzersoft.Themes.ThemedLabel();
+            this.cbLineEndings = new System.Windows.Forms.CheckBox();
+            this.panSettings = new System.Windows.Forms.TableLayoutPanel();
+            this.label7 = new System.Windows.Forms.Label();
+            this.label8 = new System.Windows.Forms.Label();
             this.flpUsers = new OTEX.Editor.UserList();
+            this.lblDebug = new System.Windows.Forms.Label();
+            this.lblAbout = new System.Windows.Forms.Label();
             this.panJoin.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dgvServers)).BeginInit();
             this.panServerPassword.SuspendLayout();
             this.panHost.SuspendLayout();
             this.panConnectingPage.SuspendLayout();
             this.panConnectingContent.SuspendLayout();
-            this.panSettings.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.nudLineLength)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.nudClientUpdateInterval)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.splitter)).BeginInit();
@@ -114,6 +116,7 @@
             this.menuSplitter.Panel1.SuspendLayout();
             this.menuSplitter.SuspendLayout();
             this.panHostTempName.SuspendLayout();
+            this.panSettings.SuspendLayout();
             this.SuspendLayout();
             // 
             // btnHost
@@ -433,7 +436,7 @@
             this.panHost.Controls.Add(this.lblHostSettings);
             this.panHost.Controls.Add(this.btnHostStart);
             this.panHost.Controls.Add(this.lblHostDocuments);
-            this.panHost.Location = new System.Drawing.Point(32, 170);
+            this.panHost.Location = new System.Drawing.Point(430, 162);
             this.panHost.Name = "panHost";
             this.panHost.Padding = new System.Windows.Forms.Padding(10);
             this.panHost.Size = new System.Drawing.Size(482, 385);
@@ -569,34 +572,6 @@
             this.lblHostDocuments.Text = "Documents";
             this.lblHostDocuments.TextAlign = System.Drawing.ContentAlignment.BottomLeft;
             // 
-            // lblAbout
-            // 
-            this.lblAbout.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.lblAbout.Cursor = System.Windows.Forms.Cursors.Hand;
-            this.lblAbout.Location = new System.Drawing.Point(0, 236);
-            this.lblAbout.Margin = new System.Windows.Forms.Padding(0);
-            this.lblAbout.Name = "lblAbout";
-            this.lblAbout.Size = new System.Drawing.Size(264, 30);
-            this.lblAbout.TabIndex = 0;
-            this.lblAbout.TabStop = true;
-            this.lblAbout.Text = "About";
-            this.lblAbout.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
-            // 
-            // lblDebug
-            // 
-            this.lblDebug.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.lblDebug.Cursor = System.Windows.Forms.Cursors.Hand;
-            this.lblDebug.Location = new System.Drawing.Point(0, 201);
-            this.lblDebug.Margin = new System.Windows.Forms.Padding(0);
-            this.lblDebug.Name = "lblDebug";
-            this.lblDebug.Size = new System.Drawing.Size(264, 30);
-            this.lblDebug.TabIndex = 5;
-            this.lblDebug.TabStop = true;
-            this.lblDebug.Text = "<guid>";
-            this.lblDebug.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
-            // 
             // panConnectingPage
             // 
             this.panConnectingPage.Controls.Add(this.panConnectingContent);
@@ -655,57 +630,39 @@
             this.btnConnectingBack.Visible = false;
             this.btnConnectingBack.Click += new System.EventHandler(this.btnConnectingBack_Click);
             // 
-            // panSettings
-            // 
-            this.panSettings.Controls.Add(this.label6);
-            this.panSettings.Controls.Add(this.lblAbout);
-            this.panSettings.Controls.Add(this.lblDebug);
-            this.panSettings.Controls.Add(this.cbTheme);
-            this.panSettings.Controls.Add(this.nudLineLength);
-            this.panSettings.Controls.Add(this.label5);
-            this.panSettings.Controls.Add(this.cbLineLength);
-            this.panSettings.Controls.Add(this.label4);
-            this.panSettings.Controls.Add(this.cbClientColour);
-            this.panSettings.Controls.Add(this.nudClientUpdateInterval);
-            this.panSettings.Controls.Add(this.label3);
-            this.panSettings.Location = new System.Drawing.Point(945, 207);
-            this.panSettings.Name = "panSettings";
-            this.panSettings.Size = new System.Drawing.Size(264, 266);
-            this.panSettings.TabIndex = 8;
-            // 
             // label6
             // 
-            this.label6.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.label6.Location = new System.Drawing.Point(0, 148);
+            this.label6.AutoSize = true;
+            this.label6.Location = new System.Drawing.Point(3, 154);
+            this.label6.Margin = new System.Windows.Forms.Padding(3, 4, 20, 0);
             this.label6.Name = "label6";
-            this.label6.Size = new System.Drawing.Size(166, 24);
+            this.label6.Size = new System.Drawing.Size(43, 13);
             this.label6.TabIndex = 117;
-            this.label6.Text = "Visual style:";
+            this.label6.Text = "Theme:";
             this.label6.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
             // cbTheme
             // 
-            this.cbTheme.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.cbTheme.Dock = System.Windows.Forms.DockStyle.Fill;
             this.cbTheme.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cbTheme.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.cbTheme.Location = new System.Drawing.Point(169, 151);
+            this.cbTheme.Location = new System.Drawing.Point(105, 150);
             this.cbTheme.Margin = new System.Windows.Forms.Padding(0);
             this.cbTheme.Name = "cbTheme";
-            this.cbTheme.Size = new System.Drawing.Size(86, 21);
+            this.cbTheme.Size = new System.Drawing.Size(120, 21);
             this.cbTheme.TabIndex = 116;
             this.cbTheme.SelectedIndexChanged += new System.EventHandler(this.cbTheme_SelectedIndexChanged);
             // 
             // nudLineLength
             // 
-            this.nudLineLength.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.nudLineLength.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.nudLineLength.Dock = System.Windows.Forms.DockStyle.Fill;
             this.nudLineLength.Increment = new decimal(new int[] {
             10,
             0,
             0,
             0});
-            this.nudLineLength.Location = new System.Drawing.Point(201, 117);
+            this.nudLineLength.Location = new System.Drawing.Point(105, 90);
             this.nudLineLength.Margin = new System.Windows.Forms.Padding(0);
             this.nudLineLength.Maximum = new decimal(new int[] {
             200,
@@ -718,7 +675,7 @@
             0,
             0});
             this.nudLineLength.Name = "nudLineLength";
-            this.nudLineLength.Size = new System.Drawing.Size(54, 20);
+            this.nudLineLength.Size = new System.Drawing.Size(120, 20);
             this.nudLineLength.TabIndex = 115;
             this.nudLineLength.Value = new decimal(new int[] {
             100,
@@ -729,53 +686,51 @@
             // 
             // label5
             // 
-            this.label5.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.label5.Location = new System.Drawing.Point(0, 114);
+            this.label5.AutoSize = true;
+            this.label5.Location = new System.Drawing.Point(3, 94);
+            this.label5.Margin = new System.Windows.Forms.Padding(3, 4, 20, 0);
             this.label5.Name = "label5";
-            this.label5.Size = new System.Drawing.Size(195, 22);
+            this.label5.Size = new System.Drawing.Size(64, 13);
             this.label5.TabIndex = 114;
-            this.label5.Text = "Ruler offset (characters):";
-            this.label5.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.label5.Text = "Ruler offset:";
+            this.label5.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             // 
             // cbLineLength
             // 
-            this.cbLineLength.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.cbLineLength.CheckAlign = System.Drawing.ContentAlignment.MiddleRight;
             this.cbLineLength.Checked = true;
             this.cbLineLength.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.cbLineLength.Location = new System.Drawing.Point(0, 79);
+            this.cbLineLength.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.cbLineLength.Location = new System.Drawing.Point(105, 60);
+            this.cbLineLength.Margin = new System.Windows.Forms.Padding(0);
             this.cbLineLength.Name = "cbLineLength";
-            this.cbLineLength.Size = new System.Drawing.Size(255, 24);
+            this.cbLineLength.Size = new System.Drawing.Size(120, 30);
             this.cbLineLength.TabIndex = 113;
-            this.cbLineLength.Text = "Draw line-length guide ruler?";
             this.cbLineLength.UseVisualStyleBackColor = true;
             this.cbLineLength.CheckedChanged += new System.EventHandler(this.cbLineLength_CheckedChanged);
             // 
             // label4
             // 
-            this.label4.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.label4.Location = new System.Drawing.Point(0, 41);
+            this.label4.AutoSize = true;
+            this.label4.Location = new System.Drawing.Point(3, 34);
+            this.label4.Margin = new System.Windows.Forms.Padding(3, 4, 20, 0);
             this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(195, 21);
+            this.label4.Size = new System.Drawing.Size(64, 13);
             this.label4.TabIndex = 112;
             this.label4.Text = "User colour:";
             this.label4.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
             // cbClientColour
             // 
-            this.cbClientColour.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.cbClientColour.Dock = System.Windows.Forms.DockStyle.Fill;
             this.cbClientColour.DrawMode = System.Windows.Forms.DrawMode.OwnerDrawFixed;
             this.cbClientColour.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cbClientColour.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.cbClientColour.FormattingEnabled = true;
-            this.cbClientColour.Location = new System.Drawing.Point(201, 44);
+            this.cbClientColour.Location = new System.Drawing.Point(105, 30);
             this.cbClientColour.Margin = new System.Windows.Forms.Padding(0);
             this.cbClientColour.Name = "cbClientColour";
             this.cbClientColour.ShowNames = false;
-            this.cbClientColour.Size = new System.Drawing.Size(54, 21);
+            this.cbClientColour.Size = new System.Drawing.Size(120, 21);
             this.cbClientColour.TabIndex = 111;
             this.toolTips.SetToolTip(this.cbClientColour, "Your user colour. Remote users will see your highlight ranges marked out using th" +
         "is colour.");
@@ -783,15 +738,15 @@
             // 
             // nudClientUpdateInterval
             // 
-            this.nudClientUpdateInterval.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.nudClientUpdateInterval.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.nudClientUpdateInterval.DecimalPlaces = 1;
+            this.nudClientUpdateInterval.Dock = System.Windows.Forms.DockStyle.Fill;
             this.nudClientUpdateInterval.Increment = new decimal(new int[] {
             5,
             0,
             0,
             65536});
-            this.nudClientUpdateInterval.Location = new System.Drawing.Point(201, 12);
+            this.nudClientUpdateInterval.Location = new System.Drawing.Point(105, 0);
             this.nudClientUpdateInterval.Margin = new System.Windows.Forms.Padding(0);
             this.nudClientUpdateInterval.Maximum = new decimal(new int[] {
             50,
@@ -804,7 +759,7 @@
             0,
             65536});
             this.nudClientUpdateInterval.Name = "nudClientUpdateInterval";
-            this.nudClientUpdateInterval.Size = new System.Drawing.Size(54, 20);
+            this.nudClientUpdateInterval.Size = new System.Drawing.Size(120, 20);
             this.nudClientUpdateInterval.TabIndex = 110;
             this.toolTips.SetToolTip(this.nudClientUpdateInterval, "How frequently your local client sends requests to (and recieves update responses" +
         " from) the server. Lower values require more bandwidth and system resources.");
@@ -817,28 +772,28 @@
             // 
             // label3
             // 
-            this.label3.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.label3.Location = new System.Drawing.Point(0, 9);
+            this.label3.AutoSize = true;
+            this.label3.Location = new System.Drawing.Point(3, 4);
+            this.label3.Margin = new System.Windows.Forms.Padding(3, 4, 20, 0);
             this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(198, 20);
+            this.label3.Size = new System.Drawing.Size(82, 13);
             this.label3.TabIndex = 109;
-            this.label3.Text = "Update interval (seconds):";
+            this.label3.Text = "Update interval:";
             this.label3.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
             // splitter
             // 
             this.splitter.FixedPanel = System.Windows.Forms.FixedPanel.Panel2;
             this.splitter.IsSplitterFixed = true;
-            this.splitter.Location = new System.Drawing.Point(32, 21);
+            this.splitter.Location = new System.Drawing.Point(9, 9);
             this.splitter.Margin = new System.Windows.Forms.Padding(0);
             this.splitter.Name = "splitter";
             // 
             // splitter.Panel2
             // 
             this.splitter.Panel2.Controls.Add(this.sideSplitter);
-            this.splitter.Size = new System.Drawing.Size(392, 100);
-            this.splitter.SplitterDistance = 120;
+            this.splitter.Size = new System.Drawing.Size(432, 100);
+            this.splitter.SplitterDistance = 140;
             this.splitter.SplitterWidth = 1;
             this.splitter.TabIndex = 9;
             this.splitter.TabStop = false;
@@ -862,7 +817,7 @@
             // sideSplitter.Panel2
             // 
             this.sideSplitter.Panel2.Padding = new System.Windows.Forms.Padding(2, 0, 0, 0);
-            this.sideSplitter.Size = new System.Drawing.Size(271, 100);
+            this.sideSplitter.Size = new System.Drawing.Size(291, 100);
             this.sideSplitter.SplitterDistance = 34;
             this.sideSplitter.SplitterWidth = 1;
             this.sideSplitter.TabIndex = 0;
@@ -876,7 +831,7 @@
             this.lblSideBar.Location = new System.Drawing.Point(2, 4);
             this.lblSideBar.Margin = new System.Windows.Forms.Padding(0);
             this.lblSideBar.Name = "lblSideBar";
-            this.lblSideBar.Size = new System.Drawing.Size(269, 30);
+            this.lblSideBar.Size = new System.Drawing.Size(289, 30);
             this.lblSideBar.TabIndex = 108;
             this.lblSideBar.Text = "<sidebar>";
             this.lblSideBar.TextAlign = System.Drawing.ContentAlignment.BottomLeft;
@@ -984,7 +939,7 @@
             // 
             this.panHostTempName.Controls.Add(this.lblHostTempName);
             this.panHostTempName.Controls.Add(this.tbHostTempName);
-            this.panHostTempName.Location = new System.Drawing.Point(575, 114);
+            this.panHostTempName.Location = new System.Drawing.Point(699, 82);
             this.panHostTempName.Name = "panHostTempName";
             this.panHostTempName.Size = new System.Drawing.Size(204, 64);
             this.panHostTempName.TabIndex = 2007;
@@ -1003,6 +958,76 @@
             this.lblHostTempName.Text = "Temp document description:";
             this.lblHostTempName.TextAlign = System.Drawing.ContentAlignment.BottomLeft;
             // 
+            // cbLineEndings
+            // 
+            this.cbLineEndings.Checked = true;
+            this.cbLineEndings.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.cbLineEndings.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.cbLineEndings.Location = new System.Drawing.Point(105, 120);
+            this.cbLineEndings.Margin = new System.Windows.Forms.Padding(0);
+            this.cbLineEndings.Name = "cbLineEndings";
+            this.cbLineEndings.Size = new System.Drawing.Size(120, 30);
+            this.cbLineEndings.TabIndex = 118;
+            this.cbLineEndings.UseVisualStyleBackColor = true;
+            this.cbLineEndings.CheckedChanged += new System.EventHandler(this.cbLineEndings_CheckedChanged);
+            // 
+            // panSettings
+            // 
+            this.panSettings.ColumnCount = 3;
+            this.panSettings.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
+            this.panSettings.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 120F));
+            this.panSettings.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
+            this.panSettings.Controls.Add(this.label6, 0, 5);
+            this.panSettings.Controls.Add(this.cbLineEndings, 1, 4);
+            this.panSettings.Controls.Add(this.nudClientUpdateInterval, 1, 0);
+            this.panSettings.Controls.Add(this.cbClientColour, 1, 1);
+            this.panSettings.Controls.Add(this.nudLineLength, 1, 3);
+            this.panSettings.Controls.Add(this.cbTheme, 1, 5);
+            this.panSettings.Controls.Add(this.label5, 0, 3);
+            this.panSettings.Controls.Add(this.label3, 0, 0);
+            this.panSettings.Controls.Add(this.label4, 0, 1);
+            this.panSettings.Controls.Add(this.label7, 0, 2);
+            this.panSettings.Controls.Add(this.cbLineLength, 1, 2);
+            this.panSettings.Controls.Add(this.label8, 0, 4);
+            this.panSettings.Controls.Add(this.lblAbout, 0, 8);
+            this.panSettings.Controls.Add(this.lblDebug, 1, 8);
+            this.panSettings.Location = new System.Drawing.Point(32, 189);
+            this.panSettings.Name = "panSettings";
+            this.panSettings.RowCount = 9;
+            this.panSettings.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 30F));
+            this.panSettings.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 30F));
+            this.panSettings.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 30F));
+            this.panSettings.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 30F));
+            this.panSettings.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 30F));
+            this.panSettings.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 30F));
+            this.panSettings.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 30F));
+            this.panSettings.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 30F));
+            this.panSettings.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 26F));
+            this.panSettings.Size = new System.Drawing.Size(361, 290);
+            this.panSettings.TabIndex = 2008;
+            // 
+            // label7
+            // 
+            this.label7.AutoSize = true;
+            this.label7.Location = new System.Drawing.Point(3, 64);
+            this.label7.Margin = new System.Windows.Forms.Padding(3, 4, 20, 0);
+            this.label7.Name = "label7";
+            this.label7.Size = new System.Drawing.Size(67, 13);
+            this.label7.TabIndex = 113;
+            this.label7.Text = "Ruler visible:";
+            this.label7.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            // 
+            // label8
+            // 
+            this.label8.AutoSize = true;
+            this.label8.Location = new System.Drawing.Point(3, 124);
+            this.label8.Margin = new System.Windows.Forms.Padding(3, 4, 20, 0);
+            this.label8.Name = "label8";
+            this.label8.Size = new System.Drawing.Size(70, 13);
+            this.label8.TabIndex = 119;
+            this.label8.Text = "Line endings:";
+            this.label8.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            // 
             // flpUsers
             // 
             this.flpUsers.AutoScroll = true;
@@ -1015,14 +1040,42 @@
             this.flpUsers.TabIndex = 10;
             this.flpUsers.WrapContents = false;
             // 
+            // lblDebug
+            // 
+            this.lblDebug.AutoSize = true;
+            this.lblDebug.Cursor = System.Windows.Forms.Cursors.Default;
+            this.lblDebug.Dock = System.Windows.Forms.DockStyle.Bottom;
+            this.lblDebug.Location = new System.Drawing.Point(105, 267);
+            this.lblDebug.Margin = new System.Windows.Forms.Padding(0, 10, 0, 10);
+            this.lblDebug.Name = "lblDebug";
+            this.lblDebug.Size = new System.Drawing.Size(120, 13);
+            this.lblDebug.TabIndex = 5;
+            this.lblDebug.TabStop = true;
+            this.lblDebug.Text = "<guid>";
+            this.lblDebug.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            // 
+            // lblAbout
+            // 
+            this.lblAbout.AutoSize = true;
+            this.lblAbout.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.lblAbout.Dock = System.Windows.Forms.DockStyle.Bottom;
+            this.lblAbout.Location = new System.Drawing.Point(0, 267);
+            this.lblAbout.Margin = new System.Windows.Forms.Padding(0, 10, 0, 10);
+            this.lblAbout.Name = "lblAbout";
+            this.lblAbout.Size = new System.Drawing.Size(105, 13);
+            this.lblAbout.TabIndex = 120;
+            this.lblAbout.TabStop = true;
+            this.lblAbout.Text = "About";
+            this.lblAbout.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            // 
             // EditorForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1372, 676);
+            this.ClientSize = new System.Drawing.Size(1444, 703);
+            this.Controls.Add(this.panSettings);
             this.Controls.Add(this.panHostTempName);
             this.Controls.Add(this.panHost);
-            this.Controls.Add(this.panSettings);
             this.Controls.Add(this.menuSplitter);
             this.Controls.Add(this.panEditors);
             this.Controls.Add(this.flpUsers);
@@ -1044,7 +1097,6 @@
             this.panHost.ResumeLayout(false);
             this.panConnectingPage.ResumeLayout(false);
             this.panConnectingContent.ResumeLayout(false);
-            this.panSettings.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.nudLineLength)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.nudClientUpdateInterval)).EndInit();
             this.splitter.Panel2.ResumeLayout(false);
@@ -1059,6 +1111,8 @@
             this.menuSplitter.ResumeLayout(false);
             this.panHostTempName.ResumeLayout(false);
             this.panHostTempName.PerformLayout();
+            this.panSettings.ResumeLayout(false);
+            this.panSettings.PerformLayout();
             this.ResumeLayout(false);
 
         }
@@ -1073,7 +1127,6 @@
         private System.Windows.Forms.SaveFileDialog dlgHostNew;
         private Marzersoft.Themes.ThemedLabel lblConnectingStatus;
         private System.Windows.Forms.Panel panHost;
-        private System.Windows.Forms.Label lblAbout;
         private System.Windows.Forms.Label label2;
         private Marzersoft.Themes.ThemedTextBox tbClientPassword;
         private Marzersoft.Themes.ThemedDataGridView dgvServers;
@@ -1087,7 +1140,6 @@
         private System.Windows.Forms.Panel panConnectingContent;
         private Marzersoft.Themes.ThemedButton btnConnectingReconnect;
         private Marzersoft.Themes.ThemedButton btnConnectingBack;
-        private System.Windows.Forms.Panel panSettings;
         private Marzersoft.Themes.ThemedNumericUpDown nudClientUpdateInterval;
         private System.Windows.Forms.Label label3;
         private Marzersoft.Controls.ColourComboBox cbClientColour;
@@ -1108,7 +1160,6 @@
         private System.Windows.Forms.ToolStripMenuItem readonlyToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem kickToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem banToolStripMenuItem;
-        private System.Windows.Forms.Label lblDebug;
         internal Marzersoft.Themes.ThemedPanel panEditors;
         private System.Windows.Forms.DataGridViewTextBoxColumn colServerName;
         private System.Windows.Forms.DataGridViewTextBoxColumn colServerAddress;
@@ -1129,6 +1180,12 @@
         private System.Windows.Forms.Panel panHostTempName;
         private Marzersoft.Themes.ThemedLabel lblHostTempName;
         private Marzersoft.Themes.ThemedTextBox tbHostTempName;
+        private System.Windows.Forms.CheckBox cbLineEndings;
+        private System.Windows.Forms.TableLayoutPanel panSettings;
+        private System.Windows.Forms.Label label7;
+        private System.Windows.Forms.Label label8;
+        private System.Windows.Forms.Label lblAbout;
+        private System.Windows.Forms.Label lblDebug;
     }
 }
 
