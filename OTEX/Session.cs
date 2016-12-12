@@ -242,14 +242,14 @@ namespace OTEX
         /// syntax highlighting engines (e.g. a temporary file meant as a C# "scratchpad").</param>
         /// <exception cref="ArgumentOutOfRangeException" />
         /// <exception cref="InvalidOperationException" />
-        public Session AddDocument(string name)
+        public Document AddDocument(string name)
         {
             if (ReadOnly)
                 throw new InvalidOperationException("AddDocument is only valid server-side");
             var doc = new Document(name);
             lock (documents)
                 documents[doc.ID] = doc;
-            return this;
+            return doc;
         }
 
         /// <summary>
@@ -260,14 +260,44 @@ namespace OTEX
         /// <param name="tabWidth">When loading files, how many spaces should tab characters be replaced with?</param>
         /// <exception cref="ArgumentOutOfRangeException" />
         /// <exception cref="InvalidOperationException" />
-        public Session AddDocument(string path, Document.ConflictResolutionStrategy conflictStrategy, uint tabWidth = 4)
+        public Document AddDocument(string path, Document.ConflictResolutionStrategy conflictStrategy, uint tabWidth = 4)
         {
             if (ReadOnly)
                 throw new InvalidOperationException("AddDocument is only valid server-side");
             var doc = new Document(path, conflictStrategy, tabWidth);
             lock (documents)
                 documents[doc.ID] = doc;
-            return this;
+            return doc;
+        }
+
+        /// <summary>
+        /// Removes a document from a session configuration (server-side).
+        /// </summary>
+        /// <param name="doc">Document object to remove.</param>
+        /// <exception cref="InvalidOperationException" />
+        /// <exception cref="ArgumentNullException" />
+        public bool RemoveDocument(Document doc)
+        {
+            if (ReadOnly)
+                throw new InvalidOperationException("RemoveDocument is only valid server-side");
+            if (doc == null)
+                throw new ArgumentNullException("doc");
+            return documents.Remove(doc.ID);
+        }
+
+        /// <summary>
+        /// Removes a document from a session configuration (server-side).
+        /// </summary>
+        /// <param name="documentID">ID of document object to remove.</param>
+        /// <exception cref="InvalidOperationException" />
+        /// <exception cref="ArgumentOutOfRangeException" />
+        public bool RemoveDocument(Guid documentID)
+        {
+            if (ReadOnly)
+                throw new InvalidOperationException("RemoveDocument is only valid server-side");
+            if (documentID == Guid.Empty)
+                throw new ArgumentOutOfRangeException("documentID", "documentID cannot be Guid.Empty");
+            return documents.Remove(documentID);
         }
 
         /// <summary>
