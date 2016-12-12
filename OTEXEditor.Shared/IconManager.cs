@@ -75,12 +75,13 @@ namespace OTEX.Editor
                     if (lastPeriod != -1)
                     {
                         if (lastPeriod == key.Length - 1)
-                            return null;
-                        key = key.Substring(lastPeriod + 1);
+                            key = "txt";
+                        else
+                            key = key.Substring(lastPeriod + 1);
                     }
                 }
                 if (key.Length == 0)
-                    return null;
+                    key = "txt";
 
                 Image output = null;
                 iconsLock.TryLock(() =>
@@ -91,6 +92,9 @@ namespace OTEX.Editor
                         if (output != null)
                             break;
                     }
+
+                    if (output == null && !key.Equals("txt") && icons.TryGetValue("default", out var icon))
+                        output = icon.Image("txt");
                 });
                 return output;
             }
@@ -180,7 +184,6 @@ namespace OTEX.Editor
             private readonly Dictionary<Color, Image> images = new Dictionary<Color, Image>();
             private readonly Lazy<RegexCache> rxExtensions;
             private readonly SvgDocument svg;
-            private readonly float ratio;
 
             public int ExtensionCount { get { return extensions.Count; } }
 
