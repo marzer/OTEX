@@ -31,9 +31,30 @@ namespace OTEX.Editor
         /// </summary>
         public event Action<Settings> OnThemeChanged;
 
+        /// <summary>
+        /// Event triggered when the show line endings setting changes.
+        /// </summary>
+        public event Action<Settings> OnLineEndingsChanged;
+
         /////////////////////////////////////////////////////////////////////
         // PROPERTIES/VARIABLES
         /////////////////////////////////////////////////////////////////////
+
+        /// <summary>
+        /// Does the user have the line ending markers visible?
+        /// </summary>
+        public bool LineEndings
+        {
+            get { return App.Config.User.Get("editor.line_endings", false); }
+            set
+            {
+                if (value != LineEndings)
+                {
+                    App.Config.User.Set("editor.line_endings", value);
+                    OnLineEndingsChanged?.Invoke(this);
+                }
+            }
+        }
 
         /// <summary>
         /// Does the user have the line length ruler visible?

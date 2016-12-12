@@ -39,9 +39,10 @@ namespace OTEX.Editor
         internal readonly User localUser;
         private readonly Dictionary<Guid, User> remoteUsers = new Dictionary<Guid, User>();
         internal readonly PluginFactory plugins;
-        private readonly Dictionary<Keys, Action<IEditorTextBox>> singleEditorBindings
-            = new Dictionary<Keys, Action<IEditorTextBox>>(),
-            globalEditorBindings = new Dictionary<Keys, Action<IEditorTextBox>>();
+        private readonly Dictionary<Keys, Action<IEditorTextBox>> editorBindings
+            = new Dictionary<Keys, Action<IEditorTextBox>>();
+        private readonly Dictionary<Keys, Action> globalBindings
+            = new Dictionary<Keys, Action>();
         private volatile bool suspendTitleBarButtonEvents = false;
         internal readonly Settings settings;
         private readonly Session hostSession = new Session();
@@ -376,16 +377,16 @@ namespace OTEX.Editor
             }
 
             // KEY BINDINGS ////////////////////////////////////////////////////////////////////////
-            globalEditorBindings[Keys.Control | Keys.W] = (tb) => { tb.LineEndingsVisible = !tb.LineEndingsVisible; };
-            singleEditorBindings[Keys.Control | Keys.Q] = (tb) => { tb.ToggleCommentSelection(); };
-            singleEditorBindings[Keys.Control | Keys.B] = (tb) => { tb.ToggleBookmark(); };
-            singleEditorBindings[Keys.F2] = (tb) => { tb.NextBookmark(); };
-            singleEditorBindings[Keys.Shift | Keys.F2] = (tb) => { tb.PreviousBookmark(); };
-            singleEditorBindings[Keys.Control | Keys.Subtract] = (tb) => { tb.DecreaseZoom(); };
-            singleEditorBindings[Keys.Control | Keys.Add] = (tb) => { tb.IncreaseZoom(); };
-            singleEditorBindings[Keys.Control | Keys.NumPad0] = (tb) => { tb.ResetZoom(); };
-            singleEditorBindings[Keys.Control | Keys.U] = (tb) => { tb.UppercaseSelection(); };
-            singleEditorBindings[Keys.Control | Keys.Shift | Keys.U] = (tb) => { tb.LowercaseSelection(); };
+            globalBindings[Keys.Control | Keys.W] = () => { cbLineEndings.Checked = !cbLineEndings.Checked; };
+            editorBindings[Keys.Control | Keys.Q] = (tb) => { tb.ToggleCommentSelection(); };
+            editorBindings[Keys.Control | Keys.B] = (tb) => { tb.ToggleBookmark(); };
+            editorBindings[Keys.F2] = (tb) => { tb.NextBookmark(); };
+            editorBindings[Keys.Shift | Keys.F2] = (tb) => { tb.PreviousBookmark(); };
+            editorBindings[Keys.Control | Keys.Subtract] = (tb) => { tb.DecreaseZoom(); };
+            editorBindings[Keys.Control | Keys.Add] = (tb) => { tb.IncreaseZoom(); };
+            editorBindings[Keys.Control | Keys.NumPad0] = (tb) => { tb.ResetZoom(); };
+            editorBindings[Keys.Control | Keys.U] = (tb) => { tb.UppercaseSelection(); };
+            editorBindings[Keys.Control | Keys.Shift | Keys.U] = (tb) => { tb.LowercaseSelection(); };
 
             // CREATE LANGUAGE MANAGER /////////////////////////////////////////////////////////////
             languageManager = new LanguageManager();
@@ -474,6 +475,8 @@ namespace OTEX.Editor
             else
                 cbTheme.SelectedIndex = selectedThemeIndex;
             settings.OnThemeChanged += (u) => { this.Execute(() => { App.Theme = App.Themes[u.Theme]; }); };
+            //line endings
+            cbLineEndings.Checked = settings.LineEndings;
             //save settings
             settingsLoaded = true;
             App.Config.Flush();
@@ -717,16 +720,20 @@ namespace OTEX.Editor
 
         protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
         {
-            Action<IEditorTextBox> binding = null;
-            if (singleEditorBindings.TryGetValue(keyData, out binding))
+            //check per-editor bindings
+            if (otexClient.Connected && activeEditor != null)
             {
-                binding(activeEditor.TextBox);
-                return true;
+                if (editorBindings.TryGetValue(keyData, out var editorBinding))
+                {
+                    editorBinding(activeEditor.TextBox);
+                    return true;
+                }
             }
-            if (globalEditorBindings.TryGetValue(keyData, out binding))
+
+            //check global bindings
+            if (globalBindings.TryGetValue(keyData, out var globalBinding))
             {
-                foreach (var editor in editors)
-                    binding(editor.Value.TextBox);
+                globalBinding();
                 return true;
             }
             return base.ProcessCmdKey(ref msg, keyData);
@@ -816,8 +823,8 @@ namespace OTEX.Editor
             closing = true;
 
             //clear key bindings
-            singleEditorBindings.Clear();
-            globalEditorBindings.Clear();
+            editorBindings.Clear();
+            globalBindings.Clear();
 
             //dispose network objects
             if (otexServerListener != null)
@@ -890,7 +897,7 @@ namespace OTEX.Editor
                 if (sd.RequiresPassword)
                 {
                     if (passwordForm == null)
-                        passwordForm = new FlyoutForm(panServerPassword);
+                        passwordForm = new FlyoutForm(panServerPassword, null, tbClientPassword);
                     passwordForm.Tag = sd;
                     tbServerPassword.Text = "";
                     passwordForm.Flyout();
@@ -1106,10 +1113,16 @@ namespace OTEX.Editor
         private void btnHostTemporary_Click(object sender, EventArgs e)
         {
             if (temporaryDocumentForm == null)
-                temporaryDocumentForm = new FlyoutForm(panHostTempName);
+                temporaryDocumentForm = new FlyoutForm(panHostTempName, null, tbHostTempName);
             tbHostTempName.Text = "";
             temporaryDocumentForm.Flyout();
 
+        }
+
+        private void cbLineEndings_CheckedChanged(object sender, EventArgs e)
+        {
+            if (settingsLoaded)
+                settings.LineEndings = cbLineEndings.Checked;
         }
 
         private void kickToolStripMenuItem_Click(object sender, EventArgs e)

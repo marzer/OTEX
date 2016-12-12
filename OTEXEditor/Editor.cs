@@ -119,6 +119,7 @@ namespace OTEX.Editor
             TextBox.Language = LanguageManager[document.Path];
             TextBox.UserColour = User.Colour;
             TextBox.SetRuler(Settings.RulerVisible, Settings.RulerOffset);
+            TextBox.LineEndingsVisible = Settings.LineEndings;
             Paginator.Add(ID.ToString(), textBox as Control, Tab.Active);           
 
             //subscribe to events
@@ -131,6 +132,7 @@ namespace OTEX.Editor
             Tab.Activated += Tab_Activated;
             User.OnColourChanged += User_OnColourChanged;
             Settings.OnRulerChanged += Settings_OnRulerChanged;
+            Settings.OnLineEndingsChanged += Settings_OnLineEndingsChanged;
         }
 
         /////////////////////////////////////////////////////////////////////
@@ -140,6 +142,11 @@ namespace OTEX.Editor
         private void Settings_OnRulerChanged(Settings obj)
         {
             TextBox.SetRuler(Settings.RulerVisible, Settings.RulerOffset);
+        }
+
+        private void Settings_OnLineEndingsChanged(Settings obj)
+        {
+            TextBox.LineEndingsVisible = Settings.LineEndings;
         }
 
         /////////////////////////////////////////////////////////////////////
@@ -257,6 +264,7 @@ namespace OTEX.Editor
             disposed = true;
 
             //unsubscribe from events
+            Settings.OnLineEndingsChanged -= Settings_OnLineEndingsChanged;
             Settings.OnRulerChanged -= Settings_OnRulerChanged;
             User.OnColourChanged -= User_OnColourChanged;
             LanguageManager.OnLoaded -= LanguageManager_OnLoaded;
