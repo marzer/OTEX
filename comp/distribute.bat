@@ -7,8 +7,10 @@ REM ----------------------------------------------------------------------------
 SET "OUTPUT_NAME=OTEX"
 SET "SOLUTION_PATH=%~dp0.."
 SET "README_PATH=%SOLUTION_PATH%\OTEX Readme.pdf"
+SET "LANGUAGES_PATH=%SOLUTION_PATH%\languages.xml"
 SET "BUILD_PATH=%SOLUTION_PATH%\bin"
 SET "LEGAL_PATH=%SOLUTION_PATH%\licenses"
+SET "ICONS_PATH=%SOLUTION_PATH%\icons"
 SET "STAGING_PATH=%SOLUTION_PATH%\staging"
 SET "OUTPUT_PATH=%STAGING_PATH%\%OUTPUT_NAME%"
 SET "ZIP_PATH=%SOLUTION_PATH%\%OUTPUT_NAME%.zip"
@@ -30,7 +32,9 @@ MKDIR "%OUTPUT_PATH%"
 xcopy "%BUILD_PATH%\x64\Release\*" "%OUTPUT_PATH%\x64" /S /I /Y /J
 xcopy "%BUILD_PATH%\x86\Release\*" "%OUTPUT_PATH%\x86" /S /I /Y /J
 xcopy "%LEGAL_PATH%\*" "%OUTPUT_PATH%\licenses" /S /I /Y /J
+xcopy "%ICONS_PATH%\*" "%OUTPUT_PATH%\icons" /S /I /Y /J
 xcopy "%README_PATH%" "%OUTPUT_PATH%" /Y /J /F
+xcopy "%LANGUAGES_PATH%" "%OUTPUT_PATH%" /Y /J /F
 
 REM  --------------------------------------------------------------------------------------
 echo --- CLEANING -------------------------------------------------------------------------
@@ -82,7 +86,7 @@ IF EXIST "%ZIP_PATH%" (
 )
 
 CD "%STAGING_PATH%"
-zip -S -9 -r "%ZIP_PATH%" "%OUTPUT_NAME%"
+zip -9 -r "%ZIP_PATH%" "%OUTPUT_NAME%"
 
 REM  --------------------------------------------------------------------------------------
 echo --- CLEANING UP ----------------------------------------------------------------------
