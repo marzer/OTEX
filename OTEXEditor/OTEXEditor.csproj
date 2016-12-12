@@ -106,8 +106,18 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="OTEX.ico" />
+    <None Include="Resources\Media-Play-24.png" />
+    <None Include="Resources\Document-Error-24.png" />
+    <None Include="Resources\User-Group-16.png" />
+    <None Include="Resources\Settings-02-16.png" />
+    <None Include="Resources\Previous-24.png" />
+    <None Include="Resources\Next-24.png" />
+    <None Include="Resources\Folder-Open-24.png" />
+    <None Include="Resources\Document-New-24.png" />
+    <None Include="Resources\Document-Delete-02-24.png" />
+    <None Include="Resources\Document-Add-02-24.png" />
+    <None Include="Resources\Command-Refresh-24.png" />
     <None Include="Resources\logout.png" />
-    <None Include="Resources\cog.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\marzersoft-lib\Marzersoft\Marzersoft.csproj">
