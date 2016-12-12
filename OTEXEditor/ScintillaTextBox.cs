@@ -45,10 +45,7 @@ namespace OTEX.Editor
         /// More robust check for design mode.
         /// </summary>
         [Browsable(false), DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public bool IsDesignMode
-        {
-            get { return DesignMode || this.IsDesignMode(); }
-        }
+        public readonly bool IsDesignMode;
 
         /// <summary>
         /// Are the OnInsertion/OnDeletion events fired when the text is changed?
@@ -195,6 +192,7 @@ namespace OTEX.Editor
         public ScintillaTextBox()
         {
             //setup
+            IsDesignMode = DesignMode || this.DetectDesignMode();
             WrapMode = WrapMode.Word;
             WrapStartIndent = 4;
             WrapIndentMode = WrapIndentMode.Indent;
@@ -245,11 +243,10 @@ namespace OTEX.Editor
                 default: EolMode = Eol.CrLf; break;
             }
             PasteConvertEndings = true;
+            repaintMarshal = new RepaintMarshal(this);
 
             if (IsDesignMode)
-                return;
-
-            repaintMarshal = new RepaintMarshal(this);
+                return;            
 
             //hotkeys
             ClearAllCmdKeys();
@@ -380,25 +377,16 @@ namespace OTEX.Editor
 
         public void SuspendRepaints()
         {
-            if (IsDisposed || Disposing)
-                return;
-            this.CrossThreadCheck();
             repaintMarshal.SuspendRepaints();
         }
 
         public void ResumeRepaints(bool redraw = true)
         {
-            if (IsDisposed || Disposing)
-                return;
-            this.CrossThreadCheck();
             repaintMarshal.ResumeRepaints(redraw);
         }
 
         public void SuspendRepaintsWhile(Action action, bool redraw = true)
         {
-            if (IsDisposed || Disposing)
-                return;
-            this.CrossThreadCheck();
             repaintMarshal.SuspendRepaintsWhile(action, redraw);
         }
 
