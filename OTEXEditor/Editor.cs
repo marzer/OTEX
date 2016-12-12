@@ -59,7 +59,12 @@ namespace OTEX.Editor
         /// <summary>
         /// The language manager.
         /// </summary>
-        public readonly LanguageManager LanaguageManager;
+        public readonly LanguageManager LanguageManager;
+
+        /// <summary>
+        /// The icon manager.
+        /// </summary>
+        public readonly IconManager IconManager;
 
         /// <summary>
         /// The OTEX client.
@@ -90,7 +95,8 @@ namespace OTEX.Editor
             //assign
             Form = form ?? throw new ArgumentNullException("form");
             Document = document ?? throw new ArgumentNullException("document");
-            LanaguageManager = form.languageManager ?? throw new ArgumentNullException("form.languageManager");
+            LanguageManager = form.languageManager ?? throw new ArgumentNullException("form.languageManager");
+            IconManager = form.iconManager ?? throw new ArgumentNullException("form.iconManager");
             Client = form.otexClient ?? throw new ArgumentNullException("form.otexClient");
             User = form.localUser ?? throw new ArgumentNullException("form.localUser");
             Paginator = form.editorPaginator ?? throw new ArgumentNullException("form.editorPaginator");
@@ -100,7 +106,9 @@ namespace OTEX.Editor
             //create tab
             Tab = new TitleBarTab(form, document.Temporary ? document.Path : Path.GetFileName(document.Path));
             Tab.Tag = this;
-            Tab.Image = App.Images.Resource("document");
+            var icon = IconManager[document.Path];
+            if (icon != null)
+                Tab.Image.Add(icon);
 
             //create editor
             var textBox = form.plugins.CreateByConfig<IEditorTextBox>("editor", "plugins.editor", true, false, true, "", false);
@@ -108,7 +116,7 @@ namespace OTEX.Editor
                 textBox = new ScintillaTextBox();
             TextBox = textBox;
             RepaintMarshal = TextBox as IRepaintMarshal;
-            TextBox.Language = LanaguageManager[document.Path];
+            TextBox.Language = LanguageManager[document.Path];
             TextBox.UserColour = User.Colour;
             TextBox.SetRuler(Settings.RulerVisible, Settings.RulerOffset);
             Paginator.Add(ID.ToString(), textBox as Control, Tab.Active);           
@@ -117,7 +125,8 @@ namespace OTEX.Editor
             TextBox.OnInsertion += TextBox_OnInsertion;
             TextBox.OnDeletion += TextBox_OnDeletion;
             TextBox.OnSelection += TextBox_OnSelection;
-            LanaguageManager.OnLoaded += LanguageManager_OnLoaded;
+            LanguageManager.OnLoaded += LanguageManager_OnLoaded;
+            IconManager.OnLoaded += IconManager_OnLoaded;
             Client.OnRemoteDisconnection += Client_OnRemoteDisconnection;
             Tab.Activated += Tab_Activated;
             User.OnColourChanged += User_OnColourChanged;
@@ -221,6 +230,23 @@ namespace OTEX.Editor
         }
 
         /////////////////////////////////////////////////////////////////////
+        // ICONS
+        /////////////////////////////////////////////////////////////////////
+
+        private void IconManager_OnLoaded(IconManager sender, int iconCount, int extensionCount)
+        {
+            Form.Execute(() =>
+            {
+                if (iconCount > 0 && extensionCount > 0)
+                {
+                    var icon = IconManager[Document.Path];
+                    if (icon != null)
+                        Tab.Image.Add(icon);
+                }
+            });
+        }
+
+        /////////////////////////////////////////////////////////////////////
         // DISPOSE
         /////////////////////////////////////////////////////////////////////
 
@@ -233,7 +259,8 @@ namespace OTEX.Editor
             //unsubscribe from events
             Settings.OnRulerChanged -= Settings_OnRulerChanged;
             User.OnColourChanged -= User_OnColourChanged;
-            LanaguageManager.OnLoaded -= LanguageManager_OnLoaded;
+            LanguageManager.OnLoaded -= LanguageManager_OnLoaded;
+            IconManager.OnLoaded -= IconManager_OnLoaded;
             TextBox.OnInsertion -= TextBox_OnInsertion;
             TextBox.OnDeletion -= TextBox_OnDeletion;
             TextBox.OnSelection -= TextBox_OnSelection;

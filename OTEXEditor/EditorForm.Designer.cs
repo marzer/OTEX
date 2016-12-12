@@ -29,20 +29,14 @@
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
-            this.btnServerExisting = new Marzersoft.Themes.ThemedButton();
-            this.btnServerNew = new Marzersoft.Themes.ThemedButton();
-            this.btnClient = new Marzersoft.Themes.ThemedButton();
-            this.panMenu = new System.Windows.Forms.Panel();
-            this.panMenuButtons = new System.Windows.Forms.Panel();
-            this.btnServerTemporary = new Marzersoft.Themes.ThemedButton();
-            this.lblTitle = new System.Windows.Forms.Label();
-            this.panServerBrowserPage = new System.Windows.Forms.Panel();
+            this.btnHost = new Marzersoft.Themes.ThemedRadioButton();
+            this.btnJoin = new Marzersoft.Themes.ThemedRadioButton();
+            this.panJoin = new System.Windows.Forms.Panel();
             this.label1 = new System.Windows.Forms.Label();
-            this.lblManualEntry = new System.Windows.Forms.Label();
-            this.lblServerBrowser = new System.Windows.Forms.Label();
+            this.lblJoinManual = new Marzersoft.Themes.ThemedLabel();
+            this.lblJoinPublic = new Marzersoft.Themes.ThemedLabel();
             this.dgvServers = new Marzersoft.Themes.ThemedDataGridView();
             this.colServerName = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.colTemporary = new System.Windows.Forms.DataGridViewCheckBoxColumn();
             this.colServerAddress = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.colServerPort = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.colPassword = new System.Windows.Forms.DataGridViewCheckBoxColumn();
@@ -50,18 +44,24 @@
             this.colPing = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.label2 = new System.Windows.Forms.Label();
             this.tbClientPassword = new Marzersoft.Themes.ThemedTextBox();
-            this.btnClientCancel = new Marzersoft.Themes.ThemedButton();
             this.btnClientConnect = new Marzersoft.Themes.ThemedButton();
             this.tbClientAddress = new Marzersoft.Controls.IPEndPointTextBox();
-            this.dlgServerOpenExisting = new System.Windows.Forms.OpenFileDialog();
-            this.dlgServerCreateNew = new System.Windows.Forms.SaveFileDialog();
-            this.lblConnectingStatus = new System.Windows.Forms.Label();
+            this.dlgHostExisting = new System.Windows.Forms.OpenFileDialog();
+            this.dlgHostNew = new System.Windows.Forms.SaveFileDialog();
+            this.lblConnectingStatus = new Marzersoft.Themes.ThemedLabel();
             this.panServerPassword = new System.Windows.Forms.Panel();
-            this.labServerPassword = new System.Windows.Forms.Label();
+            this.labServerPassword = new Marzersoft.Themes.ThemedLabel();
             this.tbServerPassword = new Marzersoft.Themes.ThemedTextBox();
-            this.panMenuPage = new System.Windows.Forms.Panel();
+            this.panHost = new System.Windows.Forms.Panel();
+            this.btnHostDelete = new Marzersoft.Themes.ThemedButton();
+            this.btnHostTemporary = new Marzersoft.Themes.ThemedButton();
+            this.btnHostExisting = new Marzersoft.Themes.ThemedButton();
+            this.btnHostNew = new Marzersoft.Themes.ThemedButton();
+            this.lbDocuments = new Marzersoft.Themes.ThemedListBox();
+            this.lblHostSettings = new Marzersoft.Themes.ThemedLabel();
+            this.btnHostStart = new Marzersoft.Themes.ThemedButton();
+            this.lblHostDocuments = new Marzersoft.Themes.ThemedLabel();
             this.lblAbout = new System.Windows.Forms.Label();
-            this.lblVersion = new System.Windows.Forms.Label();
             this.lblDebug = new System.Windows.Forms.Label();
             this.panConnectingPage = new System.Windows.Forms.Panel();
             this.panConnectingContent = new System.Windows.Forms.Panel();
@@ -79,7 +79,7 @@
             this.label3 = new System.Windows.Forms.Label();
             this.splitter = new Marzersoft.Themes.ThemedSplitContainer();
             this.sideSplitter = new Marzersoft.Themes.ThemedSplitContainer();
-            this.lblSideBar = new System.Windows.Forms.Label();
+            this.lblSideBar = new Marzersoft.Themes.ThemedLabel();
             this.cmUsers = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.showSelectionsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.adminSeparator = new System.Windows.Forms.ToolStripSeparator();
@@ -87,14 +87,17 @@
             this.readonlyToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.kickToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.banToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.flpUsers = new OTEX.Editor.UserList();
             this.panEditors = new Marzersoft.Themes.ThemedPanel();
-            this.panMenu.SuspendLayout();
-            this.panMenuButtons.SuspendLayout();
-            this.panServerBrowserPage.SuspendLayout();
+            this.menuSplitter = new Marzersoft.Themes.ThemedSplitContainer();
+            this.toolTips = new System.Windows.Forms.ToolTip(this.components);
+            this.tbHostTempName = new Marzersoft.Themes.ThemedTextBox();
+            this.panHostTempName = new System.Windows.Forms.Panel();
+            this.lblHostTempName = new Marzersoft.Themes.ThemedLabel();
+            this.flpUsers = new OTEX.Editor.UserList();
+            this.panJoin.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dgvServers)).BeginInit();
             this.panServerPassword.SuspendLayout();
-            this.panMenuPage.SuspendLayout();
+            this.panHost.SuspendLayout();
             this.panConnectingPage.SuspendLayout();
             this.panConnectingContent.SuspendLayout();
             this.panSettings.SuspendLayout();
@@ -107,170 +110,109 @@
             this.sideSplitter.Panel1.SuspendLayout();
             this.sideSplitter.SuspendLayout();
             this.cmUsers.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.menuSplitter)).BeginInit();
+            this.menuSplitter.Panel1.SuspendLayout();
+            this.menuSplitter.SuspendLayout();
+            this.panHostTempName.SuspendLayout();
             this.SuspendLayout();
             // 
-            // btnServerExisting
+            // btnHost
             // 
-            this.btnServerExisting.Accent = ((uint)(2u));
-            this.btnServerExisting.BackColor = System.Drawing.SystemColors.Control;
-            this.btnServerExisting.FlatAppearance.BorderSize = 0;
-            this.btnServerExisting.FlatAppearance.MouseDownBackColor = System.Drawing.SystemColors.Highlight;
-            this.btnServerExisting.FlatAppearance.MouseOverBackColor = System.Drawing.SystemColors.ControlLight;
-            this.btnServerExisting.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.btnServerExisting.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.btnServerExisting.ForeColor = System.Drawing.SystemColors.ControlText;
-            this.btnServerExisting.ImageAlign = System.Drawing.ContentAlignment.MiddleRight;
-            this.btnServerExisting.Location = new System.Drawing.Point(0, 53);
-            this.btnServerExisting.Margin = new System.Windows.Forms.Padding(0, 2, 0, 2);
-            this.btnServerExisting.Name = "btnServerExisting";
-            this.btnServerExisting.Size = new System.Drawing.Size(267, 48);
-            this.btnServerExisting.TabIndex = 1;
-            this.btnServerExisting.Text = "Host an existing document";
-            this.btnServerExisting.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            this.btnServerExisting.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
-            this.btnServerExisting.UseVisualStyleBackColor = false;
-            this.btnServerExisting.Click += new System.EventHandler(this.btnServerExisting_Click);
+            this.btnHost.Accent = ((uint)(1u));
+            this.btnHost.Appearance = System.Windows.Forms.Appearance.Button;
+            this.btnHost.BackColor = System.Drawing.SystemColors.Control;
+            this.btnHost.Checked = true;
+            this.btnHost.FlatAppearance.BorderSize = 0;
+            this.btnHost.FlatAppearance.MouseDownBackColor = System.Drawing.SystemColors.Highlight;
+            this.btnHost.FlatAppearance.MouseOverBackColor = System.Drawing.SystemColors.ControlLight;
+            this.btnHost.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnHost.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.btnHost.FontSize = 1;
+            this.btnHost.ForeColor = System.Drawing.SystemColors.ControlText;
+            this.btnHost.ImageAlign = System.Drawing.ContentAlignment.MiddleRight;
+            this.btnHost.Location = new System.Drawing.Point(10, 10);
+            this.btnHost.Margin = new System.Windows.Forms.Padding(10, 10, 0, 10);
+            this.btnHost.Name = "btnHost";
+            this.btnHost.Size = new System.Drawing.Size(132, 40);
+            this.btnHost.TabIndex = 0;
+            this.btnHost.TabStop = true;
+            this.btnHost.Text = "Host";
+            this.btnHost.TextImageRelation = System.Windows.Forms.TextImageRelation.TextBeforeImage;
+            this.toolTips.SetToolTip(this.btnHost, "Host an OTEX session using documents on your local computer.");
+            this.btnHost.UseVisualStyleBackColor = false;
             // 
-            // btnServerNew
+            // btnJoin
             // 
-            this.btnServerNew.Accent = ((uint)(2u));
-            this.btnServerNew.BackColor = System.Drawing.SystemColors.Control;
-            this.btnServerNew.FlatAppearance.BorderSize = 0;
-            this.btnServerNew.FlatAppearance.MouseDownBackColor = System.Drawing.SystemColors.Highlight;
-            this.btnServerNew.FlatAppearance.MouseOverBackColor = System.Drawing.SystemColors.ControlLight;
-            this.btnServerNew.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.btnServerNew.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.btnServerNew.ForeColor = System.Drawing.SystemColors.ControlText;
-            this.btnServerNew.ImageAlign = System.Drawing.ContentAlignment.MiddleRight;
-            this.btnServerNew.Location = new System.Drawing.Point(0, 0);
-            this.btnServerNew.Margin = new System.Windows.Forms.Padding(0, 0, 0, 2);
-            this.btnServerNew.Name = "btnServerNew";
-            this.btnServerNew.Size = new System.Drawing.Size(267, 48);
-            this.btnServerNew.TabIndex = 0;
-            this.btnServerNew.Text = "Host a new document";
-            this.btnServerNew.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            this.btnServerNew.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
-            this.btnServerNew.UseVisualStyleBackColor = false;
-            this.btnServerNew.Click += new System.EventHandler(this.btnServerNew_Click);
+            this.btnJoin.Accent = ((uint)(2u));
+            this.btnJoin.Appearance = System.Windows.Forms.Appearance.Button;
+            this.btnJoin.FlatAppearance.BorderSize = 0;
+            this.btnJoin.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnJoin.FontSize = 1;
+            this.btnJoin.ImageAlign = System.Drawing.ContentAlignment.MiddleRight;
+            this.btnJoin.Location = new System.Drawing.Point(152, 10);
+            this.btnJoin.Margin = new System.Windows.Forms.Padding(10, 10, 0, 10);
+            this.btnJoin.Name = "btnJoin";
+            this.btnJoin.Size = new System.Drawing.Size(128, 40);
+            this.btnJoin.TabIndex = 2;
+            this.btnJoin.Text = "Join";
+            this.btnJoin.TextImageRelation = System.Windows.Forms.TextImageRelation.TextBeforeImage;
+            this.toolTips.SetToolTip(this.btnJoin, "Join an existing OTEX session hosted elsewhere,");
+            this.btnJoin.UseVisualStyleBackColor = true;
             // 
-            // btnClient
+            // panJoin
             // 
-            this.btnClient.Accent = ((uint)(0u));
-            this.btnClient.FlatAppearance.BorderSize = 0;
-            this.btnClient.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.btnClient.ImageAlign = System.Drawing.ContentAlignment.MiddleRight;
-            this.btnClient.Location = new System.Drawing.Point(0, 159);
-            this.btnClient.Margin = new System.Windows.Forms.Padding(0, 2, 0, 0);
-            this.btnClient.Name = "btnClient";
-            this.btnClient.Size = new System.Drawing.Size(267, 48);
-            this.btnClient.TabIndex = 2;
-            this.btnClient.Text = "Edit someone else\'s document";
-            this.btnClient.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            this.btnClient.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
-            this.btnClient.UseVisualStyleBackColor = true;
-            this.btnClient.Click += new System.EventHandler(this.btnClient_Click);
-            // 
-            // panMenu
-            // 
-            this.panMenu.Controls.Add(this.panMenuButtons);
-            this.panMenu.Controls.Add(this.lblTitle);
-            this.panMenu.Location = new System.Drawing.Point(81, 12);
-            this.panMenu.Name = "panMenu";
-            this.panMenu.Size = new System.Drawing.Size(279, 337);
-            this.panMenu.TabIndex = 3;
-            // 
-            // panMenuButtons
-            // 
-            this.panMenuButtons.Controls.Add(this.btnServerTemporary);
-            this.panMenuButtons.Controls.Add(this.btnServerNew);
-            this.panMenuButtons.Controls.Add(this.btnServerExisting);
-            this.panMenuButtons.Controls.Add(this.btnClient);
-            this.panMenuButtons.Location = new System.Drawing.Point(6, 105);
-            this.panMenuButtons.Margin = new System.Windows.Forms.Padding(2);
-            this.panMenuButtons.Name = "panMenuButtons";
-            this.panMenuButtons.Size = new System.Drawing.Size(267, 217);
-            this.panMenuButtons.TabIndex = 7;
-            // 
-            // btnServerTemporary
-            // 
-            this.btnServerTemporary.Accent = ((uint)(1u));
-            this.btnServerTemporary.BackColor = System.Drawing.SystemColors.Control;
-            this.btnServerTemporary.FlatAppearance.BorderSize = 0;
-            this.btnServerTemporary.FlatAppearance.MouseDownBackColor = System.Drawing.SystemColors.Highlight;
-            this.btnServerTemporary.FlatAppearance.MouseOverBackColor = System.Drawing.SystemColors.ControlLight;
-            this.btnServerTemporary.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.btnServerTemporary.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.btnServerTemporary.ForeColor = System.Drawing.SystemColors.ControlText;
-            this.btnServerTemporary.ImageAlign = System.Drawing.ContentAlignment.MiddleRight;
-            this.btnServerTemporary.Location = new System.Drawing.Point(0, 106);
-            this.btnServerTemporary.Margin = new System.Windows.Forms.Padding(0, 2, 0, 0);
-            this.btnServerTemporary.Name = "btnServerTemporary";
-            this.btnServerTemporary.Size = new System.Drawing.Size(267, 48);
-            this.btnServerTemporary.TabIndex = 3;
-            this.btnServerTemporary.Text = "Host temporary document";
-            this.btnServerTemporary.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            this.btnServerTemporary.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
-            this.btnServerTemporary.UseVisualStyleBackColor = false;
-            this.btnServerTemporary.Click += new System.EventHandler(this.btnServerTemporary_Click);
-            // 
-            // lblTitle
-            // 
-            this.lblTitle.Location = new System.Drawing.Point(6, 4);
-            this.lblTitle.Name = "lblTitle";
-            this.lblTitle.Size = new System.Drawing.Size(267, 74);
-            this.lblTitle.TabIndex = 3;
-            this.lblTitle.Text = "OTEX Editor";
-            this.lblTitle.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
-            // 
-            // panServerBrowserPage
-            // 
-            this.panServerBrowserPage.Controls.Add(this.label1);
-            this.panServerBrowserPage.Controls.Add(this.lblManualEntry);
-            this.panServerBrowserPage.Controls.Add(this.lblServerBrowser);
-            this.panServerBrowserPage.Controls.Add(this.dgvServers);
-            this.panServerBrowserPage.Controls.Add(this.label2);
-            this.panServerBrowserPage.Controls.Add(this.tbClientPassword);
-            this.panServerBrowserPage.Controls.Add(this.btnClientCancel);
-            this.panServerBrowserPage.Controls.Add(this.btnClientConnect);
-            this.panServerBrowserPage.Controls.Add(this.tbClientAddress);
-            this.panServerBrowserPage.Location = new System.Drawing.Point(9, 15);
-            this.panServerBrowserPage.Margin = new System.Windows.Forms.Padding(0);
-            this.panServerBrowserPage.Name = "panServerBrowserPage";
-            this.panServerBrowserPage.Size = new System.Drawing.Size(438, 188);
-            this.panServerBrowserPage.TabIndex = 4;
-            this.panServerBrowserPage.Visible = false;
+            this.panJoin.Controls.Add(this.label1);
+            this.panJoin.Controls.Add(this.lblJoinManual);
+            this.panJoin.Controls.Add(this.lblJoinPublic);
+            this.panJoin.Controls.Add(this.dgvServers);
+            this.panJoin.Controls.Add(this.label2);
+            this.panJoin.Controls.Add(this.tbClientPassword);
+            this.panJoin.Controls.Add(this.btnClientConnect);
+            this.panJoin.Controls.Add(this.tbClientAddress);
+            this.panJoin.Location = new System.Drawing.Point(557, 207);
+            this.panJoin.Margin = new System.Windows.Forms.Padding(0);
+            this.panJoin.Name = "panJoin";
+            this.panJoin.Padding = new System.Windows.Forms.Padding(10);
+            this.panJoin.Size = new System.Drawing.Size(380, 188);
+            this.panJoin.TabIndex = 4;
+            this.panJoin.Visible = false;
             // 
             // label1
             // 
             this.label1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.label1.Location = new System.Drawing.Point(83, 126);
+            this.label1.Location = new System.Drawing.Point(15, 127);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(81, 20);
             this.label1.TabIndex = 108;
             this.label1.Text = "Address:";
             this.label1.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             // 
-            // lblManualEntry
+            // lblJoinManual
             // 
-            this.lblManualEntry.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.lblManualEntry.Location = new System.Drawing.Point(98, 89);
-            this.lblManualEntry.Margin = new System.Windows.Forms.Padding(0);
-            this.lblManualEntry.Name = "lblManualEntry";
-            this.lblManualEntry.Size = new System.Drawing.Size(327, 28);
-            this.lblManualEntry.TabIndex = 107;
-            this.lblManualEntry.Text = "Enter document address manually";
-            this.lblManualEntry.TextAlign = System.Drawing.ContentAlignment.BottomLeft;
+            this.lblJoinManual.Accent = ((uint)(0u));
+            this.lblJoinManual.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.lblJoinManual.FontSize = 1;
+            this.lblJoinManual.Location = new System.Drawing.Point(30, 90);
+            this.lblJoinManual.Margin = new System.Windows.Forms.Padding(0);
+            this.lblJoinManual.Name = "lblJoinManual";
+            this.lblJoinManual.Size = new System.Drawing.Size(340, 28);
+            this.lblJoinManual.TabIndex = 107;
+            this.lblJoinManual.Text = "Enter session address manually";
+            this.lblJoinManual.TextAlign = System.Drawing.ContentAlignment.BottomLeft;
             // 
-            // lblServerBrowser
+            // lblJoinPublic
             // 
-            this.lblServerBrowser.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            this.lblJoinPublic.Accent = ((uint)(0u));
+            this.lblJoinPublic.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.lblServerBrowser.Location = new System.Drawing.Point(11, 6);
-            this.lblServerBrowser.Name = "lblServerBrowser";
-            this.lblServerBrowser.Size = new System.Drawing.Size(414, 28);
-            this.lblServerBrowser.TabIndex = 106;
-            this.lblServerBrowser.Text = "Public documents";
-            this.lblServerBrowser.TextAlign = System.Drawing.ContentAlignment.BottomLeft;
+            this.lblJoinPublic.FontSize = 1;
+            this.lblJoinPublic.Location = new System.Drawing.Point(10, 10);
+            this.lblJoinPublic.Margin = new System.Windows.Forms.Padding(0);
+            this.lblJoinPublic.Name = "lblJoinPublic";
+            this.lblJoinPublic.Size = new System.Drawing.Size(360, 28);
+            this.lblJoinPublic.TabIndex = 106;
+            this.lblJoinPublic.Text = "Public sessions";
+            this.lblJoinPublic.TextAlign = System.Drawing.ContentAlignment.BottomLeft;
             // 
             // dgvServers
             // 
@@ -287,14 +229,13 @@
             this.dgvServers.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.DisableResizing;
             this.dgvServers.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
             this.colServerName,
-            this.colTemporary,
             this.colServerAddress,
             this.colServerPort,
             this.colPassword,
             this.colUserCount,
             this.colPing});
             this.dgvServers.EditMode = System.Windows.Forms.DataGridViewEditMode.EditProgrammatically;
-            this.dgvServers.Location = new System.Drawing.Point(11, 37);
+            this.dgvServers.Location = new System.Drawing.Point(10, 47);
             this.dgvServers.Margin = new System.Windows.Forms.Padding(0);
             this.dgvServers.MultiSelect = false;
             this.dgvServers.Name = "dgvServers";
@@ -307,7 +248,7 @@
             this.dgvServers.ShowCellToolTips = false;
             this.dgvServers.ShowEditingIcon = false;
             this.dgvServers.ShowRowErrors = false;
-            this.dgvServers.Size = new System.Drawing.Size(414, 49);
+            this.dgvServers.Size = new System.Drawing.Size(360, 29);
             this.dgvServers.TabIndex = 2000;
             this.dgvServers.CellDoubleClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.dgvServers_CellContentDoubleClick);
             // 
@@ -318,18 +259,6 @@
             this.colServerName.Name = "colServerName";
             this.colServerName.ReadOnly = true;
             this.colServerName.ToolTipText = "The name of this server.";
-            // 
-            // colTemporary
-            // 
-            this.colTemporary.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.ColumnHeader;
-            this.colTemporary.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.colTemporary.HeaderText = "Temporary?";
-            this.colTemporary.Name = "colTemporary";
-            this.colTemporary.ReadOnly = true;
-            this.colTemporary.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Automatic;
-            this.colTemporary.ToolTipText = "Is the document hosted by this server a temporary one? Temporary documents are no" +
-    "t backed by files, and will be lost when the server shuts down.";
-            this.colTemporary.Width = 88;
             // 
             // colServerAddress
             // 
@@ -383,7 +312,7 @@
             // label2
             // 
             this.label2.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.label2.Location = new System.Drawing.Point(83, 154);
+            this.label2.Location = new System.Drawing.Point(15, 155);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(81, 20);
             this.label2.TabIndex = 104;
@@ -394,31 +323,13 @@
             // 
             this.tbClientPassword.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.tbClientPassword.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.tbClientPassword.Location = new System.Drawing.Point(170, 154);
+            this.tbClientPassword.Location = new System.Drawing.Point(102, 155);
             this.tbClientPassword.Margin = new System.Windows.Forms.Padding(0);
             this.tbClientPassword.MaxLength = 32;
             this.tbClientPassword.Name = "tbClientPassword";
-            this.tbClientPassword.Size = new System.Drawing.Size(166, 20);
+            this.tbClientPassword.Size = new System.Drawing.Size(178, 20);
             this.tbClientPassword.TabIndex = 2002;
             this.tbClientPassword.UseSystemPasswordChar = true;
-            // 
-            // btnClientCancel
-            // 
-            this.btnClientCancel.Accent = ((uint)(0u));
-            this.btnClientCancel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.btnClientCancel.FlatAppearance.BorderSize = 0;
-            this.btnClientCancel.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.btnClientCancel.ImageAlign = System.Drawing.ContentAlignment.MiddleRight;
-            this.btnClientCancel.Location = new System.Drawing.Point(11, 128);
-            this.btnClientCancel.Margin = new System.Windows.Forms.Padding(0);
-            this.btnClientCancel.Name = "btnClientCancel";
-            this.btnClientCancel.Size = new System.Drawing.Size(80, 48);
-            this.btnClientCancel.TabIndex = 2004;
-            this.btnClientCancel.Text = "Back";
-            this.btnClientCancel.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            this.btnClientCancel.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
-            this.btnClientCancel.UseVisualStyleBackColor = true;
-            this.btnClientCancel.Click += new System.EventHandler(this.btnClientCancel_Click);
             // 
             // btnClientConnect
             // 
@@ -427,7 +338,7 @@
             this.btnClientConnect.FlatAppearance.BorderSize = 0;
             this.btnClientConnect.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnClientConnect.ImageAlign = System.Drawing.ContentAlignment.MiddleRight;
-            this.btnClientConnect.Location = new System.Drawing.Point(345, 128);
+            this.btnClientConnect.Location = new System.Drawing.Point(290, 127);
             this.btnClientConnect.Margin = new System.Windows.Forms.Padding(0);
             this.btnClientConnect.Name = "btnClientConnect";
             this.btnClientConnect.Size = new System.Drawing.Size(80, 48);
@@ -442,30 +353,32 @@
             // 
             this.tbClientAddress.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.tbClientAddress.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.tbClientAddress.Location = new System.Drawing.Point(170, 126);
+            this.tbClientAddress.Location = new System.Drawing.Point(102, 127);
             this.tbClientAddress.Margin = new System.Windows.Forms.Padding(0);
             this.tbClientAddress.MaxLength = 512;
             this.tbClientAddress.Name = "tbClientAddress";
-            this.tbClientAddress.Size = new System.Drawing.Size(166, 20);
+            this.tbClientAddress.Size = new System.Drawing.Size(178, 20);
             this.tbClientAddress.TabIndex = 2001;
             this.tbClientAddress.Text = "127.0.0.1";
             this.tbClientAddress.TextChanged += new System.EventHandler(this.tbClientAddress_TextChanged);
             this.tbClientAddress.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.tbClientAddress_KeyPress);
             // 
-            // dlgServerOpenExisting
+            // dlgHostExisting
             // 
-            this.dlgServerOpenExisting.Multiselect = true;
-            this.dlgServerOpenExisting.Title = "Select an existing file to collaboratively edit";
+            this.dlgHostExisting.Multiselect = true;
+            this.dlgHostExisting.Title = "Select existing document(s) to edit";
             // 
-            // dlgServerCreateNew
+            // dlgHostNew
             // 
-            this.dlgServerCreateNew.Title = "Select a new file to create collaboratively";
+            this.dlgHostNew.Title = "Choose where to save the new document";
             // 
             // lblConnectingStatus
             // 
+            this.lblConnectingStatus.Accent = ((uint)(0u));
             this.lblConnectingStatus.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.lblConnectingStatus.Location = new System.Drawing.Point(14, -39);
+            this.lblConnectingStatus.Margin = new System.Windows.Forms.Padding(0);
             this.lblConnectingStatus.Name = "lblConnectingStatus";
             this.lblConnectingStatus.Size = new System.Drawing.Size(274, 137);
             this.lblConnectingStatus.TabIndex = 2;
@@ -476,14 +389,15 @@
             // 
             this.panServerPassword.Controls.Add(this.labServerPassword);
             this.panServerPassword.Controls.Add(this.tbServerPassword);
-            this.panServerPassword.Location = new System.Drawing.Point(20, 391);
+            this.panServerPassword.Location = new System.Drawing.Point(699, 12);
             this.panServerPassword.Name = "panServerPassword";
-            this.panServerPassword.Size = new System.Drawing.Size(204, 56);
+            this.panServerPassword.Size = new System.Drawing.Size(204, 64);
             this.panServerPassword.TabIndex = 6;
             this.panServerPassword.Visible = false;
             // 
             // labServerPassword
             // 
+            this.labServerPassword.Accent = ((uint)(0u));
             this.labServerPassword.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.labServerPassword.Location = new System.Drawing.Point(10, 0);
@@ -505,66 +419,191 @@
             this.tbServerPassword.Name = "tbServerPassword";
             this.tbServerPassword.Size = new System.Drawing.Size(185, 20);
             this.tbServerPassword.TabIndex = 2006;
+            this.tbServerPassword.TabStop = false;
             this.tbServerPassword.UseSystemPasswordChar = true;
             this.tbServerPassword.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.tbServerPassword_KeyPress);
             // 
-            // panMenuPage
+            // panHost
             // 
-            this.panMenuPage.Controls.Add(this.panMenu);
-            this.panMenuPage.Controls.Add(this.lblAbout);
-            this.panMenuPage.Controls.Add(this.lblVersion);
-            this.panMenuPage.Controls.Add(this.lblDebug);
-            this.panMenuPage.Location = new System.Drawing.Point(619, 12);
-            this.panMenuPage.Name = "panMenuPage";
-            this.panMenuPage.Size = new System.Drawing.Size(427, 345);
-            this.panMenuPage.TabIndex = 5;
-            this.panMenuPage.Resize += new System.EventHandler(this.panMenuPage_Resize);
+            this.panHost.Controls.Add(this.btnHostDelete);
+            this.panHost.Controls.Add(this.btnHostTemporary);
+            this.panHost.Controls.Add(this.btnHostExisting);
+            this.panHost.Controls.Add(this.btnHostNew);
+            this.panHost.Controls.Add(this.lbDocuments);
+            this.panHost.Controls.Add(this.lblHostSettings);
+            this.panHost.Controls.Add(this.btnHostStart);
+            this.panHost.Controls.Add(this.lblHostDocuments);
+            this.panHost.Location = new System.Drawing.Point(32, 170);
+            this.panHost.Name = "panHost";
+            this.panHost.Padding = new System.Windows.Forms.Padding(10);
+            this.panHost.Size = new System.Drawing.Size(482, 385);
+            this.panHost.TabIndex = 5;
+            // 
+            // btnHostDelete
+            // 
+            this.btnHostDelete.Accent = ((uint)(0u));
+            this.btnHostDelete.FlatAppearance.BorderSize = 0;
+            this.btnHostDelete.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnHostDelete.ImageAlign = System.Drawing.ContentAlignment.MiddleRight;
+            this.btnHostDelete.Location = new System.Drawing.Point(10, 179);
+            this.btnHostDelete.Margin = new System.Windows.Forms.Padding(0);
+            this.btnHostDelete.Name = "btnHostDelete";
+            this.btnHostDelete.Size = new System.Drawing.Size(28, 28);
+            this.btnHostDelete.TabIndex = 2009;
+            this.btnHostDelete.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.btnHostDelete.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
+            this.toolTips.SetToolTip(this.btnHostDelete, "Remove the selected document(s)");
+            this.btnHostDelete.UseVisualStyleBackColor = true;
+            this.btnHostDelete.Visible = false;
+            this.btnHostDelete.Click += new System.EventHandler(this.btnHostDelete_Click);
+            // 
+            // btnHostTemporary
+            // 
+            this.btnHostTemporary.Accent = ((uint)(0u));
+            this.btnHostTemporary.FlatAppearance.BorderSize = 0;
+            this.btnHostTemporary.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnHostTemporary.ImageAlign = System.Drawing.ContentAlignment.MiddleRight;
+            this.btnHostTemporary.Location = new System.Drawing.Point(10, 82);
+            this.btnHostTemporary.Margin = new System.Windows.Forms.Padding(0);
+            this.btnHostTemporary.Name = "btnHostTemporary";
+            this.btnHostTemporary.Size = new System.Drawing.Size(28, 28);
+            this.btnHostTemporary.TabIndex = 2008;
+            this.btnHostTemporary.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.btnHostTemporary.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
+            this.toolTips.SetToolTip(this.btnHostTemporary, "Add a temporary document (not saved on disk; will be lost when the session is ter" +
+        "minated)");
+            this.btnHostTemporary.UseVisualStyleBackColor = true;
+            this.btnHostTemporary.Click += new System.EventHandler(this.btnHostTemporary_Click);
+            // 
+            // btnHostExisting
+            // 
+            this.btnHostExisting.Accent = ((uint)(0u));
+            this.btnHostExisting.FlatAppearance.BorderSize = 0;
+            this.btnHostExisting.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnHostExisting.ImageAlign = System.Drawing.ContentAlignment.MiddleRight;
+            this.btnHostExisting.Location = new System.Drawing.Point(10, 117);
+            this.btnHostExisting.Margin = new System.Windows.Forms.Padding(0);
+            this.btnHostExisting.Name = "btnHostExisting";
+            this.btnHostExisting.Size = new System.Drawing.Size(28, 28);
+            this.btnHostExisting.TabIndex = 2007;
+            this.btnHostExisting.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.btnHostExisting.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
+            this.toolTips.SetToolTip(this.btnHostExisting, "Add existing documents");
+            this.btnHostExisting.UseVisualStyleBackColor = true;
+            this.btnHostExisting.Click += new System.EventHandler(this.btnHostExisting_Click);
+            // 
+            // btnHostNew
+            // 
+            this.btnHostNew.Accent = ((uint)(0u));
+            this.btnHostNew.FlatAppearance.BorderSize = 0;
+            this.btnHostNew.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnHostNew.ImageAlign = System.Drawing.ContentAlignment.MiddleRight;
+            this.btnHostNew.Location = new System.Drawing.Point(10, 47);
+            this.btnHostNew.Margin = new System.Windows.Forms.Padding(0);
+            this.btnHostNew.Name = "btnHostNew";
+            this.btnHostNew.Size = new System.Drawing.Size(28, 28);
+            this.btnHostNew.TabIndex = 2006;
+            this.btnHostNew.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.btnHostNew.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
+            this.toolTips.SetToolTip(this.btnHostNew, "Create a new document");
+            this.btnHostNew.UseVisualStyleBackColor = true;
+            this.btnHostNew.Click += new System.EventHandler(this.btnHostNew_Click);
+            // 
+            // lbDocuments
+            // 
+            this.lbDocuments.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left)));
+            this.lbDocuments.BorderStyle = System.Windows.Forms.BorderStyle.None;
+            this.lbDocuments.DrawMode = System.Windows.Forms.DrawMode.OwnerDrawVariable;
+            this.lbDocuments.FormattingEnabled = true;
+            this.lbDocuments.IntegralHeight = false;
+            this.lbDocuments.Location = new System.Drawing.Point(45, 47);
+            this.lbDocuments.Margin = new System.Windows.Forms.Padding(0);
+            this.lbDocuments.Name = "lbDocuments";
+            this.lbDocuments.SelectionMode = System.Windows.Forms.SelectionMode.MultiExtended;
+            this.lbDocuments.Size = new System.Drawing.Size(185, 328);
+            this.lbDocuments.TabIndex = 108;
+            this.lbDocuments.SelectedIndexChanged += new System.EventHandler(this.lbDocuments_SelectedIndexChanged);
+            // 
+            // lblHostSettings
+            // 
+            this.lblHostSettings.Accent = ((uint)(0u));
+            this.lblHostSettings.FontSize = 1;
+            this.lblHostSettings.Location = new System.Drawing.Point(239, 10);
+            this.lblHostSettings.Margin = new System.Windows.Forms.Padding(0);
+            this.lblHostSettings.Name = "lblHostSettings";
+            this.lblHostSettings.Size = new System.Drawing.Size(220, 28);
+            this.lblHostSettings.TabIndex = 2005;
+            this.lblHostSettings.Text = "Session Configuration";
+            this.lblHostSettings.TextAlign = System.Drawing.ContentAlignment.BottomLeft;
+            // 
+            // btnHostStart
+            // 
+            this.btnHostStart.Accent = ((uint)(0u));
+            this.btnHostStart.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.btnHostStart.Enabled = false;
+            this.btnHostStart.FlatAppearance.BorderSize = 0;
+            this.btnHostStart.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnHostStart.ImageAlign = System.Drawing.ContentAlignment.MiddleRight;
+            this.btnHostStart.Location = new System.Drawing.Point(379, 327);
+            this.btnHostStart.Margin = new System.Windows.Forms.Padding(0);
+            this.btnHostStart.Name = "btnHostStart";
+            this.btnHostStart.Size = new System.Drawing.Size(80, 48);
+            this.btnHostStart.TabIndex = 2004;
+            this.btnHostStart.Text = "Start";
+            this.btnHostStart.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
+            this.btnHostStart.TextImageRelation = System.Windows.Forms.TextImageRelation.TextBeforeImage;
+            this.toolTips.SetToolTip(this.btnHostStart, "Start hosting an OTEX session");
+            this.btnHostStart.UseVisualStyleBackColor = true;
+            this.btnHostStart.Click += new System.EventHandler(this.btnHostStart_Click);
+            // 
+            // lblHostDocuments
+            // 
+            this.lblHostDocuments.Accent = ((uint)(0u));
+            this.lblHostDocuments.FontSize = 1;
+            this.lblHostDocuments.Location = new System.Drawing.Point(10, 10);
+            this.lblHostDocuments.Margin = new System.Windows.Forms.Padding(0);
+            this.lblHostDocuments.Name = "lblHostDocuments";
+            this.lblHostDocuments.Size = new System.Drawing.Size(220, 28);
+            this.lblHostDocuments.TabIndex = 107;
+            this.lblHostDocuments.Text = "Documents";
+            this.lblHostDocuments.TextAlign = System.Drawing.ContentAlignment.BottomLeft;
             // 
             // lblAbout
             // 
-            this.lblAbout.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.lblAbout.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.lblAbout.Cursor = System.Windows.Forms.Cursors.Hand;
-            this.lblAbout.Location = new System.Drawing.Point(0, 313);
+            this.lblAbout.Location = new System.Drawing.Point(0, 236);
             this.lblAbout.Margin = new System.Windows.Forms.Padding(0);
             this.lblAbout.Name = "lblAbout";
-            this.lblAbout.Size = new System.Drawing.Size(100, 30);
+            this.lblAbout.Size = new System.Drawing.Size(264, 30);
             this.lblAbout.TabIndex = 0;
             this.lblAbout.TabStop = true;
             this.lblAbout.Text = "About";
             this.lblAbout.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
-            // 
-            // lblVersion
-            // 
-            this.lblVersion.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.lblVersion.Location = new System.Drawing.Point(325, 313);
-            this.lblVersion.Margin = new System.Windows.Forms.Padding(0);
-            this.lblVersion.Name = "lblVersion";
-            this.lblVersion.Size = new System.Drawing.Size(100, 30);
-            this.lblVersion.TabIndex = 4;
-            this.lblVersion.Text = "label2";
-            this.lblVersion.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
             // lblDebug
             // 
             this.lblDebug.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.lblDebug.Cursor = System.Windows.Forms.Cursors.Hand;
-            this.lblDebug.Location = new System.Drawing.Point(100, 313);
+            this.lblDebug.Location = new System.Drawing.Point(0, 201);
             this.lblDebug.Margin = new System.Windows.Forms.Padding(0);
             this.lblDebug.Name = "lblDebug";
-            this.lblDebug.Size = new System.Drawing.Size(225, 30);
+            this.lblDebug.Size = new System.Drawing.Size(264, 30);
             this.lblDebug.TabIndex = 5;
             this.lblDebug.TabStop = true;
-            this.lblDebug.Text = "About";
+            this.lblDebug.Text = "<guid>";
             this.lblDebug.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
             // panConnectingPage
             // 
             this.panConnectingPage.Controls.Add(this.panConnectingContent);
             this.panConnectingPage.Controls.Add(this.lblConnectingStatus);
-            this.panConnectingPage.Location = new System.Drawing.Point(12, 206);
+            this.panConnectingPage.Location = new System.Drawing.Point(934, 12);
             this.panConnectingPage.Name = "panConnectingPage";
-            this.panConnectingPage.Size = new System.Drawing.Size(300, 179);
+            this.panConnectingPage.Size = new System.Drawing.Size(300, 158);
             this.panConnectingPage.TabIndex = 7;
             this.panConnectingPage.Resize += new System.EventHandler(this.panConnectingPage_Resize);
             // 
@@ -611,6 +650,7 @@
             this.btnConnectingBack.Text = "Back";
             this.btnConnectingBack.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             this.btnConnectingBack.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
+            this.toolTips.SetToolTip(this.btnConnectingBack, "Back to the main menu");
             this.btnConnectingBack.UseVisualStyleBackColor = true;
             this.btnConnectingBack.Visible = false;
             this.btnConnectingBack.Click += new System.EventHandler(this.btnConnectingBack_Click);
@@ -618,6 +658,8 @@
             // panSettings
             // 
             this.panSettings.Controls.Add(this.label6);
+            this.panSettings.Controls.Add(this.lblAbout);
+            this.panSettings.Controls.Add(this.lblDebug);
             this.panSettings.Controls.Add(this.cbTheme);
             this.panSettings.Controls.Add(this.nudLineLength);
             this.panSettings.Controls.Add(this.label5);
@@ -626,9 +668,9 @@
             this.panSettings.Controls.Add(this.cbClientColour);
             this.panSettings.Controls.Add(this.nudClientUpdateInterval);
             this.panSettings.Controls.Add(this.label3);
-            this.panSettings.Location = new System.Drawing.Point(373, 391);
+            this.panSettings.Location = new System.Drawing.Point(945, 207);
             this.panSettings.Name = "panSettings";
-            this.panSettings.Size = new System.Drawing.Size(264, 228);
+            this.panSettings.Size = new System.Drawing.Size(264, 266);
             this.panSettings.TabIndex = 8;
             // 
             // label6
@@ -637,21 +679,20 @@
             | System.Windows.Forms.AnchorStyles.Right)));
             this.label6.Location = new System.Drawing.Point(0, 148);
             this.label6.Name = "label6";
-            this.label6.Size = new System.Drawing.Size(144, 24);
+            this.label6.Size = new System.Drawing.Size(166, 24);
             this.label6.TabIndex = 117;
             this.label6.Text = "Visual style:";
             this.label6.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
             // cbTheme
             // 
-            this.cbTheme.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
+            this.cbTheme.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.cbTheme.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cbTheme.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.cbTheme.Location = new System.Drawing.Point(131, 151);
+            this.cbTheme.Location = new System.Drawing.Point(169, 151);
             this.cbTheme.Margin = new System.Windows.Forms.Padding(0);
             this.cbTheme.Name = "cbTheme";
-            this.cbTheme.Size = new System.Drawing.Size(124, 21);
+            this.cbTheme.Size = new System.Drawing.Size(86, 21);
             this.cbTheme.TabIndex = 116;
             this.cbTheme.SelectedIndexChanged += new System.EventHandler(this.cbTheme_SelectedIndexChanged);
             // 
@@ -736,6 +777,8 @@
             this.cbClientColour.ShowNames = false;
             this.cbClientColour.Size = new System.Drawing.Size(54, 21);
             this.cbClientColour.TabIndex = 111;
+            this.toolTips.SetToolTip(this.cbClientColour, "Your user colour. Remote users will see your highlight ranges marked out using th" +
+        "is colour.");
             this.cbClientColour.SelectedIndexChanged += new System.EventHandler(this.cbClientColour_SelectedIndexChanged);
             // 
             // nudClientUpdateInterval
@@ -763,6 +806,8 @@
             this.nudClientUpdateInterval.Name = "nudClientUpdateInterval";
             this.nudClientUpdateInterval.Size = new System.Drawing.Size(54, 20);
             this.nudClientUpdateInterval.TabIndex = 110;
+            this.toolTips.SetToolTip(this.nudClientUpdateInterval, "How frequently your local client sends requests to (and recieves update responses" +
+        " from) the server. Lower values require more bandwidth and system resources.");
             this.nudClientUpdateInterval.Value = new decimal(new int[] {
             10,
             0,
@@ -785,15 +830,15 @@
             // 
             this.splitter.FixedPanel = System.Windows.Forms.FixedPanel.Panel2;
             this.splitter.IsSplitterFixed = true;
-            this.splitter.Location = new System.Drawing.Point(678, 391);
+            this.splitter.Location = new System.Drawing.Point(32, 21);
             this.splitter.Margin = new System.Windows.Forms.Padding(0);
             this.splitter.Name = "splitter";
             // 
             // splitter.Panel2
             // 
             this.splitter.Panel2.Controls.Add(this.sideSplitter);
-            this.splitter.Size = new System.Drawing.Size(351, 100);
-            this.splitter.SplitterDistance = 118;
+            this.splitter.Size = new System.Drawing.Size(392, 100);
+            this.splitter.SplitterDistance = 120;
             this.splitter.SplitterWidth = 1;
             this.splitter.TabIndex = 9;
             this.splitter.TabStop = false;
@@ -817,7 +862,7 @@
             // sideSplitter.Panel2
             // 
             this.sideSplitter.Panel2.Padding = new System.Windows.Forms.Padding(2, 0, 0, 0);
-            this.sideSplitter.Size = new System.Drawing.Size(232, 100);
+            this.sideSplitter.Size = new System.Drawing.Size(271, 100);
             this.sideSplitter.SplitterDistance = 34;
             this.sideSplitter.SplitterWidth = 1;
             this.sideSplitter.TabIndex = 0;
@@ -825,11 +870,13 @@
             // 
             // lblSideBar
             // 
+            this.lblSideBar.Accent = ((uint)(0u));
             this.lblSideBar.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.lblSideBar.FontSize = 1;
             this.lblSideBar.Location = new System.Drawing.Point(2, 4);
             this.lblSideBar.Margin = new System.Windows.Forms.Padding(0);
             this.lblSideBar.Name = "lblSideBar";
-            this.lblSideBar.Size = new System.Drawing.Size(230, 30);
+            this.lblSideBar.Size = new System.Drawing.Size(269, 30);
             this.lblSideBar.TabIndex = 108;
             this.lblSideBar.Text = "<sidebar>";
             this.lblSideBar.TextAlign = System.Drawing.ContentAlignment.BottomLeft;
@@ -889,53 +936,112 @@
             this.banToolStripMenuItem.Text = "Ban";
             this.banToolStripMenuItem.Click += new System.EventHandler(this.kickToolStripMenuItem_Click);
             // 
+            // panEditors
+            // 
+            this.panEditors.Location = new System.Drawing.Point(525, 12);
+            this.panEditors.Margin = new System.Windows.Forms.Padding(0);
+            this.panEditors.Name = "panEditors";
+            this.panEditors.Size = new System.Drawing.Size(33, 37);
+            this.panEditors.TabIndex = 11;
+            // 
+            // menuSplitter
+            // 
+            this.menuSplitter.FixedPanel = System.Windows.Forms.FixedPanel.Panel1;
+            this.menuSplitter.IsSplitterFixed = true;
+            this.menuSplitter.Location = new System.Drawing.Point(557, 456);
+            this.menuSplitter.Margin = new System.Windows.Forms.Padding(0);
+            this.menuSplitter.Name = "menuSplitter";
+            this.menuSplitter.Orientation = System.Windows.Forms.Orientation.Horizontal;
+            // 
+            // menuSplitter.Panel1
+            // 
+            this.menuSplitter.Panel1.Controls.Add(this.btnHost);
+            this.menuSplitter.Panel1.Controls.Add(this.btnJoin);
+            this.menuSplitter.Size = new System.Drawing.Size(560, 234);
+            this.menuSplitter.SplitterDistance = 60;
+            this.menuSplitter.SplitterWidth = 1;
+            this.menuSplitter.TabIndex = 12;
+            this.menuSplitter.TabStop = false;
+            // 
+            // tbHostTempName
+            // 
+            this.tbHostTempName.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.tbHostTempName.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.tbHostTempName.Location = new System.Drawing.Point(10, 25);
+            this.tbHostTempName.Margin = new System.Windows.Forms.Padding(0);
+            this.tbHostTempName.MaxLength = 32;
+            this.tbHostTempName.Name = "tbHostTempName";
+            this.tbHostTempName.Size = new System.Drawing.Size(185, 20);
+            this.tbHostTempName.TabIndex = 2006;
+            this.tbHostTempName.TabStop = false;
+            this.toolTips.SetToolTip(this.tbHostTempName, "A description of your temporary document.  Cannot be blank, and must be at most 3" +
+        "2 characters. Put a file extension at the end to invoke syntax highlighting for " +
+        "the associated language.");
+            this.tbHostTempName.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.tbHostTempName_KeyPress);
+            // 
+            // panHostTempName
+            // 
+            this.panHostTempName.Controls.Add(this.lblHostTempName);
+            this.panHostTempName.Controls.Add(this.tbHostTempName);
+            this.panHostTempName.Location = new System.Drawing.Point(575, 114);
+            this.panHostTempName.Name = "panHostTempName";
+            this.panHostTempName.Size = new System.Drawing.Size(204, 64);
+            this.panHostTempName.TabIndex = 2007;
+            this.panHostTempName.Visible = false;
+            // 
+            // lblHostTempName
+            // 
+            this.lblHostTempName.Accent = ((uint)(0u));
+            this.lblHostTempName.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.lblHostTempName.Location = new System.Drawing.Point(10, 0);
+            this.lblHostTempName.Margin = new System.Windows.Forms.Padding(0);
+            this.lblHostTempName.Name = "lblHostTempName";
+            this.lblHostTempName.Size = new System.Drawing.Size(185, 20);
+            this.lblHostTempName.TabIndex = 2005;
+            this.lblHostTempName.Text = "Temp document description:";
+            this.lblHostTempName.TextAlign = System.Drawing.ContentAlignment.BottomLeft;
+            // 
             // flpUsers
             // 
             this.flpUsers.AutoScroll = true;
             this.flpUsers.ContextMenuStrip = this.cmUsers;
             this.flpUsers.FlowDirection = System.Windows.Forms.FlowDirection.TopDown;
-            this.flpUsers.Location = new System.Drawing.Point(255, 405);
+            this.flpUsers.Location = new System.Drawing.Point(480, 12);
             this.flpUsers.Margin = new System.Windows.Forms.Padding(0);
             this.flpUsers.Name = "flpUsers";
-            this.flpUsers.Size = new System.Drawing.Size(88, 34);
+            this.flpUsers.Size = new System.Drawing.Size(34, 37);
             this.flpUsers.TabIndex = 10;
             this.flpUsers.WrapContents = false;
-            // 
-            // panEditors
-            // 
-            this.panEditors.Location = new System.Drawing.Point(376, 236);
-            this.panEditors.Margin = new System.Windows.Forms.Padding(0);
-            this.panEditors.Name = "panEditors";
-            this.panEditors.Size = new System.Drawing.Size(200, 100);
-            this.panEditors.TabIndex = 11;
             // 
             // EditorForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1074, 478);
+            this.ClientSize = new System.Drawing.Size(1372, 676);
+            this.Controls.Add(this.panHostTempName);
+            this.Controls.Add(this.panHost);
+            this.Controls.Add(this.panSettings);
+            this.Controls.Add(this.menuSplitter);
             this.Controls.Add(this.panEditors);
             this.Controls.Add(this.flpUsers);
             this.Controls.Add(this.splitter);
-            this.Controls.Add(this.panSettings);
             this.Controls.Add(this.panConnectingPage);
-            this.Controls.Add(this.panMenuPage);
             this.Controls.Add(this.panServerPassword);
-            this.Controls.Add(this.panServerBrowserPage);
+            this.Controls.Add(this.panJoin);
             this.MinimumSize = new System.Drawing.Size(500, 400);
             this.Name = "EditorForm";
-            this.SizeGripStyle = System.Windows.Forms.SizeGripStyle.Hide;
+            this.StartPosition = System.Windows.Forms.FormStartPosition.Manual;
             this.Text = "OTEX Editor";
-            this.TextFlourishes = false;
+            this.WindowState = System.Windows.Forms.FormWindowState.Maximized;
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.EditorForm_FormClosing);
-            this.panMenu.ResumeLayout(false);
-            this.panMenuButtons.ResumeLayout(false);
-            this.panServerBrowserPage.ResumeLayout(false);
-            this.panServerBrowserPage.PerformLayout();
+            this.panJoin.ResumeLayout(false);
+            this.panJoin.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dgvServers)).EndInit();
             this.panServerPassword.ResumeLayout(false);
             this.panServerPassword.PerformLayout();
-            this.panMenuPage.ResumeLayout(false);
+            this.panHost.ResumeLayout(false);
             this.panConnectingPage.ResumeLayout(false);
             this.panConnectingContent.ResumeLayout(false);
             this.panSettings.ResumeLayout(false);
@@ -948,43 +1054,34 @@
             ((System.ComponentModel.ISupportInitialize)(this.sideSplitter)).EndInit();
             this.sideSplitter.ResumeLayout(false);
             this.cmUsers.ResumeLayout(false);
+            this.menuSplitter.Panel1.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.menuSplitter)).EndInit();
+            this.menuSplitter.ResumeLayout(false);
+            this.panHostTempName.ResumeLayout(false);
+            this.panHostTempName.PerformLayout();
             this.ResumeLayout(false);
 
         }
 
         #endregion
-        private Marzersoft.Themes.ThemedButton btnServerNew;
-        private Marzersoft.Themes.ThemedButton btnServerExisting;
-        private Marzersoft.Themes.ThemedButton btnClient;
-        private System.Windows.Forms.Panel panMenu;
-        private System.Windows.Forms.Label lblTitle;
-        private System.Windows.Forms.Panel panServerBrowserPage;
+        private Marzersoft.Themes.ThemedRadioButton btnHost;
+        private Marzersoft.Themes.ThemedRadioButton btnJoin;
+        private System.Windows.Forms.Panel panJoin;
         private Marzersoft.Controls.IPEndPointTextBox tbClientAddress;
-        private Marzersoft.Themes.ThemedButton btnClientCancel;
         private Marzersoft.Themes.ThemedButton btnClientConnect;
-        private System.Windows.Forms.OpenFileDialog dlgServerOpenExisting;
-        private System.Windows.Forms.SaveFileDialog dlgServerCreateNew;
-        private System.Windows.Forms.Label lblConnectingStatus;
-        private System.Windows.Forms.Panel panMenuButtons;
-        private System.Windows.Forms.Panel panMenuPage;
+        private System.Windows.Forms.OpenFileDialog dlgHostExisting;
+        private System.Windows.Forms.SaveFileDialog dlgHostNew;
+        private Marzersoft.Themes.ThemedLabel lblConnectingStatus;
+        private System.Windows.Forms.Panel panHost;
         private System.Windows.Forms.Label lblAbout;
-        private System.Windows.Forms.Label lblVersion;
-        private Marzersoft.Themes.ThemedButton btnServerTemporary;
         private System.Windows.Forms.Label label2;
         private Marzersoft.Themes.ThemedTextBox tbClientPassword;
         private Marzersoft.Themes.ThemedDataGridView dgvServers;
-        private System.Windows.Forms.Label lblServerBrowser;
-        private System.Windows.Forms.Label lblManualEntry;
+        private Marzersoft.Themes.ThemedLabel lblJoinPublic;
+        private Marzersoft.Themes.ThemedLabel lblJoinManual;
         private System.Windows.Forms.Label label1;
-        private System.Windows.Forms.DataGridViewTextBoxColumn colServerName;
-        private System.Windows.Forms.DataGridViewCheckBoxColumn colTemporary;
-        private System.Windows.Forms.DataGridViewTextBoxColumn colServerAddress;
-        private System.Windows.Forms.DataGridViewTextBoxColumn colServerPort;
-        private System.Windows.Forms.DataGridViewCheckBoxColumn colPassword;
-        private System.Windows.Forms.DataGridViewTextBoxColumn colUserCount;
-        private System.Windows.Forms.DataGridViewTextBoxColumn colPing;
         private System.Windows.Forms.Panel panServerPassword;
-        private System.Windows.Forms.Label labServerPassword;
+        private Marzersoft.Themes.ThemedLabel labServerPassword;
         private Marzersoft.Themes.ThemedTextBox tbServerPassword;
         private System.Windows.Forms.Panel panConnectingPage;
         private System.Windows.Forms.Panel panConnectingContent;
@@ -1002,7 +1099,7 @@
         private Marzersoft.Themes.ThemedComboBox cbTheme;
         private Marzersoft.Themes.ThemedSplitContainer splitter;
         private Marzersoft.Themes.ThemedSplitContainer sideSplitter;
-        private System.Windows.Forms.Label lblSideBar;
+        private Marzersoft.Themes.ThemedLabel lblSideBar;
         private UserList flpUsers;
         private System.Windows.Forms.ContextMenuStrip cmUsers;
         private System.Windows.Forms.ToolStripMenuItem showSelectionsToolStripMenuItem;
@@ -1013,6 +1110,25 @@
         private System.Windows.Forms.ToolStripMenuItem banToolStripMenuItem;
         private System.Windows.Forms.Label lblDebug;
         internal Marzersoft.Themes.ThemedPanel panEditors;
+        private System.Windows.Forms.DataGridViewTextBoxColumn colServerName;
+        private System.Windows.Forms.DataGridViewTextBoxColumn colServerAddress;
+        private System.Windows.Forms.DataGridViewTextBoxColumn colServerPort;
+        private System.Windows.Forms.DataGridViewCheckBoxColumn colPassword;
+        private System.Windows.Forms.DataGridViewTextBoxColumn colUserCount;
+        private System.Windows.Forms.DataGridViewTextBoxColumn colPing;
+        private Marzersoft.Themes.ThemedSplitContainer menuSplitter;
+        private Marzersoft.Themes.ThemedLabel lblHostDocuments;
+        private Marzersoft.Themes.ThemedButton btnHostStart;
+        private Marzersoft.Themes.ThemedListBox lbDocuments;
+        private Marzersoft.Themes.ThemedLabel lblHostSettings;
+        private Marzersoft.Themes.ThemedButton btnHostTemporary;
+        private Marzersoft.Themes.ThemedButton btnHostExisting;
+        private Marzersoft.Themes.ThemedButton btnHostNew;
+        private Marzersoft.Themes.ThemedButton btnHostDelete;
+        private System.Windows.Forms.ToolTip toolTips;
+        private System.Windows.Forms.Panel panHostTempName;
+        private Marzersoft.Themes.ThemedLabel lblHostTempName;
+        private Marzersoft.Themes.ThemedTextBox tbHostTempName;
     }
 }
 

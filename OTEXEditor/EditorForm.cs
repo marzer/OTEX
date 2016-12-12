@@ -23,18 +23,18 @@ namespace OTEX.Editor
             = new Dictionary<Guid, Editor>();
         internal Editor activeEditor;
         internal readonly LanguageManager languageManager;
+        internal readonly IconManager iconManager;
         private readonly Server otexServer;
         internal readonly Client otexClient;
         private readonly ServerListener otexServerListener;
         private volatile Thread clientConnectingThread = null;
         private volatile bool closing = false;
-        private FlyoutForm passwordForm = null;
+        private FlyoutForm passwordForm = null, temporaryDocumentForm = null;
         private volatile IPEndPoint lastConnectionEndpoint = null;
         private volatile Password lastConnectionPassword = null;
-        private volatile bool lastConnectionReturnToServerBrowser = false;
         private TitleBarButton logoutButton = null, settingsButton = null, usersButton = null;
         private volatile bool settingsLoaded = false;
-        private Paginator mainPaginator = null, sidePaginator = null;
+        private Paginator mainPaginator = null, sidePaginator = null, menuPaginator = null;
         internal readonly Paginator editorPaginator = null;
         internal readonly User localUser;
         private readonly Dictionary<Guid, User> remoteUsers = new Dictionary<Guid, User>();
@@ -44,6 +44,7 @@ namespace OTEX.Editor
             globalEditorBindings = new Dictionary<Keys, Action<IEditorTextBox>>();
         private volatile bool suspendTitleBarButtonEvents = false;
         internal readonly Settings settings;
+        private readonly Session hostSession = new Session();
 
         /// <summary>
         /// List of allowed user colours.
@@ -99,23 +100,6 @@ namespace OTEX.Editor
             splitter.HidePanel(2);
 
             // CONFIGURE MAIN MENU /////////////////////////////////////////////////////////////////
-            //button text alignment
-            btnClient.TextAlign = btnServerNew.TextAlign = btnServerExisting.TextAlign
-                = btnServerTemporary.TextAlign = ContentAlignment.MiddleCenter;
-            //about label
-            lblAbout.MouseEnter += (s, e) => { lblAbout.ForeColor = App.Theme.Foreground.Colour; };
-            lblAbout.MouseLeave += (s, e) => { lblAbout.ForeColor = App.Theme.Foreground.LowContrast.Colour; };
-            lblAbout.Click += (s, e) => { App.Website.LaunchWebsite(); };
-            //version label
-            lblVersion.Text = "v" + RegularExpressions.VersionTrailingZeroes.Replace(App.AssemblyVersion.ToString(),"");
-            if (lblVersion.Text.IndexOf('.') == -1)
-                lblVersion.Text += ".0";
-            //debug label
-#if DEBUG
-            lblDebug.Text = instanceID.ToString();
-#else
-            lblDebug.Visible = false;
-#endif
             //file dialog filters
             FileFilterFactory filterFactory = new FileFilterFactory();
             filterFactory.Add("Text files", "txt");
@@ -134,31 +118,28 @@ namespace OTEX.Editor
             filterFactory.Add("Settings files", "ini", "config", "cfg", "conf", "reg");
             filterFactory.Add("Shader files", "hlsl", "glsl", "fx", "csh", "cshader", "dsh", "dshader",
                 "gsh", "gshader", "hlsli", "hsh", "hshader", "psh", "pshader", "vsh", "vshader");
-            filterFactory.Apply(dlgServerCreateNew);
-            filterFactory.Apply(dlgServerOpenExisting);
+            filterFactory.Apply(dlgHostNew);
+            filterFactory.Apply(dlgHostExisting);
 
-            // CONFIGURE SERVER BROWSER ////////////////////////////////////////////////////////////
-            btnClientConnect.Image = App.Images.Resource("next");
-            btnClientCancel.Image = App.Images.Resource("previous");
+            // CONFIGURE JOIN PAGE /////////////////////////////////////////////////////////////////
             dgvServers.ColumnHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleLeft;
             dgvServers.Columns[1].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleLeft;
+            btnHostDelete.Visible = false;
 
             // CONFIGURE "CONNECTING" PAGE /////////////////////////////////////////////////////////
-            lblConnectingStatus.Width = panConnectingPage.ClientSize.Width - 10;
-            btnConnectingReconnect.Image = App.Images.Resource("refresh");
-            btnConnectingBack.Image = App.Images.Resource("previous");
+            lblConnectingStatus.Width = panConnectingPage.ClientSize.Width - 10;            
 
             // CONFIGURE FORM TITLEBAR /////////////////////////////////////////////////////////////
-            //text
-            Text = App.Name;
-            //settings menu
+            //settings button
             settingsButton = new TitleBarButton(this);
+            settingsButton.Image.Add(App.Images.Resource("settings", App.Assembly, "OTEX.Editor"));
             settingsButton.ToggleMode = true;
             settingsButton.Tag = panSettings;
             panSettings.Tag = settingsButton;
             settingsButton.CheckedChanged += TitleBarButton_CheckedChanged;
-            //users menu
+            //users button
             usersButton = new TitleBarButton(this);
+            usersButton.Image.Add(App.Images.Resource("users", App.Assembly, "OTEX.Editor"));
             usersButton.ToggleMode = true;
             usersButton.Tag = flpUsers;
             usersButton.Offset += settingsButton.Width;
@@ -167,6 +148,7 @@ namespace OTEX.Editor
             usersButton.Visible = false;
             //logout button
             logoutButton = new TitleBarButton(this);
+            logoutButton.Image.Add(App.Images.Resource("logout", App.Assembly, "OTEX.Editor"));
             logoutButton.RightAligned = false;
             logoutButton.Colour = ColorTranslator.FromHtml("#DF3F26");
             logoutButton.Visible = false;
@@ -389,7 +371,7 @@ namespace OTEX.Editor
             catch (Exception exc)
             {
                 Logger.ErrorMessage(this, "An error occurred while creating the server listener:\n\n{0}"
-                    + "\n\nYou can still use OTEX Editor, but the \"Public Documents\" list will be empty.",
+                    + "\n\nYou can still use OTEX Editor, but the \"Public sessions\" list will be empty.",
                     exc.Message);
             }
 
@@ -420,6 +402,21 @@ namespace OTEX.Editor
                 Logger.I("LanguageManager: loaded {0} languages.", c);
             };
 
+            // CREATE ICON MANAGER /////////////////////////////////////////////////////////////////
+            iconManager = new IconManager();
+            iconManager.OnThreadException += (lm, e) =>
+            {
+                Logger.E("IconManager: {0}: {1}", e.InnerException.GetType().FullName, e.InnerException.Message);
+#if DEBUG
+                if (Debugger.IsAttached && !closing)
+                    throw new Exception("iconManager.OnThreadException", e);
+#endif
+            };
+            iconManager.OnLoaded += (lm, c, ex) =>
+            {
+                Logger.I("IconManager: loaded {0} icons for {1} file extensions.", c, ex);
+            };
+
             // CREATE LOCAL USER ///////////////////////////////////////////////////////////////////
             localUser = new User(otexClient.ID);
             cbClientColour.SetItems(AllowedColours, false);
@@ -438,11 +435,26 @@ namespace OTEX.Editor
             //selection changed
             localUser.OnSelectionChanged += (u) => { otexClient.Metadata = u.Serialize(); };
 
-            // CREATE SETTINGS MANAGER /////////////////////////////////////////////////////////////
+            // CONFIGURE SETTINGS //////////////////////////////////////////////////////////////////
+            //about label
+            lblAbout.MouseEnter += (s, e) => { lblAbout.ForeColor = App.Theme.Foreground.Colour; };
+            lblAbout.MouseLeave += (s, e) => { lblAbout.ForeColor = App.Theme.Foreground.LowContrast.Colour; };
+            lblAbout.Click += (s, e) => { App.Website.LaunchWebsite(); };
+            //debug label
+#if DEBUG
+            lblDebug.Text = instanceID.ToString();
+#else
+            lblDebug.Visible = false;
+#endif
+            //settings manager
             settings = new Settings();
             //update interval
             nudClientUpdateInterval.Value = (decimal)(otexClient.UpdateInterval = settings.UpdateInterval);
-            settings.OnUpdateIntervalChanged += (u) => { otexClient.UpdateInterval = u.UpdateInterval; };
+            settings.OnUpdateIntervalChanged += (u) =>
+            {
+                if (!otexClient.Connected || otexClient.ID != otexServer.ID)
+                    otexClient.UpdateInterval = u.UpdateInterval;
+            };
             //line length ruler
             cbLineLength.Checked = settings.RulerVisible;
             nudLineLength.Value = settings.RulerOffset;
@@ -471,39 +483,32 @@ namespace OTEX.Editor
             {
                 this.Execute(() =>
                 {
-                    lblManualEntry.Font
-                        = lblServerBrowser.Font
-                        = lblSideBar.Font
-                        = t.Font.Large.Regular;
-
-                    lblTitle.Font = t.Font.Huge.Bold;
-
-                    lblAbout.ForeColor
-                        = lblVersion.ForeColor
-                        = t.Foreground.LowContrast.Colour;
-
+                    lblAbout.ForeColor = t.Foreground.LowContrast.Colour;
                     lblAbout.Font = t.Font.Underline;
 
                     settingsButton.Colour = t.Accent(0).Colour;
-                    settingsButton.Image = App.Images.Resource("cog", App.Assembly, "OTEX.Editor");
-                    settingsButton.InvertImage = settingsButton.InvertImageWhenChecked = !t.IsDark;
-
                     usersButton.Colour = t.Accent(1).Colour;
-                    
-                    logoutButton.Image = App.Images.Resource("logout", App.Assembly, "OTEX.Editor");
+                    settingsButton.InvertImage = settingsButton.InvertImageWhenChecked = !t.IsDark;
+                    usersButton.InvertImage = usersButton.InvertImageWhenChecked = !t.IsDark;
                     logoutButton.InvertImage = logoutButton.InvertImageWhenChecked = !t.IsDark;
-
                     sideSplitter.Panel1.Refresh();
 
+                    var mutator = t.IsDark ? "" : "invert";
+                    btnHostNew.Image = App.Images.Resource("doc_new", mutator, App.Assembly, "OTEX.Editor");
+                    btnHostExisting.Image = App.Images.Resource("open", mutator, App.Assembly, "OTEX.Editor");
+                    btnHostTemporary.Image = App.Images.Resource("doc_temp", mutator, App.Assembly, "OTEX.Editor");
+                    btnHostDelete.Image = App.Images.Resource("doc_delete", mutator, App.Assembly, "OTEX.Editor");
+                    btnClientConnect.Image = btnHostStart.Image = App.Images.Resource("play", mutator, App.Assembly, "OTEX.Editor");
+                    btnConnectingReconnect.Image = App.Images.Resource("refresh", mutator, App.Assembly, "OTEX.Editor");
+                    btnConnectingBack.Image = App.Images.Resource("previous", mutator, App.Assembly, "OTEX.Editor");
                 }, false);
             };
             App.Theme = App.Themes[settings.Theme];
 
             // CONFIGURE MAIN CONTENT PAGINATOR ////////////////////////////////////////////////////
             mainPaginator = new Paginator(splitter.Panel1);
-            mainPaginator.Add("menu", panMenuPage);
+            mainPaginator.Add("menu", menuSplitter);
             mainPaginator.Add("connecting", panConnectingPage);
-            mainPaginator.Add("servers", panServerBrowserPage);
             mainPaginator.Add("editors", panEditors);
             mainPaginator.PageActivated += (s, k, p) =>
             {
@@ -511,10 +516,6 @@ namespace OTEX.Editor
                     return;
                 switch (k)
                 {
-                    case "menu":
-                        panMenu.CenterInParent();
-                        break;
-
                     case "connecting":
                         PositionConnectingPageControls();
                         break;
@@ -536,6 +537,29 @@ namespace OTEX.Editor
 
             // CONFIGURE EDITOR PAGINATOR //////////////////////////////////////////////////////////
             editorPaginator = new Paginator(panEditors);
+
+            // CONFIGURE MAIN MENU PAGINATOR ///////////////////////////////////////////////////////
+            menuPaginator = new Paginator(menuSplitter.Panel2);
+            menuPaginator.Add("host", panJoin);
+            menuPaginator.Add("join", panHost);
+            menuPaginator.ActivePage = panHost;
+            btnHost.Tag = panHost;
+            btnJoin.Tag = panJoin;
+            btnHost.CheckedChanged += BtnHost_CheckedChanged;
+            btnJoin.CheckedChanged += BtnHost_CheckedChanged;
+        }
+
+        private void BtnHost_CheckForeColour(object sender, EventArgs e)
+        {
+            var rb = sender as RadioButton;
+            rb.ForeColor = rb.BackColor.Furthest(rb.ForeColor, rb.ForeColor.Invert());
+        }
+
+        private void BtnHost_CheckedChanged(object sender, EventArgs e)
+        {
+            var rb = sender as RadioButton;
+            if (rb.Checked)
+                menuPaginator.ActivePage = (rb.Tag as Control);
         }
 
         /////////////////////////////////////////////////////////////////////
@@ -570,6 +594,7 @@ namespace OTEX.Editor
             try
             {
                 otexClient.Metadata = localUser.Serialize();
+                otexClient.UpdateInterval = 0.5f; //server mode can have more frequent updates
                 otexClient.Connect(IPAddress.Loopback, session.Port, null);
             }
             catch (Exception exc)
@@ -588,7 +613,23 @@ namespace OTEX.Editor
             //set last connection data to null
             lastConnectionEndpoint = null;
             lastConnectionPassword = null;
-            lastConnectionReturnToServerBrowser = false;
+
+            //change "news" to "edits" in session so we can restart session without
+            //overwriting
+            if (session == hostSession)
+            {
+                List<Document> docs = new List<Document>();
+                foreach (var doc in hostSession.Documents)
+                    if (!doc.Value.Temporary && doc.Value.ConflictResolution == Document.ConflictResolutionStrategy.Replace)
+                        docs.Add(doc.Value);
+                foreach (var doc in docs)
+                {
+                    hostSession.RemoveDocument(doc);
+                    lbDocuments.Items.Remove(doc);
+                    lbDocuments.Items.Add(hostSession.AddDocument(
+                        doc.Path, Document.ConflictResolutionStrategy.Edit, 4));
+                }
+            }
         }
 
         /////////////////////////////////////////////////////////////////////
@@ -646,6 +687,7 @@ namespace OTEX.Editor
                 try
                 {
                     otexClient.Metadata = localUser.Serialize();
+                    otexClient.UpdateInterval = settings.UpdateInterval;
                     otexClient.Connect(lastConnectionEndpoint, lastConnectionPassword);
                 }
                 catch (Exception exc)
@@ -662,7 +704,6 @@ namespace OTEX.Editor
                 }
 
                 //started ok
-                lastConnectionReturnToServerBrowser = false;
                 clientConnectingThread = null;
             });
             clientConnectingThread.IsBackground = false;
@@ -696,7 +737,9 @@ namespace OTEX.Editor
             base.OnFirstShown(e);
             if (IsDesignMode)
                 return;
-            languageManager.Load(Path.Combine(App.ExecutableDirectory, "..\\languages.xml"));
+            btnHostDelete.Visible = false;
+            languageManager.Load(Path.Combine(Shared.BasePath, "languages.xml"));
+            iconManager.Load(Path.Combine(Shared.BasePath, "icons\\mapping.less"));
 
             string[] edits = null;
             App.Arguments.Values("edit", ref edits);
@@ -742,47 +785,6 @@ namespace OTEX.Editor
                 mainPaginator.ActivePageKey = "menu";
         }
 
-        private void btnClient_Click(object sender, EventArgs e)
-        {
-            mainPaginator.ActivePageKey = "servers";
-        }
-
-        private void btnClientCancel_Click(object sender, EventArgs e)
-        {
-            mainPaginator.ActivePageKey = "menu";
-        }
-
-        private void btnServerNew_Click(object sender, EventArgs e)
-        {
-            if (dlgServerCreateNew.ShowDialog() == DialogResult.OK)
-            {
-                Session session = new Session();
-                session.AddDocument(dlgServerCreateNew.FileName, Document.ConflictResolutionStrategy.Replace, 4);
-                session.Public = true;
-                StartServerMode(session);
-            }
-        }
-
-        private void btnServerExisting_Click(object sender, EventArgs e)
-        {
-            if (dlgServerOpenExisting.ShowDialog() == DialogResult.OK)
-            {
-                Session session = new Session();
-                foreach (var file in dlgServerOpenExisting.FileNames)
-                    session.AddDocument(file, Document.ConflictResolutionStrategy.Edit, 4);
-                session.Public = true;
-                StartServerMode(session);
-            }
-        }
-
-        private void btnServerTemporary_Click(object sender, EventArgs e)
-        {
-            Session session = new Session();
-            session.AddDocument("Temporary Document");
-            session.Public = true;
-            StartServerMode(session);
-        }
-
         private void btnClientConnect_Click(object sender, EventArgs e)
         {
             IPEndPoint endpoint = null;
@@ -797,7 +799,6 @@ namespace OTEX.Editor
                 Logger.ErrorMessage(this, exc.Message);
                 return;
             }
-            lastConnectionReturnToServerBrowser = true;
             if (StartClientMode(endpoint, tbClientPassword.Text.Trim()))
                 settings.LastDirectConnection = tbClientAddress.Text;
         }
@@ -849,8 +850,15 @@ namespace OTEX.Editor
                 passwordForm.Dispose();
                 passwordForm = null;
             }
+            if (temporaryDocumentForm != null)
+            {
+                temporaryDocumentForm.Dispose();
+                temporaryDocumentForm = null;
+            }
             if (languageManager != null)
                 languageManager.Dispose();
+            if (iconManager != null)
+                iconManager.Dispose();
 
             //flush config
             App.Config.Flush();
@@ -867,8 +875,8 @@ namespace OTEX.Editor
         {
             if (e.KeyChar == '\n' || e.KeyChar == '\r')
             {
-                btnClientConnect_Click(this, null);
                 e.Handled = true;
+                btnClientConnect_Click(this, null);
             }
         }
 
@@ -884,13 +892,11 @@ namespace OTEX.Editor
                     if (passwordForm == null)
                         passwordForm = new FlyoutForm(panServerPassword);
                     passwordForm.Tag = sd;
+                    tbServerPassword.Text = "";
                     passwordForm.Flyout();
                 }
                 else
-                {
-                    lastConnectionReturnToServerBrowser = true;
                     StartClientMode(sd.EndPoint, "");
-                }
             }
         }
 
@@ -901,15 +907,14 @@ namespace OTEX.Editor
 
             if (e.KeyChar == '\n' || e.KeyChar == '\r')
             {
+                e.Handled = true;
                 if (tbServerPassword.Text.Length > 0)
                 {
                     var pw = tbServerPassword.Text;
                     tbServerPassword.Text = "";
-                    lastConnectionReturnToServerBrowser = true;
                     if (StartClientMode((passwordForm.Tag as ServerDescription).EndPoint, pw))
                         this.Activate();
                 }
-                e.Handled = true;
             }
         }
 
@@ -919,17 +924,9 @@ namespace OTEX.Editor
                 PositionConnectingPageControls();
         }
 
-        private void panMenuPage_Resize(object sender, EventArgs e)
-        {
-            panMenu.CenterInParent();
-        }
-
         private void btnConnectingBack_Click(object sender, EventArgs e)
         {
-            if (lastConnectionReturnToServerBrowser)
-                mainPaginator.ActivePageKey = "servers";
-            else
-                mainPaginator.ActivePageKey = "menu";
+            mainPaginator.ActivePageKey = "menu";
         }
 
         private void btnConnectingReconnect_Click(object sender, EventArgs e)
@@ -984,6 +981,135 @@ namespace OTEX.Editor
             }
 
             adminSeparator.Visible = adminToolStripMenuItem.Visible = (otexClient.Session.ID == otexServer.ID);
+        }
+
+        private void btnHostNew_Click(object sender, EventArgs e)
+        {
+            if (dlgHostNew.ShowDialog() == DialogResult.OK)
+            {
+                try
+                {
+                    var path = Path.GetFullPath(dlgHostNew.FileName.Trim());
+                    var key = path.ToLower();
+                    foreach (var kvp in hostSession.Documents)
+                    {
+                        if (!kvp.Value.Temporary && Path.GetFullPath(kvp.Value.Path.Trim().ToLower()).Equals(key))
+                        {
+                            Logger.ErrorMessage(this, "{0} has already been added to the session.", path);
+                            return;
+                        }
+                    }
+                    lbDocuments.Items.Add(
+                        hostSession.AddDocument(path, Document.ConflictResolutionStrategy.Replace, 4));
+                    ValidateHostForm();
+                }
+                catch (Exception exc)
+                {
+                    Logger.ErrorMessage(this, exc.Message);
+                }
+            }
+        }
+
+        private void btnHostExisting_Click(object sender, EventArgs e)
+        {
+            if (dlgHostExisting.ShowDialog() == DialogResult.OK)
+            {
+                var paths = dlgHostExisting.FileNames;
+                foreach (var p in paths)
+                {
+                    try
+                    {
+                        var path = Path.GetFullPath(p.Trim());
+                        var key = path.ToLower();
+                        bool skip = false;
+                        foreach (var kvp in hostSession.Documents)
+                        {
+                            if (!kvp.Value.Temporary && Path.GetFullPath(kvp.Value.Path.Trim().ToLower()).Equals(key))
+                            {
+                                Logger.ErrorMessage(this, "{0} has already been added to the session.", path);
+                                skip = true;
+                                break;
+                            }
+                        }
+                        if (skip)
+                            continue;
+                        lbDocuments.Items.Add(
+                            hostSession.AddDocument(path, Document.ConflictResolutionStrategy.Edit, 4));
+                    }
+                    catch (Exception exc)
+                    {
+                        Logger.ErrorMessage(this, exc.Message);
+                    }
+                }
+                ValidateHostForm();
+            }
+        }
+
+        private void tbHostTempName_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            if (e.KeyChar == '\n' || e.KeyChar == '\r')
+            {
+                e.Handled = true;
+                var desc = tbHostTempName.Text.Trim();
+                var key = desc.ToLower();
+                if (desc.Length > 0)
+                {
+                    foreach (var kvp in hostSession.Documents)
+                    {
+                        if (kvp.Value.Temporary && kvp.Value.Path.Trim().ToLower().Equals(desc))
+                        {
+                            Logger.ErrorMessage(this, "A temporary document with description \"{0}\" has already been added to the session.", desc);
+                            this.Activate();
+                            return;
+                        }
+                    }
+                    lbDocuments.Items.Add(hostSession.AddDocument(desc));
+                    ValidateHostForm();
+                    this.Activate();
+                }
+            }
+        }
+
+        private void ValidateHostForm()
+        {
+            btnHostStart.Enabled = lbDocuments.Items.Count > 0;
+            btnHostDelete.Visible = lbDocuments.Items.Count > 0 && lbDocuments.SelectedIndex > -1;
+        }
+
+        private void btnHostStart_Click(object sender, EventArgs e)
+        {
+            hostSession.Public = true;
+            StartServerMode(hostSession, "");
+        }
+
+        private void lbDocuments_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            ValidateHostForm();
+        }
+
+        private void btnHostDelete_Click(object sender, EventArgs e)
+        {
+            if (lbDocuments.Items.Count == 0 || lbDocuments.SelectedItems == null
+                || lbDocuments.SelectedItems.Count == 0)
+                return;
+            var docs = lbDocuments.SelectedItems.Cast<Document>().ToList();
+            if (docs.Count == 0)
+                return;
+            foreach (var doc in docs)
+            {
+                lbDocuments.Items.Remove(doc);
+                hostSession.RemoveDocument(doc);
+            }
+            ValidateHostForm();
+        }
+
+        private void btnHostTemporary_Click(object sender, EventArgs e)
+        {
+            if (temporaryDocumentForm == null)
+                temporaryDocumentForm = new FlyoutForm(panHostTempName);
+            tbHostTempName.Text = "";
+            temporaryDocumentForm.Flyout();
+
         }
 
         private void kickToolStripMenuItem_Click(object sender, EventArgs e)
