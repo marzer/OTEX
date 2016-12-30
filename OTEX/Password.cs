@@ -76,7 +76,7 @@ namespace OTEX
                 return true;
             if (((object)a == null) || ((object)b == null))
                 return false;
-            return a.EncyptedPassword.Equals(b);
+            return a.EncyptedPassword.Equals(b.EncyptedPassword);
         }
 
         /// <summary>
