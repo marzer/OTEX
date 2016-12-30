@@ -24,7 +24,7 @@ namespace OTEX.Editor
         internal Editor activeEditor;
         internal readonly LanguageManager languageManager;
         internal readonly IconManager iconManager;
-        private readonly Server otexServer;
+        internal readonly Server otexServer;
         internal readonly Client otexClient;
         private readonly ServerListener otexServerListener;
         private volatile Thread clientConnectingThread = null;
@@ -45,7 +45,7 @@ namespace OTEX.Editor
             = new Dictionary<Keys, Action>();
         private volatile bool suspendTitleBarButtonEvents = false;
         internal readonly Settings settings;
-        private readonly Session hostSession = new Session();
+        internal readonly Session hostSession = new Session();
 
         /// <summary>
         /// List of allowed user colours.
@@ -494,6 +494,7 @@ namespace OTEX.Editor
                     settingsButton.InvertImage = settingsButton.InvertImageWhenChecked = !t.IsDark;
                     usersButton.InvertImage = usersButton.InvertImageWhenChecked = !t.IsDark;
                     logoutButton.InvertImage = logoutButton.InvertImageWhenChecked = !t.IsDark;
+
                     sideSplitter.Panel1.Refresh();
 
                     var mutator = t.IsDark ? "" : "invert";
@@ -504,6 +505,8 @@ namespace OTEX.Editor
                     btnClientConnect.Image = btnHostStart.Image = App.Images.Resource("play", mutator, App.Assembly, "OTEX.Editor");
                     btnConnectingReconnect.Image = App.Images.Resource("refresh", mutator, App.Assembly, "OTEX.Editor");
                     btnConnectingBack.Image = App.Images.Resource("previous", mutator, App.Assembly, "OTEX.Editor");
+
+                    ValidateHostForm();
                 }, false);
             };
             App.Theme = App.Themes[settings.Theme];
@@ -576,10 +579,6 @@ namespace OTEX.Editor
             {
                 if (password.Length > 0)
                     session.Password = new Password(password);
-                session.Port = Server.DefaultPort + 1;
-#if DEBUG
-                session.Public = true;
-#endif
                 otexServer.Start(session);
             }
             catch (Exception exc)
@@ -598,7 +597,7 @@ namespace OTEX.Editor
             {
                 otexClient.Metadata = localUser.Serialize();
                 otexClient.UpdateInterval = 0.5f; //server mode can have more frequent updates
-                otexClient.Connect(IPAddress.Loopback, session.Port, null);
+                otexClient.Connect(IPAddress.Loopback, session.Port, session.Password);
             }
             catch (Exception exc)
             {
@@ -621,17 +620,10 @@ namespace OTEX.Editor
             //overwriting
             if (session == hostSession)
             {
-                List<Document> docs = new List<Document>();
-                foreach (var doc in hostSession.Documents)
-                    if (!doc.Value.Temporary && doc.Value.ConflictResolution == Document.ConflictResolutionStrategy.Replace)
-                        docs.Add(doc.Value);
+                var docs = lbDocuments.Items.Cast<HostedDocument>().ToList();
                 foreach (var doc in docs)
-                {
-                    hostSession.RemoveDocument(doc);
-                    lbDocuments.Items.Remove(doc);
-                    lbDocuments.Items.Add(hostSession.AddDocument(
-                        doc.Path, Document.ConflictResolutionStrategy.Edit, 4));
-                }
+                    doc.ConvertReplaceToEdit();
+                lbDocuments.Refresh();
             }
         }
 
@@ -747,6 +739,8 @@ namespace OTEX.Editor
             btnHostDelete.Visible = false;
             languageManager.Load(Path.Combine(Shared.BasePath, "languages.xml"));
             iconManager.Load(Path.Combine(Shared.BasePath, "icons\\mapping.less"));
+
+            splitter.SplitterDistance = splitter.Width - 300;
 
             string[] edits = null;
             App.Arguments.Values("edit", ref edits);
@@ -961,9 +955,9 @@ namespace OTEX.Editor
             var button = sidePaginator.ActivePage.Tag as TitleBarButton;
             if (button == null)
                 return;
-
+            var panel = (sender as Control);
             using (var brush = new SolidBrush(button.Colour.Value))
-                e.Graphics.FillRectangle(brush, 0, 0, (sender as Control).Width, 4);
+                e.Graphics.FillRectangle(brush, 0, 0, panel.Width, 4);
         }
 
         private void nudLineLength_ValueChanged(object sender, EventArgs e)
@@ -996,18 +990,8 @@ namespace OTEX.Editor
             {
                 try
                 {
-                    var path = Path.GetFullPath(dlgHostNew.FileName.Trim());
-                    var key = path.ToLower();
-                    foreach (var kvp in hostSession.Documents)
-                    {
-                        if (!kvp.Value.Temporary && Path.GetFullPath(kvp.Value.Path.Trim().ToLower()).Equals(key))
-                        {
-                            Logger.ErrorMessage(this, "{0} has already been added to the session.", path);
-                            return;
-                        }
-                    }
-                    lbDocuments.Items.Add(
-                        hostSession.AddDocument(path, Document.ConflictResolutionStrategy.Replace, 4));
+                    new HostedDocument(this, dlgHostNew.FileName,
+                        Document.ConflictResolutionStrategy.Replace); //adds itself to listbox
                     ValidateHostForm();
                 }
                 catch (Exception exc)
@@ -1026,22 +1010,8 @@ namespace OTEX.Editor
                 {
                     try
                     {
-                        var path = Path.GetFullPath(p.Trim());
-                        var key = path.ToLower();
-                        bool skip = false;
-                        foreach (var kvp in hostSession.Documents)
-                        {
-                            if (!kvp.Value.Temporary && Path.GetFullPath(kvp.Value.Path.Trim().ToLower()).Equals(key))
-                            {
-                                Logger.ErrorMessage(this, "{0} has already been added to the session.", path);
-                                skip = true;
-                                break;
-                            }
-                        }
-                        if (skip)
-                            continue;
-                        lbDocuments.Items.Add(
-                            hostSession.AddDocument(path, Document.ConflictResolutionStrategy.Edit, 4));
+                        new HostedDocument(this, p,
+                            Document.ConflictResolutionStrategy.Edit); //adds itself to listbox
                     }
                     catch (Exception exc)
                     {
@@ -1058,35 +1028,46 @@ namespace OTEX.Editor
             {
                 e.Handled = true;
                 var desc = tbHostTempName.Text.Trim();
-                var key = desc.ToLower();
                 if (desc.Length > 0)
                 {
-                    foreach (var kvp in hostSession.Documents)
+                    try
                     {
-                        if (kvp.Value.Temporary && kvp.Value.Path.Trim().ToLower().Equals(desc))
-                        {
-                            Logger.ErrorMessage(this, "A temporary document with description \"{0}\" has already been added to the session.", desc);
-                            this.Activate();
-                            return;
-                        }
+                        new HostedDocument(this, desc); //adds itself to listbox
+                        ValidateHostForm();
+                        Activate();
                     }
-                    lbDocuments.Items.Add(hostSession.AddDocument(desc));
-                    ValidateHostForm();
-                    this.Activate();
+                    catch (Exception exc)
+                    {
+                        Logger.ErrorMessage(this, exc.Message);
+                    }
                 }
             }
         }
 
         private void ValidateHostForm()
         {
-            btnHostStart.Enabled = lbDocuments.Items.Count > 0;
+            var pwd = tbHostPassword.Text.Trim();
+            btnHostStart.Enabled = lbDocuments.Items.Count > 0
+                && (pwd.Length == 0 || pwd.Length >=6);
             btnHostDelete.Visible = lbDocuments.Items.Count > 0 && lbDocuments.SelectedIndex > -1;
         }
 
         private void btnHostStart_Click(object sender, EventArgs e)
         {
-            hostSession.Public = true;
-            StartServerMode(hostSession, "");
+            try
+            {
+                hostSession.Public = cbHostPublic.Checked;
+                hostSession.Port = (ushort)nudHostPort.Value;
+                hostSession.Name = tbHostName.Text.Trim();
+                hostSession.ClientLimit = (uint)nudHostClientLimit.Value;
+            }
+            catch (Exception exc)
+            {
+                Logger.ErrorMessage(this, exc.Message);
+                return;
+            }
+
+            StartServerMode(hostSession, tbHostPassword.Text.Trim());
         }
 
         private void lbDocuments_SelectedIndexChanged(object sender, EventArgs e)
@@ -1099,14 +1080,11 @@ namespace OTEX.Editor
             if (lbDocuments.Items.Count == 0 || lbDocuments.SelectedItems == null
                 || lbDocuments.SelectedItems.Count == 0)
                 return;
-            var docs = lbDocuments.SelectedItems.Cast<Document>().ToList();
+            var docs = lbDocuments.SelectedItems.Cast<HostedDocument>().ToList();
             if (docs.Count == 0)
                 return;
             foreach (var doc in docs)
-            {
-                lbDocuments.Items.Remove(doc);
-                hostSession.RemoveDocument(doc);
-            }
+                doc.Dispose();
             ValidateHostForm();
         }
 
@@ -1123,6 +1101,11 @@ namespace OTEX.Editor
         {
             if (settingsLoaded)
                 settings.LineEndings = cbLineEndings.Checked;
+        }
+
+        private void tbHostPassword_TextChanged(object sender, EventArgs e)
+        {
+            ValidateHostForm();
         }
 
         private void kickToolStripMenuItem_Click(object sender, EventArgs e)

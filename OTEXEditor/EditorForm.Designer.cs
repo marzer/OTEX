@@ -53,6 +53,17 @@
             this.labServerPassword = new Marzersoft.Themes.ThemedLabel();
             this.tbServerPassword = new Marzersoft.Themes.ThemedTextBox();
             this.panHost = new System.Windows.Forms.Panel();
+            this.tableLayoutPanel1 = new System.Windows.Forms.TableLayoutPanel();
+            this.label11 = new System.Windows.Forms.Label();
+            this.label13 = new System.Windows.Forms.Label();
+            this.cbHostPublic = new System.Windows.Forms.CheckBox();
+            this.label14 = new System.Windows.Forms.Label();
+            this.nudHostPort = new Marzersoft.Themes.ThemedNumericUpDown();
+            this.label10 = new System.Windows.Forms.Label();
+            this.label15 = new System.Windows.Forms.Label();
+            this.nudHostClientLimit = new Marzersoft.Themes.ThemedNumericUpDown();
+            this.tbHostPassword = new Marzersoft.Themes.ThemedTextBox();
+            this.tbHostName = new Marzersoft.Themes.ThemedTextBox();
             this.btnHostDelete = new Marzersoft.Themes.ThemedButton();
             this.btnHostTemporary = new Marzersoft.Themes.ThemedButton();
             this.btnHostExisting = new Marzersoft.Themes.ThemedButton();
@@ -101,6 +112,9 @@
             ((System.ComponentModel.ISupportInitialize)(this.dgvServers)).BeginInit();
             this.panServerPassword.SuspendLayout();
             this.panHost.SuspendLayout();
+            this.tableLayoutPanel1.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.nudHostPort)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.nudHostClientLimit)).BeginInit();
             this.panConnectingPage.SuspendLayout();
             this.panConnectingContent.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.nudLineLength)).BeginInit();
@@ -125,7 +139,6 @@
             this.btnHost.Appearance = System.Windows.Forms.Appearance.Button;
             this.btnHost.BackColor = System.Drawing.SystemColors.Control;
             this.btnHost.Checked = true;
-            this.btnHost.FlatAppearance.BorderSize = 0;
             this.btnHost.FlatAppearance.MouseDownBackColor = System.Drawing.SystemColors.Highlight;
             this.btnHost.FlatAppearance.MouseOverBackColor = System.Drawing.SystemColors.ControlLight;
             this.btnHost.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
@@ -148,7 +161,6 @@
             // 
             this.btnJoin.Accent = ((uint)(2u));
             this.btnJoin.Appearance = System.Windows.Forms.Appearance.Button;
-            this.btnJoin.FlatAppearance.BorderSize = 0;
             this.btnJoin.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnJoin.FontSize = 1;
             this.btnJoin.ImageAlign = System.Drawing.ContentAlignment.MiddleRight;
@@ -172,7 +184,7 @@
             this.panJoin.Controls.Add(this.tbClientPassword);
             this.panJoin.Controls.Add(this.btnClientConnect);
             this.panJoin.Controls.Add(this.tbClientAddress);
-            this.panJoin.Location = new System.Drawing.Point(557, 207);
+            this.panJoin.Location = new System.Drawing.Point(87, 401);
             this.panJoin.Margin = new System.Windows.Forms.Padding(0);
             this.panJoin.Name = "panJoin";
             this.panJoin.Padding = new System.Windows.Forms.Padding(10);
@@ -392,7 +404,7 @@
             // 
             this.panServerPassword.Controls.Add(this.labServerPassword);
             this.panServerPassword.Controls.Add(this.tbServerPassword);
-            this.panServerPassword.Location = new System.Drawing.Point(699, 12);
+            this.panServerPassword.Location = new System.Drawing.Point(564, 12);
             this.panServerPassword.Name = "panServerPassword";
             this.panServerPassword.Size = new System.Drawing.Size(204, 64);
             this.panServerPassword.TabIndex = 6;
@@ -428,6 +440,7 @@
             // 
             // panHost
             // 
+            this.panHost.Controls.Add(this.tableLayoutPanel1);
             this.panHost.Controls.Add(this.btnHostDelete);
             this.panHost.Controls.Add(this.btnHostTemporary);
             this.panHost.Controls.Add(this.btnHostExisting);
@@ -436,11 +449,185 @@
             this.panHost.Controls.Add(this.lblHostSettings);
             this.panHost.Controls.Add(this.btnHostStart);
             this.panHost.Controls.Add(this.lblHostDocuments);
-            this.panHost.Location = new System.Drawing.Point(430, 162);
+            this.panHost.Location = new System.Drawing.Point(48, 37);
             this.panHost.Name = "panHost";
             this.panHost.Padding = new System.Windows.Forms.Padding(10);
-            this.panHost.Size = new System.Drawing.Size(482, 385);
+            this.panHost.Size = new System.Drawing.Size(645, 385);
             this.panHost.TabIndex = 5;
+            // 
+            // tableLayoutPanel1
+            // 
+            this.tableLayoutPanel1.ColumnCount = 3;
+            this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
+            this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 120F));
+            this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
+            this.tableLayoutPanel1.Controls.Add(this.label11, 0, 0);
+            this.tableLayoutPanel1.Controls.Add(this.label13, 0, 2);
+            this.tableLayoutPanel1.Controls.Add(this.cbHostPublic, 1, 2);
+            this.tableLayoutPanel1.Controls.Add(this.label14, 0, 4);
+            this.tableLayoutPanel1.Controls.Add(this.nudHostPort, 1, 1);
+            this.tableLayoutPanel1.Controls.Add(this.label10, 0, 1);
+            this.tableLayoutPanel1.Controls.Add(this.label15, 0, 3);
+            this.tableLayoutPanel1.Controls.Add(this.nudHostClientLimit, 1, 3);
+            this.tableLayoutPanel1.Controls.Add(this.tbHostPassword, 1, 4);
+            this.tableLayoutPanel1.Controls.Add(this.tbHostName, 1, 0);
+            this.tableLayoutPanel1.Location = new System.Drawing.Point(363, 47);
+            this.tableLayoutPanel1.Name = "tableLayoutPanel1";
+            this.tableLayoutPanel1.RowCount = 6;
+            this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 30F));
+            this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 30F));
+            this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 30F));
+            this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 30F));
+            this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 30F));
+            this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 30F));
+            this.tableLayoutPanel1.Size = new System.Drawing.Size(210, 160);
+            this.tableLayoutPanel1.TabIndex = 2010;
+            // 
+            // label11
+            // 
+            this.label11.AutoSize = true;
+            this.label11.Location = new System.Drawing.Point(3, 4);
+            this.label11.Margin = new System.Windows.Forms.Padding(3, 4, 20, 0);
+            this.label11.Name = "label11";
+            this.label11.Size = new System.Drawing.Size(38, 13);
+            this.label11.TabIndex = 109;
+            this.label11.Text = "Name:";
+            this.label11.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            // 
+            // label13
+            // 
+            this.label13.AutoSize = true;
+            this.label13.Location = new System.Drawing.Point(3, 64);
+            this.label13.Margin = new System.Windows.Forms.Padding(3, 4, 20, 0);
+            this.label13.Name = "label13";
+            this.label13.Size = new System.Drawing.Size(39, 13);
+            this.label13.TabIndex = 113;
+            this.label13.Text = "Public:";
+            this.label13.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            // 
+            // cbHostPublic
+            // 
+            this.cbHostPublic.AutoSize = true;
+            this.cbHostPublic.Checked = true;
+            this.cbHostPublic.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.cbHostPublic.Location = new System.Drawing.Point(79, 66);
+            this.cbHostPublic.Margin = new System.Windows.Forms.Padding(0, 6, 0, 0);
+            this.cbHostPublic.Name = "cbHostPublic";
+            this.cbHostPublic.Size = new System.Drawing.Size(15, 14);
+            this.cbHostPublic.TabIndex = 22;
+            this.cbHostPublic.UseVisualStyleBackColor = true;
+            // 
+            // label14
+            // 
+            this.label14.AutoSize = true;
+            this.label14.Location = new System.Drawing.Point(3, 124);
+            this.label14.Margin = new System.Windows.Forms.Padding(3, 4, 20, 0);
+            this.label14.Name = "label14";
+            this.label14.Size = new System.Drawing.Size(56, 13);
+            this.label14.TabIndex = 119;
+            this.label14.Text = "Password:";
+            this.label14.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            // 
+            // nudHostPort
+            // 
+            this.nudHostPort.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.nudHostPort.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.nudHostPort.Increment = new decimal(new int[] {
+            10,
+            0,
+            0,
+            0});
+            this.nudHostPort.Location = new System.Drawing.Point(79, 30);
+            this.nudHostPort.Margin = new System.Windows.Forms.Padding(0);
+            this.nudHostPort.Maximum = new decimal(new int[] {
+            65535,
+            0,
+            0,
+            0});
+            this.nudHostPort.Minimum = new decimal(new int[] {
+            1024,
+            0,
+            0,
+            0});
+            this.nudHostPort.Name = "nudHostPort";
+            this.nudHostPort.Size = new System.Drawing.Size(120, 20);
+            this.nudHostPort.TabIndex = 21;
+            this.nudHostPort.Value = new decimal(new int[] {
+            55551,
+            0,
+            0,
+            0});
+            // 
+            // label10
+            // 
+            this.label10.AutoSize = true;
+            this.label10.Location = new System.Drawing.Point(3, 34);
+            this.label10.Margin = new System.Windows.Forms.Padding(3, 4, 20, 0);
+            this.label10.Name = "label10";
+            this.label10.Size = new System.Drawing.Size(29, 13);
+            this.label10.TabIndex = 114;
+            this.label10.Text = "Port:";
+            this.label10.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
+            // 
+            // label15
+            // 
+            this.label15.AutoSize = true;
+            this.label15.Location = new System.Drawing.Point(3, 94);
+            this.label15.Margin = new System.Windows.Forms.Padding(3, 4, 20, 0);
+            this.label15.Name = "label15";
+            this.label15.Size = new System.Drawing.Size(56, 13);
+            this.label15.TabIndex = 120;
+            this.label15.Text = "Client limit:";
+            this.label15.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
+            // 
+            // nudHostClientLimit
+            // 
+            this.nudHostClientLimit.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.nudHostClientLimit.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.nudHostClientLimit.Increment = new decimal(new int[] {
+            5,
+            0,
+            0,
+            0});
+            this.nudHostClientLimit.Location = new System.Drawing.Point(79, 90);
+            this.nudHostClientLimit.Margin = new System.Windows.Forms.Padding(0);
+            this.nudHostClientLimit.Minimum = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
+            this.nudHostClientLimit.Name = "nudHostClientLimit";
+            this.nudHostClientLimit.Size = new System.Drawing.Size(120, 20);
+            this.nudHostClientLimit.TabIndex = 23;
+            this.nudHostClientLimit.Value = new decimal(new int[] {
+            10,
+            0,
+            0,
+            0});
+            // 
+            // tbHostPassword
+            // 
+            this.tbHostPassword.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.tbHostPassword.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.tbHostPassword.Location = new System.Drawing.Point(79, 120);
+            this.tbHostPassword.Margin = new System.Windows.Forms.Padding(0);
+            this.tbHostPassword.MaxLength = 32;
+            this.tbHostPassword.Name = "tbHostPassword";
+            this.tbHostPassword.Size = new System.Drawing.Size(120, 20);
+            this.tbHostPassword.TabIndex = 24;
+            this.tbHostPassword.UseSystemPasswordChar = true;
+            this.tbHostPassword.TextChanged += new System.EventHandler(this.tbHostPassword_TextChanged);
+            // 
+            // tbHostName
+            // 
+            this.tbHostName.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.tbHostName.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.tbHostName.Location = new System.Drawing.Point(79, 0);
+            this.tbHostName.Margin = new System.Windows.Forms.Padding(0);
+            this.tbHostName.MaxLength = 32;
+            this.tbHostName.Name = "tbHostName";
+            this.tbHostName.Size = new System.Drawing.Size(120, 20);
+            this.tbHostName.TabIndex = 20;
             // 
             // btnHostDelete
             // 
@@ -452,7 +639,7 @@
             this.btnHostDelete.Margin = new System.Windows.Forms.Padding(0);
             this.btnHostDelete.Name = "btnHostDelete";
             this.btnHostDelete.Size = new System.Drawing.Size(28, 28);
-            this.btnHostDelete.TabIndex = 2009;
+            this.btnHostDelete.TabIndex = 4;
             this.btnHostDelete.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             this.btnHostDelete.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
             this.toolTips.SetToolTip(this.btnHostDelete, "Remove the selected document(s)");
@@ -470,7 +657,7 @@
             this.btnHostTemporary.Margin = new System.Windows.Forms.Padding(0);
             this.btnHostTemporary.Name = "btnHostTemporary";
             this.btnHostTemporary.Size = new System.Drawing.Size(28, 28);
-            this.btnHostTemporary.TabIndex = 2008;
+            this.btnHostTemporary.TabIndex = 2;
             this.btnHostTemporary.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             this.btnHostTemporary.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
             this.toolTips.SetToolTip(this.btnHostTemporary, "Add a temporary document (not saved on disk; will be lost when the session is ter" +
@@ -488,7 +675,7 @@
             this.btnHostExisting.Margin = new System.Windows.Forms.Padding(0);
             this.btnHostExisting.Name = "btnHostExisting";
             this.btnHostExisting.Size = new System.Drawing.Size(28, 28);
-            this.btnHostExisting.TabIndex = 2007;
+            this.btnHostExisting.TabIndex = 3;
             this.btnHostExisting.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             this.btnHostExisting.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
             this.toolTips.SetToolTip(this.btnHostExisting, "Add existing documents");
@@ -505,7 +692,7 @@
             this.btnHostNew.Margin = new System.Windows.Forms.Padding(0);
             this.btnHostNew.Name = "btnHostNew";
             this.btnHostNew.Size = new System.Drawing.Size(28, 28);
-            this.btnHostNew.TabIndex = 2006;
+            this.btnHostNew.TabIndex = 1;
             this.btnHostNew.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             this.btnHostNew.TextImageRelation = System.Windows.Forms.TextImageRelation.ImageBeforeText;
             this.toolTips.SetToolTip(this.btnHostNew, "Create a new document");
@@ -520,22 +707,23 @@
             this.lbDocuments.DrawMode = System.Windows.Forms.DrawMode.OwnerDrawVariable;
             this.lbDocuments.FormattingEnabled = true;
             this.lbDocuments.IntegralHeight = false;
+            this.lbDocuments.ItemBackgroundAlpha = ((byte)(255));
             this.lbDocuments.Location = new System.Drawing.Point(45, 47);
             this.lbDocuments.Margin = new System.Windows.Forms.Padding(0);
             this.lbDocuments.Name = "lbDocuments";
             this.lbDocuments.SelectionMode = System.Windows.Forms.SelectionMode.MultiExtended;
-            this.lbDocuments.Size = new System.Drawing.Size(185, 328);
-            this.lbDocuments.TabIndex = 108;
+            this.lbDocuments.Size = new System.Drawing.Size(305, 290);
+            this.lbDocuments.TabIndex = 5;
             this.lbDocuments.SelectedIndexChanged += new System.EventHandler(this.lbDocuments_SelectedIndexChanged);
             // 
             // lblHostSettings
             // 
             this.lblHostSettings.Accent = ((uint)(0u));
             this.lblHostSettings.FontSize = 1;
-            this.lblHostSettings.Location = new System.Drawing.Point(239, 10);
+            this.lblHostSettings.Location = new System.Drawing.Point(363, 10);
             this.lblHostSettings.Margin = new System.Windows.Forms.Padding(0);
             this.lblHostSettings.Name = "lblHostSettings";
-            this.lblHostSettings.Size = new System.Drawing.Size(220, 28);
+            this.lblHostSettings.Size = new System.Drawing.Size(199, 28);
             this.lblHostSettings.TabIndex = 2005;
             this.lblHostSettings.Text = "Session Configuration";
             this.lblHostSettings.TextAlign = System.Drawing.ContentAlignment.BottomLeft;
@@ -543,16 +731,15 @@
             // btnHostStart
             // 
             this.btnHostStart.Accent = ((uint)(0u));
-            this.btnHostStart.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.btnHostStart.Enabled = false;
             this.btnHostStart.FlatAppearance.BorderSize = 0;
             this.btnHostStart.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnHostStart.ImageAlign = System.Drawing.ContentAlignment.MiddleRight;
-            this.btnHostStart.Location = new System.Drawing.Point(379, 327);
+            this.btnHostStart.Location = new System.Drawing.Point(589, 47);
             this.btnHostStart.Margin = new System.Windows.Forms.Padding(0);
             this.btnHostStart.Name = "btnHostStart";
             this.btnHostStart.Size = new System.Drawing.Size(80, 48);
-            this.btnHostStart.TabIndex = 2004;
+            this.btnHostStart.TabIndex = 100;
             this.btnHostStart.Text = "Start";
             this.btnHostStart.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
             this.btnHostStart.TextImageRelation = System.Windows.Forms.TextImageRelation.TextBeforeImage;
@@ -564,10 +751,10 @@
             // 
             this.lblHostDocuments.Accent = ((uint)(0u));
             this.lblHostDocuments.FontSize = 1;
-            this.lblHostDocuments.Location = new System.Drawing.Point(10, 10);
+            this.lblHostDocuments.Location = new System.Drawing.Point(45, 10);
             this.lblHostDocuments.Margin = new System.Windows.Forms.Padding(0);
             this.lblHostDocuments.Name = "lblHostDocuments";
-            this.lblHostDocuments.Size = new System.Drawing.Size(220, 28);
+            this.lblHostDocuments.Size = new System.Drawing.Size(305, 28);
             this.lblHostDocuments.TabIndex = 107;
             this.lblHostDocuments.Text = "Documents";
             this.lblHostDocuments.TextAlign = System.Drawing.ContentAlignment.BottomLeft;
@@ -576,9 +763,9 @@
             // 
             this.panConnectingPage.Controls.Add(this.panConnectingContent);
             this.panConnectingPage.Controls.Add(this.lblConnectingStatus);
-            this.panConnectingPage.Location = new System.Drawing.Point(934, 12);
+            this.panConnectingPage.Location = new System.Drawing.Point(480, 65);
             this.panConnectingPage.Name = "panConnectingPage";
-            this.panConnectingPage.Size = new System.Drawing.Size(300, 158);
+            this.panConnectingPage.Size = new System.Drawing.Size(300, 148);
             this.panConnectingPage.TabIndex = 7;
             this.panConnectingPage.Resize += new System.EventHandler(this.panConnectingPage_Resize);
             // 
@@ -697,13 +884,13 @@
             // 
             // cbLineLength
             // 
+            this.cbLineLength.AutoSize = true;
             this.cbLineLength.Checked = true;
             this.cbLineLength.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.cbLineLength.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.cbLineLength.Location = new System.Drawing.Point(105, 60);
-            this.cbLineLength.Margin = new System.Windows.Forms.Padding(0);
+            this.cbLineLength.Location = new System.Drawing.Point(105, 66);
+            this.cbLineLength.Margin = new System.Windows.Forms.Padding(0, 6, 0, 0);
             this.cbLineLength.Name = "cbLineLength";
-            this.cbLineLength.Size = new System.Drawing.Size(120, 30);
+            this.cbLineLength.Size = new System.Drawing.Size(15, 14);
             this.cbLineLength.TabIndex = 113;
             this.cbLineLength.UseVisualStyleBackColor = true;
             this.cbLineLength.CheckedChanged += new System.EventHandler(this.cbLineLength_CheckedChanged);
@@ -785,15 +972,17 @@
             // 
             this.splitter.FixedPanel = System.Windows.Forms.FixedPanel.Panel2;
             this.splitter.IsSplitterFixed = true;
-            this.splitter.Location = new System.Drawing.Point(9, 9);
+            this.splitter.Location = new System.Drawing.Point(11, 12);
             this.splitter.Margin = new System.Windows.Forms.Padding(0);
             this.splitter.Name = "splitter";
+            this.splitter.Panel1MinSize = 1;
             // 
             // splitter.Panel2
             // 
             this.splitter.Panel2.Controls.Add(this.sideSplitter);
+            this.splitter.Panel2MinSize = 1;
             this.splitter.Size = new System.Drawing.Size(432, 100);
-            this.splitter.SplitterDistance = 143;
+            this.splitter.SplitterDistance = 170;
             this.splitter.SplitterWidth = 1;
             this.splitter.TabIndex = 9;
             this.splitter.TabStop = false;
@@ -817,7 +1006,7 @@
             // sideSplitter.Panel2
             // 
             this.sideSplitter.Panel2.Padding = new System.Windows.Forms.Padding(2, 0, 0, 0);
-            this.sideSplitter.Size = new System.Drawing.Size(288, 100);
+            this.sideSplitter.Size = new System.Drawing.Size(261, 100);
             this.sideSplitter.SplitterDistance = 34;
             this.sideSplitter.SplitterWidth = 1;
             this.sideSplitter.TabIndex = 0;
@@ -831,7 +1020,7 @@
             this.lblSideBar.Location = new System.Drawing.Point(2, 4);
             this.lblSideBar.Margin = new System.Windows.Forms.Padding(0);
             this.lblSideBar.Name = "lblSideBar";
-            this.lblSideBar.Size = new System.Drawing.Size(286, 30);
+            this.lblSideBar.Size = new System.Drawing.Size(259, 30);
             this.lblSideBar.TabIndex = 108;
             this.lblSideBar.Text = "<sidebar>";
             this.lblSideBar.TextAlign = System.Drawing.ContentAlignment.BottomLeft;
@@ -903,7 +1092,7 @@
             // 
             this.menuSplitter.FixedPanel = System.Windows.Forms.FixedPanel.Panel1;
             this.menuSplitter.IsSplitterFixed = true;
-            this.menuSplitter.Location = new System.Drawing.Point(557, 456);
+            this.menuSplitter.Location = new System.Drawing.Point(21, 163);
             this.menuSplitter.Margin = new System.Windows.Forms.Padding(0);
             this.menuSplitter.Name = "menuSplitter";
             this.menuSplitter.Orientation = System.Windows.Forms.Orientation.Horizontal;
@@ -912,7 +1101,9 @@
             // 
             this.menuSplitter.Panel1.Controls.Add(this.btnHost);
             this.menuSplitter.Panel1.Controls.Add(this.btnJoin);
-            this.menuSplitter.Size = new System.Drawing.Size(560, 234);
+            this.menuSplitter.Panel1MinSize = 1;
+            this.menuSplitter.Panel2MinSize = 1;
+            this.menuSplitter.Size = new System.Drawing.Size(560, 161);
             this.menuSplitter.SplitterDistance = 60;
             this.menuSplitter.SplitterWidth = 1;
             this.menuSplitter.TabIndex = 12;
@@ -939,7 +1130,7 @@
             // 
             this.panHostTempName.Controls.Add(this.lblHostTempName);
             this.panHostTempName.Controls.Add(this.tbHostTempName);
-            this.panHostTempName.Location = new System.Drawing.Point(699, 82);
+            this.panHostTempName.Location = new System.Drawing.Point(12, 119);
             this.panHostTempName.Name = "panHostTempName";
             this.panHostTempName.Size = new System.Drawing.Size(204, 64);
             this.panHostTempName.TabIndex = 2007;
@@ -960,13 +1151,13 @@
             // 
             // cbLineEndings
             // 
+            this.cbLineEndings.AutoSize = true;
             this.cbLineEndings.Checked = true;
             this.cbLineEndings.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.cbLineEndings.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.cbLineEndings.Location = new System.Drawing.Point(105, 120);
-            this.cbLineEndings.Margin = new System.Windows.Forms.Padding(0);
+            this.cbLineEndings.Location = new System.Drawing.Point(105, 126);
+            this.cbLineEndings.Margin = new System.Windows.Forms.Padding(0, 6, 0, 0);
             this.cbLineEndings.Name = "cbLineEndings";
-            this.cbLineEndings.Size = new System.Drawing.Size(120, 30);
+            this.cbLineEndings.Size = new System.Drawing.Size(15, 14);
             this.cbLineEndings.TabIndex = 118;
             this.cbLineEndings.UseVisualStyleBackColor = true;
             this.cbLineEndings.CheckedChanged += new System.EventHandler(this.cbLineEndings_CheckedChanged);
@@ -991,7 +1182,7 @@
             this.panSettings.Controls.Add(this.label8, 0, 4);
             this.panSettings.Controls.Add(this.lblAbout, 0, 8);
             this.panSettings.Controls.Add(this.lblDebug, 1, 8);
-            this.panSettings.Location = new System.Drawing.Point(32, 189);
+            this.panSettings.Location = new System.Drawing.Point(21, 442);
             this.panSettings.Name = "panSettings";
             this.panSettings.RowCount = 9;
             this.panSettings.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 30F));
@@ -1003,7 +1194,7 @@
             this.panSettings.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 30F));
             this.panSettings.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 30F));
             this.panSettings.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 26F));
-            this.panSettings.Size = new System.Drawing.Size(361, 290);
+            this.panSettings.Size = new System.Drawing.Size(306, 290);
             this.panSettings.TabIndex = 2008;
             // 
             // label7
@@ -1072,7 +1263,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1452, 706);
+            this.ClientSize = new System.Drawing.Size(724, 576);
             this.Controls.Add(this.panSettings);
             this.Controls.Add(this.panHostTempName);
             this.Controls.Add(this.panHost);
@@ -1083,7 +1274,7 @@
             this.Controls.Add(this.panConnectingPage);
             this.Controls.Add(this.panServerPassword);
             this.Controls.Add(this.panJoin);
-            this.MinimumSize = new System.Drawing.Size(500, 400);
+            this.MinimumSize = new System.Drawing.Size(700, 600);
             this.Name = "EditorForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.Manual;
             this.Text = "OTEX Editor";
@@ -1095,6 +1286,10 @@
             this.panServerPassword.ResumeLayout(false);
             this.panServerPassword.PerformLayout();
             this.panHost.ResumeLayout(false);
+            this.tableLayoutPanel1.ResumeLayout(false);
+            this.tableLayoutPanel1.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.nudHostPort)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.nudHostClientLimit)).EndInit();
             this.panConnectingPage.ResumeLayout(false);
             this.panConnectingContent.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.nudLineLength)).EndInit();
@@ -1170,7 +1365,6 @@
         private Marzersoft.Themes.ThemedSplitContainer menuSplitter;
         private Marzersoft.Themes.ThemedLabel lblHostDocuments;
         private Marzersoft.Themes.ThemedButton btnHostStart;
-        private Marzersoft.Themes.ThemedListBox lbDocuments;
         private Marzersoft.Themes.ThemedLabel lblHostSettings;
         private Marzersoft.Themes.ThemedButton btnHostTemporary;
         private Marzersoft.Themes.ThemedButton btnHostExisting;
@@ -1186,6 +1380,18 @@
         private System.Windows.Forms.Label label8;
         private System.Windows.Forms.Label lblAbout;
         private System.Windows.Forms.Label lblDebug;
+        internal Marzersoft.Themes.ThemedListBox lbDocuments;
+        private System.Windows.Forms.TableLayoutPanel tableLayoutPanel1;
+        private Marzersoft.Themes.ThemedNumericUpDown nudHostPort;
+        private System.Windows.Forms.Label label10;
+        private System.Windows.Forms.Label label11;
+        private System.Windows.Forms.Label label13;
+        private System.Windows.Forms.CheckBox cbHostPublic;
+        private System.Windows.Forms.Label label14;
+        private System.Windows.Forms.Label label15;
+        private Marzersoft.Themes.ThemedNumericUpDown nudHostClientLimit;
+        private Marzersoft.Themes.ThemedTextBox tbHostPassword;
+        private Marzersoft.Themes.ThemedTextBox tbHostName;
     }
 }
 

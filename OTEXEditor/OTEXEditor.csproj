@@ -74,7 +74,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="HostedDocument.cs" />
     <Compile Include="Editor.cs" />
+    <Compile Include="EditorComponent.cs" />
     <Compile Include="EditorForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -106,6 +108,7 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="OTEX.ico" />
+    <None Include="Resources\document-temp.png" />
     <None Include="Resources\Media-Play-24.png" />
     <None Include="Resources\Document-Error-24.png" />
     <None Include="Resources\User-Group-16.png" />

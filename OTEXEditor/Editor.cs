@@ -11,7 +11,7 @@ using System.Windows.Forms;
 
 namespace OTEX.Editor
 {
-    public sealed class Editor : IDisposable
+    internal sealed class Editor : EditorComponent, IDisposable
     {
         /////////////////////////////////////////////////////////////////////
         // PROPERTIES/VARIABLES
@@ -56,51 +56,15 @@ namespace OTEX.Editor
         /// </summary>
         public readonly Paginator Paginator;
 
-        /// <summary>
-        /// The language manager.
-        /// </summary>
-        public readonly LanguageManager LanguageManager;
-
-        /// <summary>
-        /// The icon manager.
-        /// </summary>
-        public readonly IconManager IconManager;
-
-        /// <summary>
-        /// The OTEX client.
-        /// </summary>
-        public readonly Client Client;
-
-        /// <summary>
-        /// The form
-        /// </summary>
-        public readonly EditorForm Form;
-
-        /// <summary>
-        /// The local user of the editor.
-        /// </summary>
-        public readonly User User;
-
-        /// <summary>
-        /// The application settings.
-        /// </summary>
-        public readonly Settings Settings;
-
         /////////////////////////////////////////////////////////////////////
         // CONSTRUCTOR
         /////////////////////////////////////////////////////////////////////
 
-        public Editor(EditorForm form, Document document)
+        public Editor(EditorForm form, Document document) :  base(form)
         {
             //assign
-            Form = form ?? throw new ArgumentNullException("form");
             Document = document ?? throw new ArgumentNullException("document");
-            LanguageManager = form.languageManager ?? throw new ArgumentNullException("form.languageManager");
-            IconManager = form.iconManager ?? throw new ArgumentNullException("form.iconManager");
-            Client = form.otexClient ?? throw new ArgumentNullException("form.otexClient");
-            User = form.localUser ?? throw new ArgumentNullException("form.localUser");
             Paginator = form.editorPaginator ?? throw new ArgumentNullException("form.editorPaginator");
-            Settings = form.settings ?? throw new ArgumentNullException("form.settings");
             ID = Document.ID;
 
             //create tab
