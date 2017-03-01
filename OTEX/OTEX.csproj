@@ -85,7 +85,6 @@
     <Compile Include="Operation.cs" />
     <Compile Include="Packets\ClientUpdate.cs" />
     <Compile Include="Packets\PacketStream.cs" />
-    <Compile Include="PortRange.cs" />
     <Compile Include="RemoteClient.cs" />
     <Compile Include="ServerDescription.cs" />
     <Compile Include="Password.cs" />
