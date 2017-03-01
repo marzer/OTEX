@@ -96,7 +96,7 @@ namespace OTEX.Editor
             get { return App.Config.User.Get("client.update_interval", 1.0f).Clamp(0.5f, 5.0f); }
             set
             {
-                if (!(value = value.Clamp(0.5f, 5.0f)).Equal(UpdateInterval))
+                if (!(value = value.Clamp(0.5f, 5.0f)).IsSimilar(UpdateInterval))
                 {
                     App.Config.User.Set("client.update_interval", value);
                     OnUpdateIntervalChanged?.Invoke(this);
