@@ -377,9 +377,9 @@ namespace OTEX.Editor
             }
 
             // KEY BINDINGS ////////////////////////////////////////////////////////////////////////
-            globalBindings[Keys.Control | Keys.W] = () => { cbLineEndings.Checked = !cbLineEndings.Checked; };
+            globalBindings[Keys.Control | Keys.E] = () => { cbLineEndings.Checked = !cbLineEndings.Checked; };
             editorBindings[Keys.Control | Keys.Q] = (tb) => { tb.ToggleCommentSelection(); };
-            editorBindings[Keys.Control | Keys.B] = (tb) => { tb.ToggleBookmark(); };
+            editorBindings[Keys.Control | Keys.F2] = (tb) => { tb.ToggleBookmark(); };
             editorBindings[Keys.F2] = (tb) => { tb.NextBookmark(); };
             editorBindings[Keys.Shift | Keys.F2] = (tb) => { tb.PreviousBookmark(); };
             editorBindings[Keys.Control | Keys.Subtract] = (tb) => { tb.DecreaseZoom(); };
