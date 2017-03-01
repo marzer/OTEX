@@ -63,6 +63,8 @@ namespace OTEX.Editor
 
             App.MainFormType = typeof(EditorForm);
             App.Name = "OTEX Editor";
+            App.Developer = "Mark 'marzer' Gillard";
+            App.Company = "Marzersoft";
             App.Description = "Editor client for OTEX collaborative text editor framework.";
             App.Website = "https://github.com/marzer/OTEX/";
             App.AutoCheckForUpdates = false;
