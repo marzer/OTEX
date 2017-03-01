@@ -185,6 +185,20 @@ namespace OTEX.Editor
             get { return (uint)AnchorPosition; }
         }
 
+        /// <summary>
+        /// Is word wrapping enabled?
+        /// </summary>
+        bool IEditorTextBox.WordWrap
+        {
+            get { return WrapMode != WrapMode.None; }
+            set
+            {
+                var val = value ? WrapMode.Word : WrapMode.None;
+                if (val != WrapMode)
+                    WrapMode = val;
+            }
+        }
+
         /////////////////////////////////////////////////////////////////////
         // CONSTRUCTOR
         /////////////////////////////////////////////////////////////////////

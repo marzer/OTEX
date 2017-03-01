@@ -65,6 +65,11 @@ namespace OTEX.Editor
         /// </summary>
         uint SelectionEnd { get; }
 
+        /// <summary>
+        /// Is word wrapping enabled?
+        /// </summary>
+        bool WordWrap { get; set; }
+
         /////////////////////////////////////////////////////////////////////
         // METHODS
         /////////////////////////////////////////////////////////////////////
